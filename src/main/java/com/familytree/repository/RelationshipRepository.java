@@ -17,4 +17,5 @@ public interface RelationshipRepository extends JpaRepository<Relationship, Long
 
     void deleteByPersonOrRelatedPerson(Person person, Person relatedPerson);
     List<Relationship> findByPersonAndRelationshipTypeOrderByRelatedPersonIdAsc(Person person, RelationshipType relationshipType);
+    List<Relationship> findByRelationshipTypeOrderByPersonIdAscRelatedPersonIdAsc(RelationshipType relationshipType);
 }

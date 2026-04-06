@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 @Service
 public class RelationshipService {
@@ -154,24 +155,42 @@ public class RelationshipService {
         if (rootPerson == null){
             return  null;
         }
-        Map <String, Object> node = new LinkedHashMap<>();
+        Map<Long, List<Relationship>> childrenByPersonId = relationshipRepository
+                .findByRelationshipTypeOrderByPersonIdAscRelatedPersonIdAsc(RelationshipType.CHILD)
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        relationship -> relationship.getPerson().getId(),
+                        LinkedHashMap::new,
+                        java.util.stream.Collectors.toList()
+                ));
+        return buildLineageTree(rootPerson, childrenByPersonId);
+    }
 
-        String fullName = rootPerson.getFirstName();
-        if (rootPerson.getMiddleName() !=null && !rootPerson.getMiddleName().isBlank()){
-            fullName = fullName + " " + rootPerson.getMiddleName();
+    private Map<String, Object> buildLineageTree(Person person, Map<Long, List<Relationship>> childrenByPersonId) {
+        if (person == null) {
+            return null;
         }
 
-        node.put("id", rootPerson.getId());
-        node.put("dbId", rootPerson.getId());
+        Map<String, Object> node = new LinkedHashMap<>();
+
+        String fullName = person.getFirstName();
+        if (person.getMiddleName() != null && !person.getMiddleName().isBlank()) {
+            fullName = fullName + " " + person.getMiddleName();
+        }
+
+        node.put("id", person.getId());
+        node.put("dbId", person.getId());
         node.put("parentDbId", null);
-        node.put("generationNumber", rootPerson.getGenerationNumber());
+        node.put("generationNumber", person.getGenerationNumber());
         node.put("name", fullName);
 
-        List<Map<String, Object>> children = new java.util.ArrayList<>();
-        for (Person child: getDirectChildren(rootPerson)){
-            Map<String, Object> childNode = buildLineageTree(child);
-            if (childNode != null){
-                childNode.put("parentDbId", rootPerson.getId());
+        List<Map<String, Object>> children = new ArrayList<>();
+        List<Relationship> childRelationships = childrenByPersonId.getOrDefault(person.getId(), Collections.emptyList());
+        for (Relationship relationship : childRelationships) {
+            Person child = relationship.getRelatedPerson();
+            Map<String, Object> childNode = buildLineageTree(child, childrenByPersonId);
+            if (childNode != null) {
+                childNode.put("parentDbId", person.getId());
                 children.add(childNode);
             }
         }
