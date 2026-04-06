@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Bhatta Lineage Builder</title>
+    <link rel="stylesheet" href="/css/lineage.css">
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>Bhatta Lineage Builder</h1>
+        <p class="subtitle">
+            This page works more like a register builder. Start with one root ancestor, then keep adding sons under each person.
+            You can type directly inside the boxes and grow the tree on the same page, similar to your sketch.
+        </p>
+    </div>
+
+    <div class="top-links">
+        <a href="/">Back Home</a>
+        &nbsp;|&nbsp;
+        <a href="/persons">View All Persons</a>
+    </div>
+
+    <div class="toolbar">
+        <span sec:authorize="hasRole('ADMIN')">
+            <button class="btn btn-primary" type="button" onclick="startRootNode()">Start Root Person</button>
+            <button class="btn btn-primary" type="button" onclick="handleSaveAll()">Save All</button>
+        </span>
+
+        <!------ New Zoom Controls ----->
+        <button class="btn btn-secondary" type="button" onclick="zoomOut()">- Zoom</button>
+        <button class="btn btn-secondary" type="button" onclick="zoomIn()">+ Zoom</button>
+        <button class="btn btn-secondary" type="button" onclick="resetZoom()">Reset</button>
+        <span id="zoomLabel" class="hint">100%</span>
+        <!--disable for now
+        <button class="btn btn-secondary" type="button" onclick="resetBoard()">Reset Board</button>
+        -->
+        <div class="hint">
+            <span sec:authorize="hasRole('ADMIN')">
+                Workflow: create the root person, type the names in the boxes, click <strong>Add Sons</strong> where needed,
+                and keep adding more sons later without replacing the existing branch. Then use <strong>Save All</strong>
+                once to save the whole lineage tree.
+            </span>
+            <span sec:authorize="!hasRole('ADMIN')">
+                You are in view-only mode. Only admin users can modify the lineage tree.
+            </span>
+        </div>
+    </div>
+
+    <div class="board">
+        <div id="emptyState" class="empty-state">
+            No lineage started yet. Click <strong>Start Root Person</strong> to begin.
+        </div>
+        <div id="treeContainer"></div>
+    </div>
+
+    <div class="small-note">
+        This is a front-end lineage builder for fast data entry and structure planning. It does not save to the database yet.
+        Later, this can be connected to your backend so each node becomes a real saved person and each branch becomes saved father-child relationships.
+    </div>
+</div>
+
+<button id="backToTopButton" class="back-to-top" type="button" onclick="scrollToTopSmooth()">↑ Top</button>
+
+<script src="/js/lineage.js?v=2"></script>
+</body>
+</html>

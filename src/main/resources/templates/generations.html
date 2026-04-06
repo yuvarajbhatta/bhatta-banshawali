@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title>Bhatta Generations</title>
+  <link rel="stylesheet" href="/css/generations.css">
+
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Bhatta Generations</h1>
+    <p class="subtitle">
+      Browse the lineage register generation by generation. This view is designed for long ancestral records
+      where father-child continuity and generational sequence matter more than a general family tree layout.
+    </p>
+  </div>
+
+  <div class="top-links">
+    <a href="/">Back Home</a>
+    &nbsp;|&nbsp;
+    <a href="/persons">View All Persons</a>
+  </div>
+
+  <div class="empty-state" th:if="${#lists.isEmpty(persons)}">
+    No generation data has been added yet.
+  </div>
+
+  <th:block th:unless="${#lists.isEmpty(persons)}">
+    <div th:each="gen : ${#numbers.sequence(1, 30)}" class="generation-block">
+      <div class="generation-header">
+        <div class="generation-title" th:text="'Generation ' + ${gen}"></div>
+      </div>
+
+      <ul>
+        <li th:each="person : ${persons}" th:if="${person.generationNumber == gen}">
+          <a class="person-link"
+             th:href="@{'/persons/' + ${person.id}}"
+             th:text="${person.firstName + ' ' + person.lastName}"></a>
+          <span class="person-meta" th:if="${person.gender != null and !person.gender.isEmpty()}"
+                th:text="'(' + ${person.gender} + ')'">
+          </span>
+        </li>
+      </ul>
+    </div>
+  </th:block>
+</div>
+</body>
+</html>

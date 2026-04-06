@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Person Form</title>
+    <link rel="stylesheet" href="/css/add-person.css">
+</head>
+<body>
+<div class="container">
+    <h1 th:text="${editMode} ? 'Edit Person' : 'Add Person'"></h1>
+    <div sec:authorize="!hasRole('ADMIN')" class="error-summary">Only admin users can add or edit persons.</div>
+
+    <form sec:authorize="hasRole('ADMIN')" th:action="${editMode} ? @{'/persons/update/' + ${person.id}} : @{/persons}" th:object="${person}" method="post">
+        <div class="error-summary" th:if="${#fields.hasErrors('*')}">
+            Please fix the errors below.
+        </div>
+
+        <div>
+            <label>First Name:</label>
+            <input type="text" th:field="*{firstName}" />
+            <div class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+        </div>
+
+        <div>
+            <label>Middle Name:</label>
+            <input type="text" th:field="*{middleName}" />
+        </div>
+
+        <div>
+            <label>Last Name:</label>
+            <input type="text" th:field="*{lastName}" />
+            <div class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+        </div>
+
+        <div>
+            <label>Generation Number:</label>
+            <input type="number" th:field="*{generationNumber}" min="1" />
+        </div>
+
+        <div>
+            <label>Gender:</label>
+            <div style="display: flex; gap: 18px; align-items: center; margin-top: 6px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; margin-bottom: 0;">
+                    <input type="radio" th:field="*{gender}" value="Male" style="width: auto;" />
+                    Male
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; margin-bottom: 0;">
+                    <input type="radio" th:field="*{gender}" value="Female" style="width: auto;" />
+                    Female
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label>Birth Date:</label>
+            <input type="date" th:field="*{birthDate}" />
+        </div>
+
+        <div>
+            <label>Death Date:</label>
+            <input type="date" th:field="*{deathDate}" />
+        </div>
+
+        <div>
+            <label>Notes:</label>
+            <textarea th:field="*{notes}"></textarea>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn btn-primary" th:text="${editMode} ? 'Update' : 'Save'"></button>
+        </div>
+    </form>
+
+    <div class="actions" sec:authorize="hasRole('ADMIN')">
+        <a href="/" class="back-link">Back Home</a>
+    </div>
+    <div class="actions" sec:authorize="!hasRole('ADMIN')">
+        <a href="/" class="back-link">Back Home</a>
+    </div>
+</div>
+</body>
+</html>
