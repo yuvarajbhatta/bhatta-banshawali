@@ -166,7 +166,9 @@ public class RelationshipService {
         return buildLineageTree(rootPerson, childrenByPersonId);
     }
 
-    private Map<String, Object> buildLineageTree(Person person, Map<Long, List<Relationship>> childrenByPersonId) {
+    private Map<String, Object> buildLineageTree(Person person,
+                                                 Map<Long, List<Relationship>> childrenByPersonId,
+                                                 Map<Long, Person> personMap) {
         if (person == null) {
             return null;
         }
