@@ -4,6 +4,7 @@ import com.familytree.entity.Person;
 import com.familytree.entity.Relationship;
 import com.familytree.entity.RelationshipType;
 import com.familytree.repository.RelationshipRepository;
+import com.familytree.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,13 +12,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Service
 public class RelationshipService {
     private final RelationshipRepository relationshipRepository;
+    private final PersonRepository personRepository;
 
-    public RelationshipService(RelationshipRepository relationshipRepository) {
+    public RelationshipService(RelationshipRepository relationshipRepository, PersonRepository personRepository) {
         this.relationshipRepository = relationshipRepository;
+        this.personRepository = personRepository;
     }
     public Relationship saveRelationship(Relationship relationship) {
         return relationshipRepository.save(relationship);
@@ -158,12 +162,33 @@ public class RelationshipService {
         Map<Long, List<Relationship>> childrenByPersonId = relationshipRepository
                 .findByRelationshipTypeOrderByPersonIdAscRelatedPersonIdAsc(RelationshipType.CHILD)
                 .stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         relationship -> relationship.getPerson().getId(),
                         LinkedHashMap::new,
-                        java.util.stream.Collectors.toList()
+                        Collectors.toList()
                 ));
-        return buildLineageTree(rootPerson, childrenByPersonId);
+        Map<Long, Person> personMap = personRepository.findAll()
+                .stream()
+                .collect(Collectors.toMap(
+                        Person::getId,
+                        person -> person,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+        return buildLineageTree(rootPerson, childrenByPersonId, personMap);
+    }
+
+    private Map<String, Object> buildLineageTree(Person person,
+                                                 Map<Long, List<Relationship>> childrenByPersonId) {
+        Map<Long, Person> personMap = personRepository.findAll()
+                .stream()
+                .collect(Collectors.toMap(
+                        Person::getId,
+                        existingPerson -> existingPerson,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
+        return buildLineageTree(person, childrenByPersonId, personMap);
     }
 
     private Map<String, Object> buildLineageTree(Person person,
@@ -189,8 +214,8 @@ public class RelationshipService {
         List<Map<String, Object>> children = new ArrayList<>();
         List<Relationship> childRelationships = childrenByPersonId.getOrDefault(person.getId(), Collections.emptyList());
         for (Relationship relationship : childRelationships) {
-            Person child = relationship.getRelatedPerson();
-            Map<String, Object> childNode = buildLineageTree(child, childrenByPersonId);
+            Person child = personMap.get(relationship.getRelatedPerson().getId());
+            Map<String, Object> childNode = buildLineageTree(child, childrenByPersonId, personMap);
             if (childNode != null) {
                 childNode.put("parentDbId", person.getId());
                 children.add(childNode);
