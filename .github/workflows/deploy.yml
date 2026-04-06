@@ -10,12 +10,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64, familytree-prod]
 
     steps:
-      - name: Deploy app
+      - name: Run deploy script
         run: |
-          cd /home/yuva/bhatta-banshawali
-          git fetch origin
-          git checkout main
-          git reset --hard origin/main
-          ./mvnw clean package -DskipTests
-          sudo systemctl restart familytree
-          sudo systemctl status familytree --no-pager
+          bash /home/yuva/deploy-familytree.sh
