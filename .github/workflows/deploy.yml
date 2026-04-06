@@ -1,0 +1,21 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Linux, X64, familytree-prod]
+
+    steps:
+      - name: Deploy app
+        run: |
+          cd /home/yuva/bhatta-banshawali
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
+          ./mvnw clean package -DskipTests
+          sudo systemctl restart familytree
+          sudo systemctl status familytree --no-pager
