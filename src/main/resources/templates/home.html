@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Family Tree App</title>
+    <title th:text="#{app.name}">Family Tree App</title>
     <link rel="stylesheet" href="/css/home.css">
-
 </head>
-
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div style="display:flex; justify-content:flex-end; align-items:center; padding:12px 20px 0 20px;">
     <span sec:authorize="isAuthenticated()" style="color:#374151; font-size:14px;">
-        Logged in as: <strong sec:authentication="name"></strong>
-        <span sec:authorize="hasRole('ADMIN')"> (ADMIN)</span>
-        <span sec:authorize="hasRole('USER')"> (USER)</span>
+        <span th:text="#{home.loggedInAs}">Logged in as:</span> <strong sec:authentication="name"></strong>
+        <span sec:authorize="hasRole('ADMIN')" th:text="#{home.role.admin}"> (ADMIN)</span>
+        <span sec:authorize="hasRole('USER')" th:text="#{home.role.user}"> (USER)</span>
         &nbsp;|&nbsp;
         <form th:action="@{/logout}" method="post" style="display:inline;">
-            <button type="submit" style="border:none; background:none; padding:0; color:#2563eb; font-weight:600; cursor:pointer;">
+            <button type="submit" style="border:none; background:none; padding:0; color:#2563eb; font-weight:600; cursor:pointer;" th:text="#{nav.logout}">
                 Logout
             </button>
         </form>
@@ -23,37 +23,39 @@
 </div>
 
 <div class="container" style="margin-top:18px;">
-    <h1 th:text="${message}"></h1>
-    <p style="margin-top:-6px; color:#2563eb; font-weight:600;">Dashboard</p>
-    <p class="subtitle">Manage people, relationships, lineage, and family history from one beautiful place.</p>
+    <h1 th:text="#{home.welcome}">Welcome to Family Tree App</h1>
+    <p style="margin-top:-6px; color:#2563eb; font-weight:600;" th:text="#{home.dashboard}">Dashboard</p>
+    <p class="subtitle" th:text="#{home.subtitle}">Manage people, relationships, lineage, and family history from one beautiful place.</p>
 
     <div style="background:linear-gradient(135deg, #dbeafe, #eff6ff); border:1px solid #bfdbfe; border-radius:18px; padding:22px 24px; margin-bottom:22px;">
-        <h2 style="margin:0 0 10px 0; color:#1e3a8a;">Preserve your family history</h2>
-        <p style="margin:0; color:#374151; line-height:1.6;">
+        <h2 style="margin:0 0 10px 0; color:#1e3a8a;" th:text="#{home.heroTitle}">Preserve your family history</h2>
+        <p style="margin:0; color:#374151; line-height:1.6;" th:text="#{home.heroText}">
             Build a living record of people, relationships, generations, and lineage branches in one secure place.
         </p>
     </div>
 
     <div class="grid">
         <div class="card">
-            <h2>Persons</h2>
-            <p>Add new people, browse the list, search records, and explore person details.</p>
-            <span sec:authorize="hasRole('ADMIN')"><a href="/persons/new">Add Person</a></span>
-            <a href="/persons">View Persons</a>
+            <h2 th:text="#{home.persons.title}">Persons</h2>
+            <p th:text="#{home.persons.text}">Add new people, browse the list, search records, and explore person details.</p>
+            <span sec:authorize="hasRole('ADMIN')"><a href="/persons/new" th:text="#{home.persons.add}">Add Person</a></span>
+            <a href="/persons" th:text="#{home.persons.view}">View Persons</a>
         </div>
 
         <div class="card">
-            <h2>Relationships</h2>
-            <p>Browse family links, generation views, and lineage structure from one place.</p>
-            <span sec:authorize="hasRole('ADMIN')"><a href="/relationships/new">Add Relationship</a></span>
-            <a href="/relationships">View Relationships</a>
-            <a href="/generations">View Generations</a>
-            <a href="/lineage">Open Lineage View</a>
+            <h2 th:text="#{home.relationships.title}">Relationships</h2>
+            <p th:text="#{home.relationships.text}">Browse family links, generation views, and lineage structure from one place.</p>
+            <span sec:authorize="hasRole('ADMIN')"><a href="/relationships/new" th:text="#{home.relationships.add}">Add Relationship</a></span>
+            <a href="/relationships" th:text="#{home.relationships.view}">View Relationships</a>
+            <a href="/generations" th:text="#{home.relationships.generations}">View Generations</a>
+            <a href="/lineage" th:text="#{home.relationships.lineage}">Open Lineage View</a>
         </div>
     </div>
 </div>
-<footer style="text-align:center; color:#6b7280; padding:24px 0 18px 0; font-size:14px;">
+<footer style="text-align:center; color:#6b7280; padding:24px 0 18px 0; font-size:14px;" th:text="#{home.footer}">
     © 2026 Kispang Bhatta Banshawali. All rights reserved.
 </footer>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

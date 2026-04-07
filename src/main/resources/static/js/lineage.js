@@ -5,6 +5,15 @@ const ZOOM_STEP = 0.1;
 
 let nodeIdCounter = 1;
 let rootNode = null;
+const messages = window.lineageMessages || {};
+
+function t(key) {
+    return messages[key] || '';
+}
+
+function formatMessage(template, ...values) {
+    return (template || '').replace(/\{(\d+)}/g, (_, index) => values[Number(index)] ?? '');
+}
 
 function getCsrfHeaders() {
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -19,7 +28,7 @@ function getCsrfHeaders() {
     };
 }
 
-function createNode(name = 'Type Name Here', parentId = null, generationNumber = null) {
+function createNode(name = t('defaultName') || 'Type Name Here', parentId = null, generationNumber = null) {
     return {
         id: nodeIdCounter++,
         dbId: null,
@@ -40,7 +49,7 @@ function mapServerNodeToUiNode(serverNode) {
         dbId: serverNode.dbId,
         parentDbId: serverNode.parentDbId ?? null,
         generationNumber: serverNode.generationNumber ?? null,
-        name: serverNode.name || 'Type Name Here',
+        name: serverNode.name || t('defaultName') || 'Type Name Here',
         children: []
     };
 
@@ -57,7 +66,7 @@ async function loadLineageTree() {
     try {
         const response = await fetch('/lineage/tree');
         if (!response.ok) {
-            throw new Error('Could not load lineage tree');
+            throw new Error(t('loadFailed') || 'Could not load lineage tree');
         }
 
         const data = await response.json();
@@ -72,7 +81,7 @@ async function loadLineageTree() {
         rootNode = mapServerNodeToUiNode(data);
         renderTree();
     } catch (error) {
-        console.error('Could not load lineage tree', error);
+        console.error(t('loadFailed') || 'Could not load lineage tree', error);
         rootNode = null;
         renderTree();
     }
@@ -80,18 +89,18 @@ async function loadLineageTree() {
 
 function startRootNode() {
     if (rootNode !== null) {
-        const replace = confirm('A lineage already exists on this page. Replace it and start over?');
+        const replace = confirm(t('rootExists') || 'A lineage already exists on this page. Replace it and start over?');
         if (!replace) {
             return;
         }
     }
 
-    const rootName = prompt('Enter the root ancestor name:', 'Jhanka Nath');
+    const rootName = prompt(t('rootPrompt') || 'Enter the root ancestor name:', 'Jhanka Nath');
     if (rootName === null) {
         return;
     }
 
-    rootNode = createNode(rootName.trim() || 'Type Name Here', null, 1);
+    rootNode = createNode(rootName.trim() || t('defaultName') || 'Type Name Here', null, 1);
     renderTree();
     askAndAddChildren(rootNode);
 }
@@ -108,8 +117,11 @@ function resetBoard() {
 function askAndAddChildren(node) {
     const existingCount = Array.isArray(node.children) ? node.children.length : 0;
     const input = prompt(
-        'How many NEW sons do you want to add under ' + (node.name || 'this person') + '?\n' +
-        'Existing sons already on this branch: ' + existingCount,
+        formatMessage(
+            t('childrenPrompt') || 'How many NEW sons do you want to add under {0}?\nExisting sons already on this branch: {1}',
+            node.name || t('personFallback') || 'this person',
+            existingCount
+        ),
         '1'
     );
 
@@ -119,7 +131,7 @@ function askAndAddChildren(node) {
 
     const count = Number(input);
     if (!Number.isInteger(count) || count < 0) {
-        alert('Please enter a whole number like 0, 1, 2, 3, ...');
+        alert(t('wholeNumber') || 'Please enter a whole number like 0, 1, 2, 3, ...');
         return;
     }
 
@@ -129,7 +141,7 @@ function askAndAddChildren(node) {
 
     const nextGeneration = node.generationNumber != null ? node.generationNumber + 1 : null;
     for (let i = 0; i < count; i++) {
-        node.children.push(createNode('Type Name Here', node.dbId, nextGeneration));
+        node.children.push(createNode(t('defaultName') || 'Type Name Here', node.dbId, nextGeneration));
     }
 
     renderTree();
@@ -199,7 +211,7 @@ function updateNodeName(nodeId, element) {
         return;
     }
 
-    node.name = element.textContent.trim() || 'Type Name Here';
+    node.name = element.textContent.trim() || t('defaultName') || 'Type Name Here';
 }
 
 function handleAddSons(nodeId) {
@@ -209,8 +221,8 @@ function handleAddSons(nodeId) {
     }
 
     const trimmedName = (node.name || '').trim();
-    if (!trimmedName || trimmedName === 'Type Name Here') {
-        alert("Please type the person's name in this box before adding sons.");
+    if (!trimmedName || trimmedName === (t('defaultName') || 'Type Name Here')) {
+        alert(t('enterNameBeforeAdd') || "Please type the person's name in this box before adding sons.");
         return;
     }
 
@@ -224,8 +236,8 @@ async function handleSaveNode(nodeId) {
     }
 
     const trimmedName = (node.name || '').trim();
-    if (!trimmedName || trimmedName === 'Type Name Here') {
-        alert('Please type a real name before saving.');
+    if (!trimmedName || trimmedName === (t('defaultName') || 'Type Name Here')) {
+        alert(t('enterRealName') || 'Please type a real name before saving.');
         return;
     }
 
@@ -265,7 +277,7 @@ async function handleSaveNode(nodeId) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Save failed:', errorText);
-            throw new Error('Save failed');
+            throw new Error(t('saveFailed') || 'Save failed');
         }
 
         const data = await response.json();
@@ -279,10 +291,10 @@ async function handleSaveNode(nodeId) {
         }
 
         renderTree();
-        alert('Saved successfully.');
+        alert(t('savedSuccessfully') || 'Saved successfully.');
     } catch (error) {
         console.error(error);
-        alert('Could not save this node.');
+        alert(t('nodeSaveFailed') || 'Could not save this node.');
     }
 }
 
@@ -292,8 +304,8 @@ async function saveTreeRecursively(node) {
     }
 
     const trimmedName = (node.name || '').trim();
-    if (!trimmedName || trimmedName === 'Type Name Here') {
-        throw new Error('Please fill in every node name before saving.');
+    if (!trimmedName || trimmedName === (t('defaultName') || 'Type Name Here')) {
+        throw new Error(t('fillAllNames') || 'Please fill in every node name before saving.');
     }
 
     const params = new URLSearchParams();
@@ -323,7 +335,7 @@ async function saveTreeRecursively(node) {
     if (!response.ok) {
         const errorText = await response.text();
         console.error('Save failed:', errorText);
-        throw new Error('Could not save lineage tree.');
+        throw new Error(t('treeSaveFailed') || 'Could not save lineage tree.');
     }
 
     const data = await response.json();
@@ -340,17 +352,17 @@ async function saveTreeRecursively(node) {
 
 async function handleSaveAll() {
     if (!rootNode) {
-        alert('There is no lineage tree to save.');
+        alert(t('noTree') || 'There is no lineage tree to save.');
         return;
     }
 
     try {
         await saveTreeRecursively(rootNode);
         renderTree();
-        alert('Entire lineage saved successfully.');
+        alert(t('treeSaved') || 'Entire lineage saved successfully.');
     } catch (error) {
         console.error(error);
-        alert(error.message || 'Could not save the lineage tree.');
+        alert(error.message || t('treeSaveFailed') || 'Could not save the lineage tree.');
     }
 }
 
@@ -389,7 +401,7 @@ function handleDeleteNode(nodeId) {
     }
 
     if (rootNode.id === nodeId) {
-        const confirmed = confirm('Delete the entire lineage root?');
+        const confirmed = confirm(t('rootDelete') || 'Delete the entire lineage root?');
         if (confirmed) {
             rootNode = null;
             renderTree();
@@ -397,7 +409,7 @@ function handleDeleteNode(nodeId) {
         return;
     }
 
-    const confirmed = confirm('Delete this branch?');
+    const confirmed = confirm(t('branchDelete') || 'Delete this branch?');
     if (!confirmed) {
         return;
     }
@@ -415,10 +427,10 @@ function buildTreeHtml(node) {
         <li>
             <div class="node-box">
                 <div class="node-name" contenteditable="true" onblur="updateNodeName(${node.id}, this)">${escapeHtml(node.name)}</div>
-                <div class="node-meta">${node.dbId ? 'Saved ID: ' + node.dbId : 'Not saved yet'}</div>
+                <div class="node-meta">${node.dbId ? (t('savedId') || 'Saved ID:') + ' ' + node.dbId : (t('notSaved') || 'Not saved yet')}</div>
                 <div class="node-actions">
-                    <button type="button" onclick="handleAddSons(${node.id})">Add Sons</button>
-                    <button type="button" onclick="handleDeleteNode(${node.id})">Delete</button>
+                    <button type="button" onclick="handleAddSons(${node.id})">${t('addSons') || 'Add Sons'}</button>
+                    <button type="button" onclick="handleDeleteNode(${node.id})">${t('delete') || 'Delete'}</button>
                 </div>
             </div>
             ${childrenHtml}

@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Controller
@@ -88,6 +89,30 @@ public class PersonController {
         return "person-details";
     }
 
+    @GetMapping("/persons/transliterate")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> suggestNepaliNames(@RequestParam(required = false) String firstName,
+                                                                  @RequestParam(required = false) String middleName,
+                                                                  @RequestParam(required = false) String lastName,
+                                                                  @RequestParam(required = false) String firstNameNepali,
+                                                                  @RequestParam(required = false) String middleNameNepali,
+                                                                  @RequestParam(required = false) String lastNameNepali) {
+        Person person = new Person();
+        person.setFirstName(firstName);
+        person.setMiddleName(middleName);
+        person.setLastName(lastName);
+        person.setFirstNameNepali(firstNameNepali);
+        person.setMiddleNameNepali(middleNameNepali);
+        person.setLastNameNepali(lastNameNepali);
+
+        Person suggestion = personService.suggestNepaliNames(person);
+        Map<String, String> response = new LinkedHashMap<>();
+        response.put("firstNameNepali", suggestion.getFirstNameNepali());
+        response.put("middleNameNepali", suggestion.getMiddleNameNepali());
+        response.put("lastNameNepali", suggestion.getLastNameNepali());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/generations")
     public String viewGenerations(Model model) {
         model.addAttribute("persons", personService.getAllPersonsOrderedByGeneration());
@@ -115,9 +140,9 @@ public class PersonController {
 
     @GetMapping("/lineage/tree")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getLineageTree() {
+    public ResponseEntity<Map<String, Object>> getLineageTree(Locale locale) {
         Person rootPerson = relationshipService.getRootPersonForLineage();
-        Map<String, Object> tree = relationshipService.buildLineageTree(rootPerson);
+        Map<String, Object> tree = relationshipService.buildLineageTree(rootPerson, locale);
 
         if (tree == null) {
             return ResponseEntity.ok(new LinkedHashMap<>());

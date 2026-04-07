@@ -17,6 +17,7 @@ import org.springframework.validation.BindingResult;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -179,9 +180,9 @@ class PersonControllerTest {
     @Test
     void getLineageTreeReturnsEmptyMapWhenNoRootExists() {
         when(relationshipService.getRootPersonForLineage()).thenReturn(null);
-        when(relationshipService.buildLineageTree(null)).thenReturn(null);
+        when(relationshipService.buildLineageTree(null, Locale.ENGLISH)).thenReturn(null);
 
-        var response = controller.getLineageTree();
+        var response = controller.getLineageTree(Locale.ENGLISH);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isEqualTo(new LinkedHashMap<>());
@@ -193,9 +194,9 @@ class PersonControllerTest {
         Map<String, Object> tree = new LinkedHashMap<>();
         tree.put("dbId", 1L);
         when(relationshipService.getRootPersonForLineage()).thenReturn(root);
-        when(relationshipService.buildLineageTree(root)).thenReturn(tree);
+        when(relationshipService.buildLineageTree(root, Locale.ENGLISH)).thenReturn(tree);
 
-        var response = controller.getLineageTree();
+        var response = controller.getLineageTree(Locale.ENGLISH);
 
         assertThat(response.getBody()).isEqualTo(tree);
     }
@@ -229,6 +230,21 @@ class PersonControllerTest {
         assertThat(response.getBody()).containsEntry("id", 11L);
         verify(personService).updateLineagePerson(11L, "Updated Name", 3);
         verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), any());
+    }
+
+    @Test
+    void suggestNepaliNamesReturnsSuggestions() {
+        Person suggestion = new Person();
+        suggestion.setFirstNameNepali("युवा");
+        suggestion.setMiddleNameNepali("प्रसाद");
+        suggestion.setLastNameNepali("भट्ट");
+        when(personService.suggestNepaliNames(any())).thenReturn(suggestion);
+
+        var response = controller.suggestNepaliNames("Yuva", "Prasad", "Bhatta", "", "", "");
+
+        assertThat(response.getBody()).containsEntry("firstNameNepali", "युवा");
+        assertThat(response.getBody()).containsEntry("middleNameNepali", "प्रसाद");
+        assertThat(response.getBody()).containsEntry("lastNameNepali", "भट्ट");
     }
 
     private Person createPerson(Long id, String firstName) {

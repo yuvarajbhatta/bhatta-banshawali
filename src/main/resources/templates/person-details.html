@@ -1,64 +1,72 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Person Details</title>
+    <title th:text="#{person.details.title}">Person Details</title>
     <link rel="stylesheet" href="/css/person-details.css">
-
 </head>
 <body>
-<div class="container">
-    <h1 th:text="${person.firstName + ' ' + person.lastName}"></h1>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
 
-    <a href="/persons" class="back-link">Back to Persons</a>
+<div class="container">
+    <h1 th:text="${@personDisplay.fullName(person, #locale)}"></h1>
+
+    <div style="margin:8px 0 18px; color:#4b5563; font-size:14px;">
+        <div><strong th:text="#{person.details.englishName} + ':'">English Name:</strong> <span th:text="${@personDisplay.fullName(person, T(java.util.Locale).ENGLISH)}"></span></div>
+        <div><strong th:text="#{person.details.nepaliName} + ':'">Nepali Name:</strong> <span th:text="${@personDisplay.fullName(person, T(java.util.Locale).forLanguageTag('ne'))}"></span></div>
+    </div>
+
+    <a href="/persons" class="back-link" th:text="#{nav.backToPersons}">Back to Persons</a>
 
     <div class="section">
-        <h2>Parents</h2>
+        <h2 th:text="#{person.details.parents}">Parents</h2>
 
         <div class="info-row">
-            <span class="label">Father:</span>
-            <span th:if="${#lists.isEmpty(fathers)}" class="muted">Not added</span>
+            <span class="label" th:text="#{person.details.father} + ':'">Father:</span>
+            <span th:if="${#lists.isEmpty(fathers)}" class="muted" th:text="#{person.details.notAdded}">Not added</span>
             <span th:each="rel : ${fathers}">
                 <a class="person-link"
                    th:href="@{'/persons/' + ${rel.relatedPerson.id}}"
-                   th:text="${rel.relatedPerson.firstName + ' ' + rel.relatedPerson.lastName}"></a>
+                   th:text="${@personDisplay.fullName(rel.relatedPerson, #locale)}"></a>
             </span>
         </div>
 
         <div class="info-row">
-            <span class="label">Mother:</span>
-            <span th:if="${#lists.isEmpty(mothers)}" class="muted">Not added</span>
+            <span class="label" th:text="#{person.details.mother} + ':'">Mother:</span>
+            <span th:if="${#lists.isEmpty(mothers)}" class="muted" th:text="#{person.details.notAdded}">Not added</span>
             <span th:each="rel : ${mothers}">
                 <a class="person-link"
                    th:href="@{'/persons/' + ${rel.relatedPerson.id}}"
-                   th:text="${rel.relatedPerson.firstName + ' ' + rel.relatedPerson.lastName}"></a>
+                   th:text="${@personDisplay.fullName(rel.relatedPerson, #locale)}"></a>
             </span>
         </div>
     </div>
 
     <div class="section">
-        <h2>Spouse</h2>
-        <div th:if="${#lists.isEmpty(spouses)}" class="muted">Not added</div>
+        <h2 th:text="#{person.details.spouse}">Spouse</h2>
+        <div th:if="${#lists.isEmpty(spouses)}" class="muted" th:text="#{person.details.notAdded}">Not added</div>
         <ul th:if="${!#lists.isEmpty(spouses)}">
             <li th:each="spouse : ${spouses}">
                 <a class="person-link"
                    th:href="@{'/persons/' + ${spouse.id}}"
-                   th:text="${spouse.firstName + ' ' + spouse.lastName}"></a>
+                   th:text="${@personDisplay.fullName(spouse, #locale)}"></a>
             </li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>Children</h2>
-        <div th:if="${#lists.isEmpty(children)}" class="muted">Not added</div>
+        <h2 th:text="#{person.details.children}">Children</h2>
+        <div th:if="${#lists.isEmpty(children)}" class="muted" th:text="#{person.details.notAdded}">Not added</div>
         <ul th:if="${!#lists.isEmpty(children)}">
             <li th:each="child : ${children}">
                 <a class="person-link"
                    th:href="@{'/persons/' + ${child.id}}"
-                   th:text="${child.firstName + ' ' + child.lastName}"></a>
+                   th:text="${@personDisplay.fullName(child, #locale)}"></a>
             </li>
         </ul>
     </div>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

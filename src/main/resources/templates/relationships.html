@@ -1,48 +1,53 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
-  <title>All Relationships</title>
+  <title th:text="#{relationships.title}">All Relationships</title>
   <link rel="stylesheet" href="/css/relationships.css">
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="container">
-  <h1>All Relationships</h1>
+  <h1 th:text="#{relationships.title}">All Relationships</h1>
 
   <div class="top-links">
-    <a href="/">Back Home</a>
+    <a href="/" th:text="#{nav.backHome}">Back Home</a>
     &nbsp;|&nbsp;
     <span sec:authorize="hasRole('ADMIN')">
-      <a href="/relationships/new">Add New Relationship</a>
+      <a href="/relationships/new" th:text="#{nav.addNewRelationship}">Add New Relationship</a>
     </span>
   </div>
 
   <table th:if="${!#lists.isEmpty(relationships)}">
     <tr>
-      <th>ID</th>
-      <th>Person</th>
-      <th>Relationship Type</th>
-      <th>Related Person</th>
-      <th sec:authorize="hasRole('ADMIN')">Actions</th>
+      <th th:text="#{relationships.id}">ID</th>
+      <th th:text="#{relationships.person}">Person</th>
+      <th th:text="#{relationships.type}">Relationship Type</th>
+      <th th:text="#{relationships.relatedPerson}">Related Person</th>
+      <th sec:authorize="hasRole('ADMIN')" th:text="#{relationships.actions}">Actions</th>
     </tr>
 
     <tr th:each="rel : ${relationships}">
       <td th:text="${rel.id}"></td>
-      <td th:text="${rel.person.firstName + ' ' + rel.person.lastName}"></td>
-      <td th:text="${rel.relationshipType}"></td>
-      <td th:text="${rel.relatedPerson.firstName + ' ' + rel.relatedPerson.lastName}"></td>
+      <td th:text="${@personDisplay.fullName(rel.person, #locale)}"></td>
+      <td th:text="${#messages.msg('relationshipType.' + rel.relationshipType.name())}"></td>
+      <td th:text="${@personDisplay.fullName(rel.relatedPerson, #locale)}"></td>
       <td class="actions" sec:authorize="hasRole('ADMIN')">
-        <a th:href="@{'/relationships/edit/' + ${rel.id}}">Edit</a>
+        <a th:href="@{'/relationships/edit/' + ${rel.id}}" th:text="#{relationships.edit}">Edit</a>
         |
         <a th:href="@{'/relationships/delete/' + ${rel.id}}"
-           onclick="return confirm('Are you sure you want to delete this relationship?')">Delete</a>
+           th:attr="onclick=|return confirm('${#messages.msg('relationships.delete.confirm')}')|"
+           th:text="#{relationships.delete}">Delete</a>
       </td>
     </tr>
   </table>
 
-  <div class="empty-state" th:if="${#lists.isEmpty(relationships)}">
+  <div class="empty-state" th:if="${#lists.isEmpty(relationships)}" th:text="#{relationships.empty}">
     No relationships found.
   </div>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>
