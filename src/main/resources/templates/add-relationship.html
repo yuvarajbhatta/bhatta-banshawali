@@ -22,8 +22,8 @@
     <div class="error" th:if="${duplicateRelationshipError != null}" th:text="${duplicateRelationshipError}"></div>
 
     <form sec:authorize="hasRole('ADMIN')"
-          th:action="${editMode} ? '/relationships/update/' + ${relationship.id} : '/relationships'"
-          th:object="${relationship}" method="post">
+          th:action="${editMode} ? @{'/relationships/update/' + ${relationshipId}} : @{/relationships}"
+          method="post">
         <div>
             <label>Person:</label>
             <select name="personId">

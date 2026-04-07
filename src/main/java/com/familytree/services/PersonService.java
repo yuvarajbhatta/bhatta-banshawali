@@ -1,5 +1,6 @@
 package com.familytree.services;
 
+import com.familytree.config.AppProperties;
 import com.familytree.entity.Person;
 import com.familytree.repository.PersonRepository;
 import org.springframework.stereotype.Service;
@@ -11,10 +12,16 @@ public class PersonService {
 
     private final PersonRepository personRepository;
     private final RelationshipService relationshipService;
+    private final String lineageDefaultLastName;
+    private final String lineageDefaultGender;
 
-    public PersonService(PersonRepository personRepository, RelationshipService relationshipService) {
+    public PersonService(PersonRepository personRepository,
+                         RelationshipService relationshipService,
+                         AppProperties appProperties) {
         this.personRepository = personRepository;
         this.relationshipService = relationshipService;
+        this.lineageDefaultLastName = normalize(appProperties.getLineage().getDefaultLastName());
+        this.lineageDefaultGender = normalize(appProperties.getLineage().getDefaultGender());
     }
 
     public Person savePerson(Person person) {
@@ -77,8 +84,7 @@ public class PersonService {
         Person person = new Person();
         person.setFirstName(firstName);
         person.setMiddleName(middleName);
-        person.setLastName("Bhatta");
-        person.setGender("Male");
+        applyLineageDefaults(person);
         person.setGenerationNumber(generationNumber);
 
         return personRepository.save(person);
@@ -100,11 +106,19 @@ public class PersonService {
 
         existingPerson.setFirstName(firstName);
         existingPerson.setMiddleName(middleName);
-        existingPerson.setLastName("Bhatta");
-        existingPerson.setGender("Male");
+        applyLineageDefaults(existingPerson);
         existingPerson.setGenerationNumber(generationNumber);
 
         return personRepository.save(existingPerson);
+    }
+
+    private void applyLineageDefaults(Person person) {
+        person.setLastName(lineageDefaultLastName.isBlank() ? null : lineageDefaultLastName);
+        person.setGender(lineageDefaultGender.isBlank() ? null : lineageDefaultGender);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 
 }

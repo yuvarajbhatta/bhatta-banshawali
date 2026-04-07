@@ -6,6 +6,19 @@ const ZOOM_STEP = 0.1;
 let nodeIdCounter = 1;
 let rootNode = null;
 
+function getCsrfHeaders() {
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+    if (!csrfToken || !csrfHeader) {
+        return {};
+    }
+
+    return {
+        [csrfHeader]: csrfToken
+    };
+}
+
 function createNode(name = 'Type Name Here', parentId = null, generationNumber = null) {
     return {
         id: nodeIdCounter++,
@@ -243,7 +256,8 @@ async function handleSaveNode(nodeId) {
         const response = await fetch('/lineage/save-person', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                ...getCsrfHeaders()
             },
             body: params.toString()
         });
@@ -300,7 +314,8 @@ async function saveTreeRecursively(node) {
     const response = await fetch('/lineage/save-person', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            ...getCsrfHeaders()
         },
         body: params.toString()
     });

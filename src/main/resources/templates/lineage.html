@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Bhatta Lineage Builder</title>
     <link rel="stylesheet" href="/css/lineage.css">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body>
 <div class="container">
@@ -55,8 +57,8 @@
     </div>
 
     <div class="small-note">
-        This is a front-end lineage builder for fast data entry and structure planning. It does not save to the database yet.
-        Later, this can be connected to your backend so each node becomes a real saved person and each branch becomes saved father-child relationships.
+        This lineage builder saves people and parent-child links to the database. Use it for fast lineage entry,
+        then open the saved records in the persons and relationships views for further editing.
     </div>
 </div>
 
