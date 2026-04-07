@@ -17,6 +17,5 @@ class HomeControllerTest {
         String viewName = controller.home(model);
 
         assertThat(viewName).isEqualTo("home");
-        assertThat(model.getAttribute("message")).isEqualTo("Welcome to Family Tree App");
     }
 }

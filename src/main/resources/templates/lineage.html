@@ -1,69 +1,82 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Bhatta Lineage Builder</title>
+    <title th:text="#{lineage.title}">Bhatta Lineage Builder</title>
     <link rel="stylesheet" href="/css/lineage.css">
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="container">
     <div class="hero">
-        <h1>Bhatta Lineage Builder</h1>
-        <p class="subtitle">
-            This page works more like a register builder. Start with one root ancestor, then keep adding sons under each person.
-            You can type directly inside the boxes and grow the tree on the same page, similar to your sketch.
-        </p>
+        <h1 th:text="#{lineage.title}">Bhatta Lineage Builder</h1>
+        <p class="subtitle" th:text="#{lineage.subtitle}"></p>
     </div>
 
     <div class="top-links">
-        <a href="/">Back Home</a>
+        <a href="/" th:text="#{nav.backHome}">Back Home</a>
         &nbsp;|&nbsp;
-        <a href="/persons">View All Persons</a>
+        <a href="/persons" th:text="#{nav.viewAllPersons}">View All Persons</a>
     </div>
 
     <div class="toolbar">
         <span sec:authorize="hasRole('ADMIN')">
-            <button class="btn btn-primary" type="button" onclick="startRootNode()">Start Root Person</button>
-            <button class="btn btn-primary" type="button" onclick="handleSaveAll()">Save All</button>
+            <button class="btn btn-primary" type="button" onclick="startRootNode()" th:text="#{lineage.startRoot}">Start Root Person</button>
+            <button class="btn btn-primary" type="button" onclick="handleSaveAll()" th:text="#{lineage.saveAll}">Save All</button>
         </span>
 
-        <!------ New Zoom Controls ----->
-        <button class="btn btn-secondary" type="button" onclick="zoomOut()">- Zoom</button>
-        <button class="btn btn-secondary" type="button" onclick="zoomIn()">+ Zoom</button>
-        <button class="btn btn-secondary" type="button" onclick="resetZoom()">Reset</button>
+        <button class="btn btn-secondary" type="button" onclick="zoomOut()" th:text="#{lineage.zoomOut}">- Zoom</button>
+        <button class="btn btn-secondary" type="button" onclick="zoomIn()" th:text="#{lineage.zoomIn}">+ Zoom</button>
+        <button class="btn btn-secondary" type="button" onclick="resetZoom()" th:text="#{lineage.reset}">Reset</button>
         <span id="zoomLabel" class="hint">100%</span>
-        <!--disable for now
-        <button class="btn btn-secondary" type="button" onclick="resetBoard()">Reset Board</button>
-        -->
         <div class="hint">
-            <span sec:authorize="hasRole('ADMIN')">
-                Workflow: create the root person, type the names in the boxes, click <strong>Add Sons</strong> where needed,
-                and keep adding more sons later without replacing the existing branch. Then use <strong>Save All</strong>
-                once to save the whole lineage tree.
-            </span>
-            <span sec:authorize="!hasRole('ADMIN')">
-                You are in view-only mode. Only admin users can modify the lineage tree.
-            </span>
+            <span sec:authorize="hasRole('ADMIN')" th:text="#{lineage.workflow}"></span>
+            <span sec:authorize="!hasRole('ADMIN')" th:text="#{lineage.viewOnly}"></span>
         </div>
     </div>
 
     <div class="board">
-        <div id="emptyState" class="empty-state">
+        <div id="emptyState" class="empty-state" th:utext="#{lineage.empty}">
             No lineage started yet. Click <strong>Start Root Person</strong> to begin.
         </div>
         <div id="treeContainer"></div>
     </div>
 
-    <div class="small-note">
-        This lineage builder saves people and parent-child links to the database. Use it for fast lineage entry,
-        then open the saved records in the persons and relationships views for further editing.
-    </div>
+    <div class="small-note" th:text="#{lineage.note}"></div>
 </div>
 
-<button id="backToTopButton" class="back-to-top" type="button" onclick="scrollToTopSmooth()">↑ Top</button>
+<button id="backToTopButton" class="back-to-top" type="button" onclick="scrollToTopSmooth()" th:text="'↑ ' + #{lineage.top}">↑ Top</button>
 
-<script src="/js/lineage.js?v=2"></script>
+<script th:inline="javascript">
+    window.lineageMessages = {
+        defaultName: /*[[#{lineage.js.defaultName}]]*/ 'Type Name Here',
+        loadFailed: /*[[#{lineage.js.loadFailed}]]*/ 'Could not load lineage tree',
+        rootExists: /*[[#{lineage.js.rootExists}]]*/ 'A lineage already exists on this page. Replace it and start over?',
+        rootPrompt: /*[[#{lineage.js.rootPrompt}]]*/ 'Enter the root ancestor name:',
+        childrenPrompt: /*[[#{lineage.js.childrenPrompt}]]*/ 'How many NEW sons do you want to add under {0}?\nExisting sons already on this branch: {1}',
+        personFallback: /*[[#{lineage.js.personFallback}]]*/ 'this person',
+        wholeNumber: /*[[#{lineage.js.wholeNumber}]]*/ 'Please enter a whole number like 0, 1, 2, 3, ...',
+        enterNameBeforeAdd: /*[[#{lineage.js.enterNameBeforeAdd}]]*/ "Please type the person's name in this box before adding sons.",
+        enterRealName: /*[[#{lineage.js.enterRealName}]]*/ 'Please type a real name before saving.',
+        saveFailed: /*[[#{lineage.js.saveFailed}]]*/ 'Save failed',
+        savedSuccessfully: /*[[#{lineage.js.savedSuccessfully}]]*/ 'Saved successfully.',
+        nodeSaveFailed: /*[[#{lineage.js.nodeSaveFailed}]]*/ 'Could not save this node.',
+        fillAllNames: /*[[#{lineage.js.fillAllNames}]]*/ 'Please fill in every node name before saving.',
+        treeSaveFailed: /*[[#{lineage.js.treeSaveFailed}]]*/ 'Could not save lineage tree.',
+        noTree: /*[[#{lineage.js.noTree}]]*/ 'There is no lineage tree to save.',
+        treeSaved: /*[[#{lineage.js.treeSaved}]]*/ 'Entire lineage saved successfully.',
+        rootDelete: /*[[#{lineage.js.rootDelete}]]*/ 'Delete the entire lineage root?',
+        branchDelete: /*[[#{lineage.js.branchDelete}]]*/ 'Delete this branch?',
+        addSons: /*[[#{lineage.node.addSons}]]*/ 'Add Sons',
+        delete: /*[[#{lineage.node.delete}]]*/ 'Delete',
+        savedId: /*[[#{lineage.node.savedId}]]*/ 'Saved ID:',
+        notSaved: /*[[#{lineage.node.notSaved}]]*/ 'Not saved yet'
+    };
+</script>
+<script src="/js/lineage.js?v=3"></script>
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

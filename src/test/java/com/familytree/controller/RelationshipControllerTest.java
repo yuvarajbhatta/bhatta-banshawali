@@ -70,9 +70,9 @@ class RelationshipControllerTest {
         String viewName = controller.saveRelationship(null, null, "", model);
 
         assertThat(viewName).isEqualTo("add-relationship");
-        assertThat(model.getAttribute("personIdError")).isEqualTo("Please select a person.");
-        assertThat(model.getAttribute("relatedPersonIdError")).isEqualTo("Please select a related person.");
-        assertThat(model.getAttribute("relationshipTypeError")).isEqualTo("Please select a relationship type.");
+        assertThat(model.getAttribute("personIdError")).isEqualTo(true);
+        assertThat(model.getAttribute("relatedPersonIdError")).isEqualTo(true);
+        assertThat(model.getAttribute("relationshipTypeError")).isEqualTo(true);
         verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), any());
     }
 
@@ -89,7 +89,7 @@ class RelationshipControllerTest {
         String viewName = controller.saveRelationship(1L, 2L, "FATHER", model);
 
         assertThat(viewName).isEqualTo("add-relationship");
-        assertThat(model.getAttribute("duplicateRelationshipError")).isEqualTo("This relationship already exists.");
+        assertThat(model.getAttribute("duplicateRelationshipError")).isEqualTo(true);
         verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), any());
     }
 
@@ -117,7 +117,7 @@ class RelationshipControllerTest {
         String viewName = controller.updateRelationship(5L, 1L, 1L, "SPOUSE", model);
 
         assertThat(viewName).isEqualTo("add-relationship");
-        assertThat(model.getAttribute("samePersonError")).isEqualTo("Person and related person cannot be the same.");
+        assertThat(model.getAttribute("samePersonError")).isEqualTo(true);
         verify(relationshipService, never()).updateRelationship(any(), any(), any(), any());
     }
 

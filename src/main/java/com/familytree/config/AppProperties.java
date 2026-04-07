@@ -8,6 +8,7 @@ public class AppProperties {
     private final Admin admin = new Admin();
     private final DevUser devUser = new DevUser();
     private final Lineage lineage = new Lineage();
+    private final Names names = new Names();
 
     public Admin getAdmin() {
         return admin;
@@ -19,6 +20,10 @@ public class AppProperties {
 
     public DevUser getDevUser() {
         return devUser;
+    }
+
+    public Names getNames() {
+        return names;
     }
 
     public static class Admin {
@@ -81,6 +86,18 @@ public class AppProperties {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+    }
+
+    public static class Names {
+        private boolean backfillMissingNepaliOnStartup = true;
+
+        public boolean isBackfillMissingNepaliOnStartup() {
+            return backfillMissingNepaliOnStartup;
+        }
+
+        public void setBackfillMissingNepaliOnStartup(boolean backfillMissingNepaliOnStartup) {
+            this.backfillMissingNepaliOnStartup = backfillMissingNepaliOnStartup;
         }
     }
 }

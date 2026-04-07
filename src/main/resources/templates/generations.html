@@ -1,49 +1,49 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
-  <title>Bhatta Generations</title>
+  <title th:text="#{generations.title}">Bhatta Generations</title>
   <link rel="stylesheet" href="/css/generations.css">
-
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="container">
   <div class="hero">
-    <h1>Bhatta Generations</h1>
-    <p class="subtitle">
-      Browse the lineage register generation by generation. This view is designed for long ancestral records
-      where father-child continuity and generational sequence matter more than a general family tree layout.
-    </p>
+    <h1 th:text="#{generations.title}">Bhatta Generations</h1>
+    <p class="subtitle" th:text="#{generations.subtitle}"></p>
   </div>
 
   <div class="top-links">
-    <a href="/">Back Home</a>
+    <a href="/" th:text="#{nav.backHome}">Back Home</a>
     &nbsp;|&nbsp;
-    <a href="/persons">View All Persons</a>
+    <a href="/persons" th:text="#{nav.viewAllPersons}">View All Persons</a>
   </div>
 
-  <div class="empty-state" th:if="${#lists.isEmpty(persons)}">
+  <div class="empty-state" th:if="${#lists.isEmpty(persons)}" th:text="#{generations.empty}">
     No generation data has been added yet.
   </div>
 
   <th:block th:unless="${#lists.isEmpty(persons)}">
     <div th:each="gen : ${#numbers.sequence(1, 30)}" class="generation-block">
       <div class="generation-header">
-        <div class="generation-title" th:text="'Generation ' + ${gen}"></div>
+        <div class="generation-title" th:text="${#messages.msg('generations.label', gen)}"></div>
       </div>
 
       <ul>
         <li th:each="person : ${persons}" th:if="${person.generationNumber == gen}">
           <a class="person-link"
              th:href="@{'/persons/' + ${person.id}}"
-             th:text="${person.firstName + ' ' + person.lastName}"></a>
+             th:text="${@personDisplay.fullName(person, #locale)}"></a>
           <span class="person-meta" th:if="${person.gender != null and !person.gender.isEmpty()}"
-                th:text="'(' + ${person.gender} + ')'">
+                th:text="'(' + ${#messages.msg('gender.' + person.gender)} + ')'">
           </span>
         </li>
       </ul>
     </div>
   </th:block>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

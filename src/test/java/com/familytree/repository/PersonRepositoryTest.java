@@ -33,12 +33,26 @@ class PersonRepositoryTest {
     @Test
     void searchByFirstNameOrLastNameIgnoresCase() {
         personRepository.save(createPerson("Yuva", "Bhatta", 2));
-        personRepository.save(createPerson("Mina", "Sharma", 3));
+        Person mina = createPerson("Mina", "Sharma", 3);
+        mina.setFirstNameNepali("मिना");
+        personRepository.save(mina);
 
         List<Person> results = personRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("yu", "yu");
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrFirstNameNepaliContainingIgnoreCaseOrLastNameNepaliContainingIgnoreCase("yu", "yu", "yu", "yu");
 
         assertThat(results).extracting(Person::getFirstName).containsExactly("Yuva");
+    }
+
+    @Test
+    void searchByNepaliNameFindsMatchingPerson() {
+        Person person = createPerson("Mina", "Sharma", 3);
+        person.setFirstNameNepali("मिना");
+        personRepository.save(person);
+
+        List<Person> results = personRepository
+                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrFirstNameNepaliContainingIgnoreCaseOrLastNameNepaliContainingIgnoreCase("मि", "मि", "मि", "मि");
+
+        assertThat(results).extracting(Person::getFirstNameNepali).containsExactly("मिना");
     }
 
     @Test

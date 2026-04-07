@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -156,6 +157,10 @@ public class RelationshipService {
                 .orElse(null);
     }
     public Map<String, Object> buildLineageTree(Person rootPerson){
+        return buildLineageTree(rootPerson, Locale.ENGLISH);
+    }
+
+    public Map<String, Object> buildLineageTree(Person rootPerson, Locale locale){
         if (rootPerson == null){
             return  null;
         }
@@ -175,7 +180,7 @@ public class RelationshipService {
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
                 ));
-        return buildLineageTree(rootPerson, childrenByPersonId, personMap);
+        return buildLineageTree(rootPerson, childrenByPersonId, personMap, locale);
     }
 
     private Map<String, Object> buildLineageTree(Person person,
@@ -188,22 +193,20 @@ public class RelationshipService {
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
                 ));
-        return buildLineageTree(person, childrenByPersonId, personMap);
+        return buildLineageTree(person, childrenByPersonId, personMap, Locale.ENGLISH);
     }
 
     private Map<String, Object> buildLineageTree(Person person,
                                                  Map<Long, List<Relationship>> childrenByPersonId,
-                                                 Map<Long, Person> personMap) {
+                                                 Map<Long, Person> personMap,
+                                                 Locale locale) {
         if (person == null) {
             return null;
         }
 
         Map<String, Object> node = new LinkedHashMap<>();
-
-        String fullName = person.getFirstName();
-        if (person.getMiddleName() != null && !person.getMiddleName().isBlank()) {
-            fullName = fullName + " " + person.getMiddleName();
-        }
+        boolean nepali = locale != null && "ne".equalsIgnoreCase(locale.getLanguage());
+        String fullName = buildPersonName(person, nepali);
 
         node.put("id", person.getId());
         node.put("dbId", person.getId());
@@ -215,7 +218,7 @@ public class RelationshipService {
         List<Relationship> childRelationships = childrenByPersonId.getOrDefault(person.getId(), Collections.emptyList());
         for (Relationship relationship : childRelationships) {
             Person child = personMap.get(relationship.getRelatedPerson().getId());
-            Map<String, Object> childNode = buildLineageTree(child, childrenByPersonId, personMap);
+            Map<String, Object> childNode = buildLineageTree(child, childrenByPersonId, personMap, locale);
             if (childNode != null) {
                 childNode.put("parentDbId", person.getId());
                 children.add(childNode);
@@ -223,5 +226,26 @@ public class RelationshipService {
         }
         node.put("children", children);
         return node;
+    }
+
+    private String buildPersonName(Person person, boolean nepali) {
+        List<String> parts = new ArrayList<>();
+        if (nepali) {
+            addIfPresent(parts, person.getFirstNameNepali());
+            addIfPresent(parts, person.getMiddleNameNepali());
+            if (!parts.isEmpty()) {
+                return String.join(" ", parts);
+            }
+        }
+
+        addIfPresent(parts, person.getFirstName());
+        addIfPresent(parts, person.getMiddleName());
+        return String.join(" ", parts);
+    }
+
+    private void addIfPresent(List<String> parts, String value) {
+        if (value != null && !value.isBlank()) {
+            parts.add(value.trim());
+        }
     }
 }
