@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Run deploy script
         run: |
-          bash /home/yuva/deploy-familytree.sh
+          /srv/scripts/deploy/familytree-deploy.sh
