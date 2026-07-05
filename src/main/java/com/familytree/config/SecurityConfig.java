@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 
 @Configuration
 public class SecurityConfig {
@@ -35,6 +36,11 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
+                        // Scraped by the local Prometheus only; the app port is bound on
+                        // all interfaces, so restrict the endpoint to loopback callers.
+                        .requestMatchers("/actuator/prometheus").access(
+                                new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
                         .requestMatchers("/", "/persons", "/persons/*", "/relationships", "/lineage", "/lineage/tree", "/generations")
                         .hasAnyRole("ADMIN", "USER")
                         .requestMatchers(
