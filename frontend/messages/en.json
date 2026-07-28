@@ -9,6 +9,28 @@
     "learnAboutBanshawali": "Learn About the Banshawali",
     "login": "Login"
   },
+  "historyPage": {
+    "title": "Family History",
+    "pending": "Verified family history content is being prepared and reviewed by administrators. Check back soon."
+  },
+  "membershipPage": {
+    "linkLabel": "Membership"
+  },
+  "privacyPage": {
+    "title": "Privacy",
+    "intro": "This site holds genealogy information contributed by family members, including some information about living relatives. We try to share only what's appropriate for each viewer, and to be clear about what's known, submitted, or still unverified.",
+    "classification": "Not all information is visible to everyone. Some details are public, some are visible only to verified family members, and some are limited to administrators or to the person the record belongs to. Full birth dates, contact details, and information about minors are treated with extra care.",
+    "correction": "If something about you or your family is incorrect, you can request a correction once you're a verified member. Corrections go through review before they change the permanent record."
+  },
+  "termsPage": {
+    "title": "Membership Guidelines",
+    "intro": "This site is a private family record, not a public service. Membership is limited to people who can be reasonably connected to the Bhatta family, and access to private details is a privilege extended to verified members, not a right.",
+    "conduct": "Please use the information here respectfully: don't share private family details outside the site without the people involved agreeing, and let an administrator know if you spot something incorrect rather than editing it to be wrong on purpose."
+  },
+  "contactPage": {
+    "title": "Contact",
+    "intro": "If you have a question about the family tree, a correction to suggest, or a membership request, please reach out to a family administrator directly, or use the correction tools available once you're signed in."
+  },
   "gender": {
     "Female": "Female",
     "Male": "Male"

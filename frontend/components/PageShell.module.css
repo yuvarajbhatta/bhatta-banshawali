@@ -1,0 +1,46 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-16);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-12);
+}
+
+.backLink {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--color-primary-600);
+}
+
+.title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin: 0 0 var(--space-8);
+}
+
+.body {
+  color: var(--color-text);
+  line-height: var(--line-height-normal);
+}
+
+.body p {
+  margin: 0 0 var(--space-4);
+}
+
+.body p:last-child {
+  margin-bottom: 0;
+}
+
+.empty {
+  color: var(--color-text-muted);
+}

@@ -3,6 +3,7 @@ package com.familytree.config;
 import com.familytree.repository.AppUserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -37,6 +38,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Public, read-only admin-managed content (About, History, Membership
+                        // explainer) for the unauthenticated marketing/public pages.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/content", "/api/v1/content/**").permitAll()
                         // Scraped by the local Prometheus only; the app port is bound on
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(
