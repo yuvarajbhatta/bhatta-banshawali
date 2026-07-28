@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { PageShell } from "@/components/PageShell";
 import { getMemberProfile, type PersonSummaryDto } from "@/lib/api";
 import styles from "./page.module.css";
@@ -25,7 +26,9 @@ export default async function DashboardPage() {
       {result.kind === "ok" && result.profile.linked && result.profile.person ? (
         <div className={styles.profile}>
           <div className={styles.card}>
-            <h2>{result.profile.person.englishFullName}</h2>
+            <h2>
+              <Link href={`/directory/${result.profile.person.id}`}>{result.profile.person.englishFullName}</Link>
+            </h2>
             {result.profile.person.nepaliFullName ? <p className={styles.nepaliName}>{result.profile.person.nepaliFullName}</p> : null}
             {result.profile.person.generationNumber != null ? (
               <p className={styles.meta}>{t("generation", { number: result.profile.person.generationNumber })}</p>
@@ -37,16 +40,16 @@ export default async function DashboardPage() {
               <h3>{t("family.title")}</h3>
               <dl className={styles.familyGrid}>
                 <dt>{t("family.father")}</dt>
-                <dd>{personLabel(result.profile.family.father, t("family.none"))}</dd>
+                <dd>{personLink(result.profile.family.father, t("family.none"))}</dd>
 
                 <dt>{t("family.mother")}</dt>
-                <dd>{personLabel(result.profile.family.mother, t("family.none"))}</dd>
+                <dd>{personLink(result.profile.family.mother, t("family.none"))}</dd>
 
                 <dt>{t("family.spouses")}</dt>
-                <dd>{personListLabel(result.profile.family.spouses, t("family.none"))}</dd>
+                <dd>{personLinks(result.profile.family.spouses, t("family.none"))}</dd>
 
                 <dt>{t("family.children")}</dt>
-                <dd>{personListLabel(result.profile.family.children, t("family.none"))}</dd>
+                <dd>{personLinks(result.profile.family.children, t("family.none"))}</dd>
               </dl>
             </div>
           ) : null}
@@ -56,10 +59,21 @@ export default async function DashboardPage() {
   );
 }
 
-function personLabel(person: PersonSummaryDto | null, emptyLabel: string): string {
-  return person ? person.englishFullName : emptyLabel;
+function personLink(person: PersonSummaryDto | null, emptyLabel: string) {
+  if (!person) {
+    return emptyLabel;
+  }
+  return <Link href={`/directory/${person.id}`}>{person.englishFullName}</Link>;
 }
 
-function personListLabel(people: PersonSummaryDto[], emptyLabel: string): string {
-  return people.length > 0 ? people.map((p) => p.englishFullName).join(", ") : emptyLabel;
+function personLinks(people: PersonSummaryDto[], emptyLabel: string) {
+  if (people.length === 0) {
+    return emptyLabel;
+  }
+  return people.map((person, index) => (
+    <span key={person.id}>
+      {index > 0 ? ", " : ""}
+      <Link href={`/directory/${person.id}`}>{person.englishFullName}</Link>
+    </span>
+  ));
 }

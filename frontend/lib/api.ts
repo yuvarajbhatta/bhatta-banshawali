@@ -145,3 +145,60 @@ export async function getMemberProfile(cookieHeader: string): Promise<MemberProf
   }
   return { kind: "ok", profile: await response.json() };
 }
+
+export interface PersonDetailDto {
+  id: number;
+  englishFullName: string;
+  nepaliFullName: string;
+  nickname: string | null;
+  gender: string | null;
+  generationNumber: number | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  birthPlace: string | null;
+  currentAddress: string | null;
+  notes: string | null;
+  photoPath: string | null;
+  family: FamilySnapshotDto;
+}
+
+export type PersonDetailResult =
+  | { kind: "ok"; person: PersonDetailDto }
+  | { kind: "unauthenticated" }
+  | { kind: "not-found" };
+
+// Server-to-server with the browser's session cookie forwarded, same
+// reasoning as getMemberProfile above.
+export async function getPersonDetail(id: string, cookieHeader: string): Promise<PersonDetailResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/persons/${encodeURIComponent(id)}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return { kind: "unauthenticated" };
+  }
+  if (response.status === 404) {
+    return { kind: "not-found" };
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load person ${id}: ${response.status}`);
+  }
+  return { kind: "ok", person: await response.json() };
+}
+
+export class UnauthenticatedError extends Error {}
+
+// Called directly from the browser as the user types -- a relative path
+// so the session cookie rides along automatically (same-origin), same
+// as submitSignup above.
+export async function searchPersons(keyword: string): Promise<PersonSummaryDto[]> {
+  const response = await fetch(`/api/v1/persons?keyword=${encodeURIComponent(keyword)}`);
+  if (response.status === 401) {
+    throw new UnauthenticatedError("Not signed in.");
+  }
+  if (!response.ok) {
+    throw new Error(`Search failed: ${response.status}`);
+  }
+  return response.json();
+}

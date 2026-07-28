@@ -33,6 +33,36 @@
     "intro": "This site is a private family record, not a public service. Membership is limited to people who can be reasonably connected to the Bhatta family, and access to private details is a privilege extended to verified members, not a right.",
     "conduct": "Please use the information here respectfully: don't share private family details outside the site without the people involved agreeing, and let an administrator know if you spot something incorrect rather than editing it to be wrong on purpose."
   },
+  "directoryPage": {
+    "title": "Family Directory",
+    "subtitle": "Search by English or Nepali name, nickname, notes, or generation number.",
+    "searchPlaceholder": "Search the family register...",
+    "noResults": "No matching records found.",
+    "prompt": "Start typing a name to search.",
+    "generation": "Gen {number}"
+  },
+  "personDetailPage": {
+    "notFound": "No record found for this person.",
+    "backToDirectory": "Back to Directory",
+    "basicInfo": "Basic Information",
+    "fields": {
+      "birthDate": "Birth Date",
+      "deathDate": "Death Date",
+      "birthPlace": "Birth Place",
+      "currentAddress": "Current Address"
+    },
+    "notAdded": "Not added",
+    "family": {
+      "title": "Immediate Family",
+      "father": "Father",
+      "mother": "Mother",
+      "spouses": "Spouse(s)",
+      "children": "Children",
+      "none": "None recorded"
+    },
+    "notes": "Notes",
+    "noNotes": "No notes added."
+  },
   "dashboardPage": {
     "title": "Your Profile",
     "noAccount": "This area is for verified family members. It looks like you're signed in with an administrator account instead -- try Persons in the admin tools.",

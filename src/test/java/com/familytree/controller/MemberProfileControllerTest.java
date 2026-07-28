@@ -9,11 +9,11 @@ import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
+import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.RelationshipService;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
@@ -41,13 +41,9 @@ class MemberProfileControllerTest {
     @Mock
     private Authentication authentication;
 
-    @InjectMocks
-    private MemberProfileController controller;
-
-    private final PersonDisplayHelper personDisplay = new PersonDisplayHelper();
-
-    private MemberProfileController controllerWithRealDisplayHelper() {
-        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, relationshipService, personDisplay);
+    private MemberProfileController controllerWithRealAssembler() {
+        PersonProfileAssembler assembler = new PersonProfileAssembler(relationshipService, new PersonDisplayHelper());
+        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, assembler);
     }
 
     @Test
@@ -58,7 +54,7 @@ class MemberProfileControllerTest {
         when(userAccountRepository.findByEmail("applicant@example.com")).thenReturn(Optional.of(account));
         when(userPersonLinkRepository.findByUserAccountId(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
 
-        MemberProfileDto profile = controllerWithRealDisplayHelper().me(authentication);
+        MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
         assertThat(profile.linked()).isFalse();
         assertThat(profile.person()).isNull();
@@ -78,7 +74,7 @@ class MemberProfileControllerTest {
         pendingLink.setPerson(new Person());
         when(userPersonLinkRepository.findByUserAccountId(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(pendingLink));
 
-        MemberProfileDto profile = controllerWithRealDisplayHelper().me(authentication);
+        MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
         assertThat(profile.linked()).isFalse();
     }
@@ -117,7 +113,7 @@ class MemberProfileControllerTest {
         when(relationshipService.getSpousesForPerson(self)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(self)).thenReturn(List.of(child));
 
-        MemberProfileDto profile = controllerWithRealDisplayHelper().me(authentication);
+        MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
         assertThat(profile.linked()).isTrue();
         assertThat(profile.person().id()).isEqualTo(100L);
@@ -134,7 +130,7 @@ class MemberProfileControllerTest {
         when(authentication.getName()).thenReturn("admin");
         when(userAccountRepository.findByEmail("admin")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> controller.me(authentication))
+        assertThatThrownBy(() -> controllerWithRealAssembler().me(authentication))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("No member profile");
     }

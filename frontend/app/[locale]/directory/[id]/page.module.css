@@ -1,0 +1,67 @@
+.notice {
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--color-text);
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+
+.card h3 {
+  margin: 0 0 var(--space-4);
+}
+
+.nepaliName {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.grid dt {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.grid dd {
+  margin: 0;
+}
+
+.grid dd a {
+  color: var(--color-primary-600);
+}
+
+.notes {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.backLink {
+  color: var(--color-primary-600);
+  font-size: var(--text-sm);
+}
