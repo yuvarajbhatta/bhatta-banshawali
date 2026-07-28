@@ -24,7 +24,11 @@ public class AuthController {
     @GetMapping("/login")
     public String login(Authentication authentication) {
         if (isAuthenticated(authentication)) {
-            return "redirect:/";
+            // Not "/" -- that path is now routed by nginx to the Next.js
+            // public landing page, not this backend (see the
+            // banshawali.yrbhatta.com vhost and SecurityConfig's
+            // defaultSuccessUrl, which redirects here for the same reason).
+            return "redirect:/persons";
         }
         return "login";
     }
@@ -32,7 +36,11 @@ public class AuthController {
     @GetMapping("/signup")
     public String signup(Model model, Authentication authentication) {
         if (isAuthenticated(authentication)) {
-            return "redirect:/";
+            // Not "/" -- that path is now routed by nginx to the Next.js
+            // public landing page, not this backend (see the
+            // banshawali.yrbhatta.com vhost and SecurityConfig's
+            // defaultSuccessUrl, which redirects here for the same reason).
+            return "redirect:/persons";
         }
         if (!model.containsAttribute("signupForm")) {
             model.addAttribute("signupForm", new SignupForm());

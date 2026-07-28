@@ -34,6 +34,12 @@ class AuthControllerTest {
                 .andExpect(view().name("login"));
     }
 
+    // The "already authenticated -> redirect target" regression tests for
+    // this same bug live in LoginRedirectTest instead of here: this class
+    // uses @AutoConfigureMockMvc(addFilters = false), which doesn't reliably
+    // resolve the Authentication method parameter the same way a full
+    // security-filter-chain context does.
+
     @Test
     void signupPageLoads() throws Exception {
         mockMvc.perform(get("/signup"))

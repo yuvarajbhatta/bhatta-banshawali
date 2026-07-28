@@ -70,6 +70,14 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
+                        // Not "/" -- nginx routes that path to the Next.js
+                        // public landing page now (banshawali.yrbhatta.com
+                        // vhost), not this backend, so a login with no
+                        // saved request (e.g. navigating straight to
+                        // /login) must not fall back to it. alwaysUse=false
+                        // still honors a saved request (e.g. being
+                        // redirected here from /persons) when one exists.
+                        .defaultSuccessUrl("/persons", false)
                         .permitAll()
                 )
                 .logout(logout -> logout
