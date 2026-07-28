@@ -57,7 +57,8 @@ class SignupControllerTest {
 
     @Test
     void signupSucceedsWithoutAuthenticationAndReturnsNeutralStatus() throws Exception {
-        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY))
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
+                        .header("X-Forwarded-For", "203.0.113.1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING_REVIEW"));
 
@@ -70,11 +71,13 @@ class SignupControllerTest {
         // registered vs. any match confidence) -- nothing for the
         // controller to leak. This asserts the actual response bytes are
         // identical across both cases, not just "some 200".
-        MvcResult first = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY))
+        MvcResult first = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
+                        .header("X-Forwarded-For", "203.0.113.2"))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        MvcResult second = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY))
+        MvcResult second = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
+                        .header("X-Forwarded-For", "203.0.113.2"))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -98,14 +101,16 @@ class SignupControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(body)
+                        .header("X-Forwarded-For", "203.0.113.3"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
     void rejectsMissingRequiredFields() throws Exception {
-        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content("{}")
+                        .header("X-Forwarded-For", "203.0.113.4"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
@@ -114,13 +119,15 @@ class SignupControllerTest {
     void rejectsWhenTermsNotAgreed() throws Exception {
         String body = VALID_BODY.replace("\"agreedToTerms\": true", "\"agreedToTerms\": false");
 
-        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(body)
+                        .header("X-Forwarded-For", "203.0.113.5"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void doesNotCallSignupServiceWhenValidationFails() throws Exception {
-        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content("{}"));
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content("{}")
+                        .header("X-Forwarded-For", "203.0.113.6"));
 
         org.mockito.Mockito.verifyNoInteractions(signupService);
     }

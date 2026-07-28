@@ -11,6 +11,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -27,7 +28,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter) throws Exception {
         http
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
@@ -36,6 +37,7 @@ public class SecurityConfig {
                 // the Next.js frontend). CSRF stays enabled for everything else,
                 // including the session-authenticated Thymeleaf admin forms.
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/signup"))
+                .addFilterBefore(new RateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
