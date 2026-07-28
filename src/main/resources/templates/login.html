@@ -1,47 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title th:text="#{login.title}">Login</title>
     <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="auth-container">
     <div class="auth-card">
-        <h1>Login</h1>
-        <p class="subtitle">Access Family Tree account.</p>
+        <h1 th:text="#{login.heading}">Login</h1>
+        <p class="subtitle" th:text="#{login.subtitle}">Access Family Tree account.</p>
 
-        <div th:if="${param.error}" class="error-message">
+        <div th:if="${param.error}" class="error-message" th:text="#{login.invalid}">
             Invalid username or password.
         </div>
 
-        <div th:if="${param.logout}" class="success-message">
+        <div th:if="${param.logout}" class="success-message" th:text="#{login.loggedOut}">
             You have been logged out successfully.
         </div>
 
-        <div th:if="${param.registered}" class="success-message">
+        <div th:if="${param.registered}" class="success-message" th:text="#{login.registered}">
             Account created successfully. Please log in.
         </div>
 
         <form th:action="@{/login}" method="post">
             <div class="form-group">
-                <label>Username</label>
+                <label th:text="#{login.username}">Username</label>
                 <input type="text" name="username" required />
             </div>
 
             <div class="form-group">
-                <label>Password</label>
+                <label th:text="#{login.password}">Password</label>
                 <input type="password" name="password" required />
             </div>
 
-            <button type="submit" class="btn-primary">Login</button>
+            <button type="submit" class="btn-primary" th:text="#{login.heading}">Login</button>
         </form>
 
         <p class="bottom-link">
-            Don't have an account?
-            <a href="/signup">Sign Up</a>
+            <span th:text="#{login.bottom}">Don't have an account?</span>
+            <a href="/signup" th:text="#{nav.signUp}">Sign Up</a>
         </p>
     </div>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

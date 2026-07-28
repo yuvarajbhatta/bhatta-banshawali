@@ -76,22 +76,22 @@ public class RelationshipController {
         model.addAttribute("relationshipId", null);
 
         if (personId == null) {
-            model.addAttribute("personIdError", "Please select a person.");
+            model.addAttribute("personIdError", true);
             hasError = true;
         }
 
         if (relatedPersonId == null) {
-            model.addAttribute("relatedPersonIdError", "Please select a related person.");
+            model.addAttribute("relatedPersonIdError", true);
             hasError = true;
         }
 
         if (relationshipType == null || relationshipType.isBlank()) {
-            model.addAttribute("relationshipTypeError", "Please select a relationship type.");
+            model.addAttribute("relationshipTypeError", true);
             hasError = true;
         }
 
         if (personId != null && relatedPersonId != null && personId.equals(relatedPersonId)) {
-            model.addAttribute("samePersonError", "Person and related person cannot be the same.");
+            model.addAttribute("samePersonError", true);
             hasError = true;
         }
 
@@ -105,7 +105,7 @@ public class RelationshipController {
 
         boolean duplicateExists = relationshipService.relationshipExists(person, relatedPerson, type);
         if (duplicateExists) {
-            model.addAttribute("duplicateRelationshipError", "This relationship already exists.");
+            model.addAttribute("duplicateRelationshipError", true);
             return "add-relationship";
         }
 
@@ -131,22 +131,22 @@ public class RelationshipController {
         model.addAttribute("editMode", true);
 
         if (personId == null) {
-            model.addAttribute("personIdError", "Please select a person.");
+            model.addAttribute("personIdError", true);
             hasError = true;
         }
 
         if (relatedPersonId == null) {
-            model.addAttribute("relatedPersonIdError", "Please select a related person.");
+            model.addAttribute("relatedPersonIdError", true);
             hasError = true;
         }
 
         if (relationshipType == null || relationshipType.isBlank()) {
-            model.addAttribute("relationshipTypeError", "Please select a relationship type.");
+            model.addAttribute("relationshipTypeError", true);
             hasError = true;
         }
 
         if (personId != null && relatedPersonId != null && personId.equals(relatedPersonId)) {
-            model.addAttribute("samePersonError", "Person and related person cannot be the same.");
+            model.addAttribute("samePersonError", true);
             hasError = true;
         }
 

@@ -1,65 +1,193 @@
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #eff6ff, #f8fafc);
+    background: #eef3f9;
     margin: 0;
-    padding: 32px;
+    padding: 28px;
     color: #1f2937;
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
-    background: white;
-    padding: 32px;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.topbar,
+.hero,
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1d4ed8;
+    text-transform: uppercase;
 }
 
 h1 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #1e3a8a;
+    margin: 0;
+    color: #0f172a;
+}
+
+.session-panel {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.session-copy {
+    color: #475569;
+    font-size: 14px;
+}
+
+.session-label {
+    margin-right: 4px;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.role-user {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.logout-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hero {
+    padding: 26px 24px;
+    margin-bottom: 18px;
+    background: linear-gradient(180deg, #f8fbff, #eef6ff);
+}
+
+.welcome-line {
+    margin: 0 0 10px;
+    color: #1d4ed8;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.subtitle,
+.hero-text {
+    margin: 0;
+    color: #475569;
+    line-height: 1.7;
+    max-width: 760px;
 }
 
 .subtitle {
-    color: #4b5563;
-    margin-bottom: 28px;
+    margin-bottom: 10px;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
 }
 
 .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 18px;
-    background-color: #f9fafb;
+    padding: 20px;
+}
+
+.card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .card h2 {
-    margin-top: 0;
-    font-size: 18px;
-    color: #111827;
+    margin: 0;
+    color: #0f172a;
+    font-size: 20px;
 }
 
 .card p {
-    margin-bottom: 14px;
-    color: #4b5563;
-    font-size: 14px;
+    margin: 0 0 16px;
+    color: #64748b;
+    line-height: 1.6;
 }
 
-.card a {
-    display: inline-block;
-    margin-right: 10px;
-    margin-top: 6px;
+.card-tag {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e3a8a;
+    background: #eff6ff;
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.link-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.link-group a {
     text-decoration: none;
     color: #2563eb;
     font-weight: 600;
 }
 
-.card a:hover {
+.link-group a:hover {
     text-decoration: underline;
+}
+
+footer {
+    text-align: center;
+    color: #64748b;
+    padding: 22px 0 18px;
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    body {
+        padding: 16px;
+    }
+
+    .topbar {
+        flex-direction: column;
+    }
+
+    .session-panel {
+        justify-content: flex-start;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
 }

@@ -1,47 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Sign Up</title>
+  <title th:text="#{signup.title}">Sign Up</title>
   <link rel="stylesheet" href="/css/auth.css">
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="auth-container">
   <div class="auth-card">
-    <h1>Create Account</h1>
-    <p class="subtitle">Register a new user account for the Family Tree App.</p>
+    <h1 th:text="#{signup.heading}">Create Account</h1>
+    <p class="subtitle" th:text="#{signup.subtitle}">Register a new user account for the Family Tree App.</p>
 
     <form th:action="@{/signup}" th:object="${signupForm}" method="post">
-      <div th:if="${#fields.hasErrors('*')}" class="error-message">
+      <div th:if="${#fields.hasErrors('*')}" class="error-message" th:text="#{signup.fixErrors}">
         Please fix the highlighted fields.
       </div>
 
       <div class="form-group">
-        <label>Username</label>
+        <label th:text="#{login.username}">Username</label>
         <input type="text" th:field="*{username}" required />
         <div class="error-message" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
       </div>
 
       <div class="form-group">
-        <label>Password</label>
+        <label th:text="#{login.password}">Password</label>
         <input type="password" th:field="*{password}" required />
         <div class="error-message" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
       </div>
 
       <div class="form-group">
-        <label>Confirm Password</label>
+        <label th:text="#{signup.confirmPassword}">Confirm Password</label>
         <input type="password" th:field="*{confirmPassword}" required />
         <div class="error-message" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
       </div>
 
-      <button type="submit" class="btn-primary">Sign Up</button>
+      <button type="submit" class="btn-primary" th:text="#{signup.submit}">Sign Up</button>
     </form>
 
     <p class="bottom-link">
-      Already have an account?
-      <a href="/login">Login</a>
+      <span th:text="#{signup.bottom}">Already have an account?</span>
+      <a href="/login" th:text="#{nav.login}">Login</a>
     </p>
   </div>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

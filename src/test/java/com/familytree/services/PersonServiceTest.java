@@ -5,13 +5,12 @@ import com.familytree.entity.Person;
 import com.familytree.repository.PersonRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.InOrder;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +30,9 @@ class PersonServiceTest {
     @Mock
     private RelationshipService relationshipService;
 
+    @Mock
+    private NameTransliterationService nameTransliterationService;
+
     private PersonService personService;
 
     @org.junit.jupiter.api.BeforeEach
@@ -38,17 +40,26 @@ class PersonServiceTest {
         AppProperties appProperties = new AppProperties();
         appProperties.getLineage().setDefaultLastName("Bhatta");
         appProperties.getLineage().setDefaultGender("Male");
-        personService = new PersonService(personRepository, relationshipService, appProperties);
+        personService = new PersonService(personRepository, relationshipService, nameTransliterationService, appProperties);
     }
 
     @Test
-    void savePersonDelegatesToRepository() {
-        Person person = createPerson(1L, "Yuva");
+    void savePersonNormalizesManualFieldsWithoutAutoTransliteration() {
+        Person person = createPerson(1L, " Yuva ");
+        person.setFirstNameNepali(" युवा ");
+        person.setMiddleName(" ");
+        person.setNickname(" Yuva Dai ");
+        person.setBirthPlace(" Kispang ");
         when(personRepository.save(person)).thenReturn(person);
 
         Person saved = personService.savePerson(person);
 
         assertThat(saved).isEqualTo(person);
+        assertThat(person.getFirstName()).isEqualTo("Yuva");
+        assertThat(person.getFirstNameNepali()).isEqualTo("युवा");
+        assertThat(person.getMiddleName()).isNull();
+        assertThat(person.getNickname()).isEqualTo("Yuva Dai");
+        assertThat(person.getBirthPlace()).isEqualTo("Kispang");
     }
 
     @Test
@@ -56,10 +67,17 @@ class PersonServiceTest {
         Person existing = createPerson(1L, "Old");
         Person updated = createPerson(null, "New");
         updated.setMiddleName("Middle");
+        updated.setFirstNameNepali("न्यु");
+        updated.setMiddleNameNepali("मिडल");
+        updated.setLastNameNepali("भट्ट");
+        updated.setNickname("N");
         updated.setGenerationNumber(3);
         updated.setGender("Female");
         updated.setBirthDate(LocalDate.of(2000, 1, 1));
         updated.setDeathDate(LocalDate.of(2070, 1, 1));
+        updated.setBirthPlace("Kathmandu");
+        updated.setCurrentAddress("Lalitpur");
+        updated.setPhotoPath("/uploads/persons/new.jpg");
         updated.setNotes("Updated note");
         when(personRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(personRepository.save(existing)).thenReturn(existing);
@@ -67,11 +85,18 @@ class PersonServiceTest {
         Person result = personService.updatePerson(1L, updated);
 
         assertThat(result.getFirstName()).isEqualTo("New");
+        assertThat(result.getFirstNameNepali()).isEqualTo("न्यु");
         assertThat(result.getMiddleName()).isEqualTo("Middle");
+        assertThat(result.getMiddleNameNepali()).isEqualTo("मिडल");
+        assertThat(result.getLastNameNepali()).isEqualTo("भट्ट");
+        assertThat(result.getNickname()).isEqualTo("N");
         assertThat(result.getGenerationNumber()).isEqualTo(3);
         assertThat(result.getGender()).isEqualTo("Female");
         assertThat(result.getBirthDate()).isEqualTo(LocalDate.of(2000, 1, 1));
         assertThat(result.getDeathDate()).isEqualTo(LocalDate.of(2070, 1, 1));
+        assertThat(result.getBirthPlace()).isEqualTo("Kathmandu");
+        assertThat(result.getCurrentAddress()).isEqualTo("Lalitpur");
+        assertThat(result.getPhotoPath()).isEqualTo("/uploads/persons/new.jpg");
         assertThat(result.getNotes()).isEqualTo("Updated note");
     }
 
@@ -95,7 +120,7 @@ class PersonServiceTest {
     @Test
     void searchPersonsUsesFindAllForBlankKeyword() {
         List<Person> persons = List.of(createPerson(1L, "Yuva"));
-        when(personRepository.findAll()).thenReturn(persons);
+        when(personRepository.findAllByOrderByGenerationNumberAscIdAsc()).thenReturn(persons);
 
         assertThat(personService.searchPersons("   ")).isEqualTo(persons);
     }
@@ -103,10 +128,17 @@ class PersonServiceTest {
     @Test
     void searchPersonsUsesSearchQueryForKeyword() {
         List<Person> persons = List.of(createPerson(1L, "Yuva"));
-        when(personRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("yu", "yu"))
-                .thenReturn(persons);
+        when(personRepository.searchPersons("yu", null)).thenReturn(persons);
 
         assertThat(personService.searchPersons("yu")).isEqualTo(persons);
+    }
+
+    @Test
+    void searchPersonsParsesGenerationNumber() {
+        List<Person> persons = List.of(createPerson(3L, "Gen"));
+        when(personRepository.searchPersons("7", 7)).thenReturn(persons);
+
+        assertThat(personService.searchPersons("7")).isEqualTo(persons);
     }
 
     @Test
@@ -146,6 +178,9 @@ class PersonServiceTest {
         assertThat(person.getFirstName()).isEqualTo("Yuva");
         assertThat(person.getMiddleName()).isEqualTo("Prasad");
         assertThat(person.getLastName()).isEqualTo("Bhatta");
+        assertThat(person.getFirstNameNepali()).isNull();
+        assertThat(person.getMiddleNameNepali()).isNull();
+        assertThat(person.getLastNameNepali()).isNull();
         assertThat(person.getGender()).isEqualTo("Male");
         assertThat(person.getGenerationNumber()).isEqualTo(4);
     }
@@ -168,6 +203,9 @@ class PersonServiceTest {
         assertThat(updated.getFirstName()).isEqualTo("New");
         assertThat(updated.getMiddleName()).isEqualTo("Middle");
         assertThat(updated.getLastName()).isEqualTo("Bhatta");
+        assertThat(updated.getFirstNameNepali()).isNull();
+        assertThat(updated.getMiddleNameNepali()).isNull();
+        assertThat(updated.getLastNameNepali()).isNull();
         assertThat(updated.getGender()).isEqualTo("Male");
         assertThat(updated.getGenerationNumber()).isEqualTo(5);
     }
@@ -179,6 +217,53 @@ class PersonServiceTest {
         assertThatThrownBy(() -> personService.updateLineagePerson(10L, "Name", 1))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Person not found with id: 10");
+    }
+
+    @Test
+    void backfillMissingNepaliNamesUpdatesExistingRowsWithoutNepaliValues() {
+        Person missing = createPerson(1L, "Yuva");
+        missing.setMiddleName("Prasad");
+        Person existing = createPerson(2L, "Bhoj");
+        existing.setFirstNameNepali("भोज");
+        existing.setLastNameNepali("भट्ट");
+
+        when(personRepository.findAll()).thenReturn(Arrays.asList(missing, existing));
+        when(nameTransliterationService.transliterate("Yuva")).thenReturn("युवा");
+        when(nameTransliterationService.transliterate("Prasad")).thenReturn("प्रसाद");
+        when(nameTransliterationService.transliterate("Bhatta")).thenReturn("भट्ट");
+
+        int updatedCount = personService.backfillMissingNepaliNames();
+
+        assertThat(updatedCount).isEqualTo(1);
+        assertThat(missing.getFirstNameNepali()).isEqualTo("युवा");
+        assertThat(missing.getMiddleNameNepali()).isEqualTo("प्रसाद");
+        assertThat(missing.getLastNameNepali()).isEqualTo("भट्ट");
+        verify(personRepository).saveAll(List.of(missing));
+    }
+
+    @Test
+    void clearAutogeneratedNepaliNamesRemovesOnlyGeneratedValues() {
+        Person generated = createPerson(1L, "Latadev");
+        generated.setFirstNameNepali("लअतअदएव");
+        generated.setLastNameNepali("भअततअ");
+
+        Person manual = createPerson(2L, "Balkrishna");
+        manual.setFirstNameNepali("बालकृष्ण");
+        manual.setLastNameNepali("भट्ट");
+
+        when(personRepository.findAll()).thenReturn(Arrays.asList(generated, manual));
+        when(nameTransliterationService.transliterate("Latadev")).thenReturn("लअतअदएव");
+        when(nameTransliterationService.transliterate("Bhatta")).thenReturn("भअततअ");
+        when(nameTransliterationService.transliterate("Balkrishna")).thenReturn("बअलकरइशनअ");
+
+        int updatedCount = personService.clearAutogeneratedNepaliNames();
+
+        assertThat(updatedCount).isEqualTo(1);
+        assertThat(generated.getFirstNameNepali()).isNull();
+        assertThat(generated.getLastNameNepali()).isNull();
+        assertThat(manual.getFirstNameNepali()).isEqualTo("बालकृष्ण");
+        assertThat(manual.getLastNameNepali()).isEqualTo("भट्ट");
+        verify(personRepository).saveAll(List.of(generated));
     }
 
     private Person createPerson(Long id, String firstName) {

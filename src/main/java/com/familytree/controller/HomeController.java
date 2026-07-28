@@ -9,8 +9,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(Model model) {
-        //model.addAttribute("title", "Family Tree");
-        model.addAttribute("message", "Welcome to Family Tree App");
         return "home";
     }
 }

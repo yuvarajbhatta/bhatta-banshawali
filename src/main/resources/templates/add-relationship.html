@@ -1,71 +1,74 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Add Relationship</title>
+    <title th:text="#{relationship.form.title}">Add Relationship</title>
     <link rel="stylesheet" href="/css/add-relationship.css">
-
 </head>
 <body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
 <div class="container">
-    <h1 th:text="${editMode} ? 'Edit Relationship' : 'Add Relationship'"></h1>
-    <div sec:authorize="!hasRole('ADMIN')" class="error-summary">
+    <h1 th:text="${editMode} ? #{relationship.form.edit} : #{relationship.form.add}"></h1>
+    <div sec:authorize="!hasRole('ADMIN')" class="error-summary" th:text="#{relationship.form.adminOnly}">
         Only admin users can add or edit relationships.
     </div>
 
-    <p class="help-text">Example: choose Yuva as Person, Bhoj as Related Person, and FATHER to mean “Yuva's father is Bhoj”.</p>
+    <p class="help-text" th:text="#{relationship.form.help}"></p>
 
-    <div class="error" th:if="${personIdError != null}" th:text="${personIdError}"></div>
-    <div class="error" th:if="${relatedPersonIdError != null}" th:text="${relatedPersonIdError}"></div>
-    <div class="error" th:if="${relationshipTypeError != null}" th:text="${relationshipTypeError}"></div>
-    <div class="error" th:if="${samePersonError != null}" th:text="${samePersonError}"></div>
-    <div class="error" th:if="${duplicateRelationshipError != null}" th:text="${duplicateRelationshipError}"></div>
+    <div class="error" th:if="${personIdError}" th:text="#{relationship.error.personRequired}"></div>
+    <div class="error" th:if="${relatedPersonIdError}" th:text="#{relationship.error.relatedPersonRequired}"></div>
+    <div class="error" th:if="${relationshipTypeError}" th:text="#{relationship.error.typeRequired}"></div>
+    <div class="error" th:if="${samePersonError}" th:text="#{relationship.error.samePerson}"></div>
+    <div class="error" th:if="${duplicateRelationshipError}" th:text="#{relationship.error.duplicate}"></div>
 
     <form sec:authorize="hasRole('ADMIN')"
           th:action="${editMode} ? @{'/relationships/update/' + ${relationshipId}} : @{/relationships}"
           method="post">
         <div>
-            <label>Person:</label>
+            <label th:text="#{relationship.person} + ':'">Person:</label>
             <select name="personId">
-                <option value="">-- Select Person --</option>
+                <option value="" th:text="#{relationship.selectPerson}">-- Select Person --</option>
                 <option th:each="p : ${persons}"
                         th:value="${p.id}"
                         th:selected="${personId != null and personId == p.id}"
-                        th:text="${p.firstName + ' ' + p.lastName}">
+                        th:text="${@personDisplay.fullName(p, #locale)}">
                 </option>
             </select>
         </div>
 
         <div>
-            <label>Related Person:</label>
+            <label th:text="#{relationship.relatedPerson} + ':'">Related Person:</label>
             <select name="relatedPersonId">
-                <option value="">-- Select Related Person --</option>
+                <option value="" th:text="#{relationship.selectRelatedPerson}">-- Select Related Person --</option>
                 <option th:each="p : ${persons}"
                         th:value="${p.id}"
                         th:selected="${relatedPersonId != null and relatedPersonId == p.id}"
-                        th:text="${p.firstName + ' ' + p.lastName}">
+                        th:text="${@personDisplay.fullName(p, #locale)}">
                 </option>
             </select>
         </div>
 
         <div>
-            <label>Relationship Type:</label>
+            <label th:text="#{relationship.type} + ':'">Relationship Type:</label>
             <select name="relationshipType">
-                <option value="">-- Select Type --</option>
+                <option value="" th:text="#{relationship.selectType}">-- Select Type --</option>
                 <option th:each="type : ${relationshipTypes}"
                         th:value="${type}"
                         th:selected="${relationshipTypeValue != null and relationshipTypeValue == type.name()}"
-                        th:text="${type}">
+                        th:text="${#messages.msg('relationshipType.' + type.name())}">
                 </option>
             </select>
         </div>
 
         <div class="actions">
-            <button type="submit" class="btn btn-primary" th:text="${editMode} ? 'Update Relationship' : 'Save Relationship'"></button>
+            <button type="submit" class="btn btn-primary" th:text="${editMode} ? #{relationship.update} : #{relationship.save}"></button>
         </div>
     </form>
 
-    <a href="/" class="back-link">Back Home</a>
+    <a href="/" class="back-link" th:text="#{nav.backHome}">Back Home</a>
 </div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
 </body>
 </html>

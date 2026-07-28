@@ -31,14 +31,29 @@ class PersonRepositoryTest {
     private PersonRepository personRepository;
 
     @Test
-    void searchByFirstNameOrLastNameIgnoresCase() {
+    void searchPersonsMatchesEnglishAndNepaliFields() {
         personRepository.save(createPerson("Yuva", "Bhatta", 2));
-        personRepository.save(createPerson("Mina", "Sharma", 3));
+        Person mina = createPerson("Mina", "Sharma", 3);
+        mina.setFirstNameNepali("मिना");
+        personRepository.save(mina);
 
-        List<Person> results = personRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("yu", "yu");
+        List<Person> englishResults = personRepository.searchPersons("yu", null);
+        List<Person> nepaliResults = personRepository.searchPersons("मि", null);
 
-        assertThat(results).extracting(Person::getFirstName).containsExactly("Yuva");
+        assertThat(englishResults).extracting(Person::getFirstName).containsExactly("Yuva");
+        assertThat(nepaliResults).extracting(Person::getFirstNameNepali).containsExactly("मिना");
+    }
+
+    @Test
+    void searchPersonsMatchesNicknameNotesAndGeneration() {
+        Person person = createPerson("Jhanka", "Bhatta", 7);
+        person.setNickname("JN");
+        person.setNotes("Branch migrated to Kathmandu");
+        personRepository.save(person);
+
+        assertThat(personRepository.searchPersons("jn", null)).extracting(Person::getNickname).containsExactly("JN");
+        assertThat(personRepository.searchPersons("kathmandu", null)).extracting(Person::getFirstName).containsExactly("Jhanka");
+        assertThat(personRepository.searchPersons("7", 7)).extracting(Person::getGenerationNumber).containsExactly(7);
     }
 
     @Test

@@ -6,25 +6,30 @@ import com.familytree.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class PersonService {
 
     private final PersonRepository personRepository;
     private final RelationshipService relationshipService;
+    private final NameTransliterationService nameTransliterationService;
     private final String lineageDefaultLastName;
     private final String lineageDefaultGender;
 
     public PersonService(PersonRepository personRepository,
                          RelationshipService relationshipService,
+                         NameTransliterationService nameTransliterationService,
                          AppProperties appProperties) {
         this.personRepository = personRepository;
         this.relationshipService = relationshipService;
+        this.nameTransliterationService = nameTransliterationService;
         this.lineageDefaultLastName = normalize(appProperties.getLineage().getDefaultLastName());
         this.lineageDefaultGender = normalize(appProperties.getLineage().getDefaultGender());
     }
 
     public Person savePerson(Person person) {
+        normalizePersonFields(person);
         return personRepository.save(person);
     }
 
@@ -34,12 +39,20 @@ public class PersonService {
 
         existingPerson.setGenerationNumber(updatedPerson.getGenerationNumber());
         existingPerson.setFirstName(updatedPerson.getFirstName());
+        existingPerson.setFirstNameNepali(updatedPerson.getFirstNameNepali());
         existingPerson.setMiddleName(updatedPerson.getMiddleName());
+        existingPerson.setMiddleNameNepali(updatedPerson.getMiddleNameNepali());
         existingPerson.setLastName(updatedPerson.getLastName());
+        existingPerson.setLastNameNepali(updatedPerson.getLastNameNepali());
+        existingPerson.setNickname(updatedPerson.getNickname());
         existingPerson.setGender(updatedPerson.getGender());
         existingPerson.setBirthDate(updatedPerson.getBirthDate());
         existingPerson.setDeathDate(updatedPerson.getDeathDate());
+        existingPerson.setPhotoPath(updatedPerson.getPhotoPath());
+        existingPerson.setBirthPlace(updatedPerson.getBirthPlace());
+        existingPerson.setCurrentAddress(updatedPerson.getCurrentAddress());
         existingPerson.setNotes(updatedPerson.getNotes());
+        normalizePersonFields(existingPerson);
 
         return personRepository.save(existingPerson);
     }
@@ -49,9 +62,11 @@ public class PersonService {
     }
     public List<Person> searchPersons(String keyword){
         if (keyword == null || keyword.isBlank()) {
-            return personRepository.findAll();
+            return personRepository.findAllByOrderByGenerationNumberAscIdAsc();
         }
-        return personRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(keyword, keyword);
+        String normalizedKeyword = keyword.trim();
+        Integer generationNumber = parseGenerationNumber(normalizedKeyword);
+        return personRepository.searchPersons(normalizedKeyword, generationNumber);
     }
     public Person getPersonById(Long id) {
         return personRepository.findById(id)
@@ -86,6 +101,7 @@ public class PersonService {
         person.setMiddleName(middleName);
         applyLineageDefaults(person);
         person.setGenerationNumber(generationNumber);
+        normalizePersonFields(person);
 
         return personRepository.save(person);
     }
@@ -108,8 +124,73 @@ public class PersonService {
         existingPerson.setMiddleName(middleName);
         applyLineageDefaults(existingPerson);
         existingPerson.setGenerationNumber(generationNumber);
+        normalizePersonFields(existingPerson);
 
         return personRepository.save(existingPerson);
+    }
+
+    public int backfillMissingNepaliNames() {
+        List<Person> persons = personRepository.findAll();
+        List<Person> updatedPersons = new ArrayList<>();
+
+        for (Person person : persons) {
+            boolean changed = false;
+
+            if (normalizeToNull(person.getFirstNameNepali()) == null && normalizeToNull(person.getFirstName()) != null) {
+                person.setFirstNameNepali(suggestNepaliValue(person.getFirstName(), null));
+                changed = true;
+            }
+            if (normalizeToNull(person.getMiddleNameNepali()) == null && normalizeToNull(person.getMiddleName()) != null) {
+                person.setMiddleNameNepali(suggestNepaliValue(person.getMiddleName(), null));
+                changed = true;
+            }
+            if (normalizeToNull(person.getLastNameNepali()) == null && normalizeToNull(person.getLastName()) != null) {
+                person.setLastNameNepali(suggestNepaliValue(person.getLastName(), null));
+                changed = true;
+            }
+
+            if (changed) {
+                updatedPersons.add(person);
+            }
+        }
+
+        if (!updatedPersons.isEmpty()) {
+            personRepository.saveAll(updatedPersons);
+        }
+
+        return updatedPersons.size();
+    }
+
+    public int clearAutogeneratedNepaliNames() {
+        List<Person> persons = personRepository.findAll();
+        List<Person> updatedPersons = new ArrayList<>();
+
+        for (Person person : persons) {
+            boolean changed = false;
+
+            if (matchesGeneratedNepaliValue(person.getFirstName(), person.getFirstNameNepali())) {
+                person.setFirstNameNepali(null);
+                changed = true;
+            }
+            if (matchesGeneratedNepaliValue(person.getMiddleName(), person.getMiddleNameNepali())) {
+                person.setMiddleNameNepali(null);
+                changed = true;
+            }
+            if (matchesGeneratedNepaliValue(person.getLastName(), person.getLastNameNepali())) {
+                person.setLastNameNepali(null);
+                changed = true;
+            }
+
+            if (changed) {
+                updatedPersons.add(person);
+            }
+        }
+
+        if (!updatedPersons.isEmpty()) {
+            personRepository.saveAll(updatedPersons);
+        }
+
+        return updatedPersons.size();
     }
 
     private void applyLineageDefaults(Person person) {
@@ -117,8 +198,66 @@ public class PersonService {
         person.setGender(lineageDefaultGender.isBlank() ? null : lineageDefaultGender);
     }
 
+    private void normalizePersonFields(Person person) {
+        person.setFirstName(normalizeToNull(person.getFirstName()));
+        person.setMiddleName(normalizeToNull(person.getMiddleName()));
+        person.setLastName(normalizeToNull(person.getLastName()));
+        person.setFirstNameNepali(normalizeToNull(person.getFirstNameNepali()));
+        person.setMiddleNameNepali(normalizeToNull(person.getMiddleNameNepali()));
+        person.setLastNameNepali(normalizeToNull(person.getLastNameNepali()));
+        person.setNickname(normalizeToNull(person.getNickname()));
+        person.setGender(normalizeToNull(person.getGender()));
+        person.setPhotoPath(normalizeToNull(person.getPhotoPath()));
+        person.setBirthPlace(normalizeToNull(person.getBirthPlace()));
+        person.setCurrentAddress(normalizeToNull(person.getCurrentAddress()));
+        person.setNotes(normalizeToNull(person.getNotes()));
+    }
+
+    private Integer parseGenerationNumber(String keyword) {
+        try {
+            return Integer.valueOf(keyword);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private String suggestNepaliValue(String englishValue, String nepaliValue) {
+        String explicitNepali = normalizeToNull(nepaliValue);
+        if (explicitNepali != null) {
+            return explicitNepali;
+        }
+
+        String normalizedEnglish = normalizeToNull(englishValue);
+        if (normalizedEnglish == null) {
+            return null;
+        }
+
+        String transliterated = nameTransliterationService.transliterate(normalizedEnglish);
+        return transliterated == null || transliterated.isBlank() ? null : transliterated;
+    }
+
+    private boolean matchesGeneratedNepaliValue(String englishValue, String nepaliValue) {
+        String storedNepali = normalizeToNull(nepaliValue);
+        if (storedNepali == null) {
+            return false;
+        }
+
+        String normalizedEnglish = normalizeToNull(englishValue);
+        if (normalizedEnglish == null) {
+            return false;
+        }
+
+        String generated = nameTransliterationService.transliterate(normalizedEnglish);
+        return generated != null && storedNepali.equals(generated.trim());
+    }
+
     private String normalize(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String normalizeToNull(String value) {
+        String normalized = normalize(value);
+        return normalized.isEmpty() ? null : normalized;
     }
 
 }
