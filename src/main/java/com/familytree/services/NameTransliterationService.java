@@ -32,6 +32,7 @@ public class NameTransliterationService {
         DIGRAPHS.put("ou", "औ");
         DIGRAPHS.put("ai", "ऐ");
         DIGRAPHS.put("au", "औ");
+        DIGRAPHS.put("Bhatta", "भट्ट");
 
         LETTERS.put('a', "अ");
         LETTERS.put('b', "ब");
@@ -59,6 +60,7 @@ public class NameTransliterationService {
         LETTERS.put('x', "क्स");
         LETTERS.put('y', "य");
         LETTERS.put('z', "ज");
+
     }
 
     public String transliterate(String text) {
@@ -124,6 +126,7 @@ public class NameTransliterationService {
                 .replace("ज्ह", "झ")
                 .replace("छ्ह", "छ")
                 .replace("  ", " ")
+                .replace("Bhatta", "भट्ट")
                 .trim();
     }
 }

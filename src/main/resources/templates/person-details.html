@@ -9,14 +9,70 @@
 <div th:replace="~{fragments/language-switch :: switcher}"></div>
 
 <div class="container">
-    <h1 th:text="${@personDisplay.fullName(person, #locale)}"></h1>
-
-    <div style="margin:8px 0 18px; color:#4b5563; font-size:14px;">
-        <div><strong th:text="#{person.details.englishName} + ':'">English Name:</strong> <span th:text="${@personDisplay.fullName(person, T(java.util.Locale).ENGLISH)}"></span></div>
-        <div><strong th:text="#{person.details.nepaliName} + ':'">Nepali Name:</strong> <span th:text="${@personDisplay.fullName(person, T(java.util.Locale).forLanguageTag('ne'))}"></span></div>
+    <div class="page-header">
+        <a href="/persons" class="back-link" th:text="#{nav.backToPersons}">Back to Persons</a>
+        <div class="header-actions" sec:authorize="hasRole('ADMIN')">
+            <a class="btn btn-primary" th:href="@{'/persons/edit/' + ${person.id}}" th:text="#{persons.edit}">Edit</a>
+            <a class="btn btn-danger"
+               th:href="@{'/persons/delete/' + ${person.id}}"
+               th:attr="onclick=|return confirm('${#messages.msg('persons.delete.confirm')}')|"
+               th:text="#{persons.delete}">Delete</a>
+        </div>
     </div>
 
-    <a href="/persons" class="back-link" th:text="#{nav.backToPersons}">Back to Persons</a>
+    <div class="hero">
+        <div class="photo-panel">
+            <img th:if="${person.photoPath != null and !person.photoPath.isBlank()}" th:src="${person.photoPath}" th:alt="${@personDisplay.englishFullName(person)}">
+            <div th:if="${person.photoPath == null or person.photoPath.isBlank()}" class="photo-placeholder" th:text="#{person.details.photoUnavailable}">
+                Photo not added
+            </div>
+        </div>
+
+        <div class="hero-content">
+            <p class="eyebrow" th:text="#{person.details.title}">Person Details</p>
+            <h1 th:text="${@personDisplay.englishFullName(person)}"></h1>
+            <p class="nepali-name" th:if="${@personDisplay.hasNepaliName(person)}" th:text="${@personDisplay.nepaliFullName(person)}"></p>
+            <div class="tag-row">
+                <span class="tag" th:if="${person.nickname != null and !person.nickname.isBlank()}" th:text="${person.nickname}"></span>
+                <span class="tag" th:if="${person.gender != null}" th:text="${#messages.msg('gender.' + person.gender)}"></span>
+                <span class="tag" th:if="${person.generationNumber != null}" th:text="${#messages.msg('person.generationNumber') + ': ' + person.generationNumber}">Generation Number: 1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 th:text="#{person.details.basicInfo}">Basic Information</h2>
+        <div class="detail-grid">
+            <div class="detail-card">
+                <span class="label" th:text="#{person.details.englishName}">English Name</span>
+                <span th:text="${@personDisplay.englishFullName(person)}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.details.nepaliName}">Nepali Name</span>
+                <span th:text="${@personDisplay.hasNepaliName(person) ? @personDisplay.nepaliFullName(person) : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.birthDate}">Birth Date</span>
+                <span th:text="${person.birthDate != null ? person.birthDate : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.deathDate}">Death Date</span>
+                <span th:text="${person.deathDate != null ? person.deathDate : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.birthPlace}">Birth Place</span>
+                <span th:text="${person.birthPlace != null and !person.birthPlace.isBlank() ? person.birthPlace : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.currentAddress}">Current Address</span>
+                <span th:text="${person.currentAddress != null and !person.currentAddress.isBlank() ? person.currentAddress : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+            <div class="detail-card">
+                <span class="label" th:text="#{person.photoPath}">Photo Path</span>
+                <span th:text="${person.photoPath != null and !person.photoPath.isBlank() ? person.photoPath : #messages.msg('person.details.notAdded')}"></span>
+            </div>
+        </div>
+    </div>
 
     <div class="section">
         <h2 th:text="#{person.details.parents}">Parents</h2>
@@ -64,6 +120,14 @@
                    th:text="${@personDisplay.fullName(child, #locale)}"></a>
             </li>
         </ul>
+    </div>
+
+    <div class="section">
+        <h2 th:text="#{person.notes}">Notes</h2>
+        <p class="notes" th:if="${person.notes != null and !person.notes.isBlank()}" th:text="${person.notes}"></p>
+        <div class="muted" th:if="${person.notes == null or person.notes.isBlank()}" th:text="#{person.details.noNotes}">
+            No notes added.
+        </div>
     </div>
 </div>
 

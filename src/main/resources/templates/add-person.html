@@ -9,7 +9,17 @@
 <div th:replace="~{fragments/language-switch :: switcher}"></div>
 
 <div class="container">
-    <h1 th:text="${editMode} ? #{person.form.edit} : #{person.form.add}"></h1>
+    <div class="page-header">
+        <div>
+            <p class="eyebrow" th:text="#{person.form.section.register}">Bhatta Banshawali Register</p>
+            <h1 th:text="${editMode} ? #{person.form.edit} : #{person.form.add}">Add Person</h1>
+            <p class="intro" th:text="#{person.form.manualNepaliHint}">
+                Enter English and Nepali names directly. Nepali fields are optional and can be corrected manually at any time.
+            </p>
+        </div>
+        <a href="/persons" class="back-link" th:text="#{nav.backToPersons}">Back to Persons</a>
+    </div>
+
     <div sec:authorize="!hasRole('ADMIN')" class="error-summary" th:text="#{person.form.adminOnly}">Only admin users can add or edit persons.</div>
 
     <form sec:authorize="hasRole('ADMIN')" th:action="${editMode} ? @{'/persons/update/' + ${person.id}} : @{/persons}" th:object="${person}" method="post">
@@ -17,123 +27,125 @@
             Please fix the errors below.
         </div>
 
-        <p style="margin:0 0 14px; color:#6b7280; font-size:14px;" th:text="#{person.autoFillHint}"></p>
-
-        <div>
-            <label th:text="#{person.firstName} + ':'">First Name:</label>
-            <input type="text" th:field="*{firstName}" />
-            <div class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
-        </div>
-
-        <div>
-            <label th:text="#{person.middleName} + ':'">Middle Name:</label>
-            <input type="text" th:field="*{middleName}" />
-        </div>
-
-        <div>
-            <label th:text="#{person.lastName} + ':'">Last Name:</label>
-            <input type="text" th:field="*{lastName}" />
-            <div class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
-        </div>
-
-        <div>
-            <label th:text="#{person.firstNameNepali} + ':'">First Name (NP):</label>
-            <input type="text" th:field="*{firstNameNepali}" />
-        </div>
-
-        <div>
-            <label th:text="#{person.middleNameNepali} + ':'">Middle Name (NP):</label>
-            <input type="text" th:field="*{middleNameNepali}" />
-        </div>
-
-        <div>
-            <label th:text="#{person.lastNameNepali} + ':'">Last Name (NP):</label>
-            <input type="text" th:field="*{lastNameNepali}" />
-        </div>
-
-        <div class="actions" style="justify-content:flex-start;">
-            <button type="button" class="btn btn-secondary" onclick="autoFillNepaliNames()" th:text="#{person.autoFillNepali}">Auto-fill NP</button>
-        </div>
-
-        <div>
-            <label th:text="#{person.generationNumber} + ':'">Generation Number:</label>
-            <input type="number" th:field="*{generationNumber}" min="1" />
-        </div>
-
-        <div>
-            <label th:text="#{person.gender} + ':'">Gender:</label>
-            <div style="display: flex; gap: 18px; align-items: center; margin-top: 6px;">
-                <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; margin-bottom: 0;">
-                    <input type="radio" th:field="*{gender}" value="Male" style="width: auto;" />
-                    <span th:text="#{gender.Male}">Male</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; margin-bottom: 0;">
-                    <input type="radio" th:field="*{gender}" value="Female" style="width: auto;" />
-                    <span th:text="#{gender.Female}">Female</span>
-                </label>
+        <section class="form-section">
+            <div class="section-heading">
+                <h2 th:text="#{person.form.section.english}">English / Roman Name</h2>
+                <p th:text="#{person.form.exampleEnglish}">Example: Jhanka Nath</p>
             </div>
-        </div>
 
-        <div>
-            <label th:text="#{person.birthDate} + ':'">Birth Date:</label>
-            <input type="date" th:field="*{birthDate}" />
-        </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label th:text="#{person.firstName} + ':'">First Name:</label>
+                    <input type="text" th:field="*{firstName}" th:placeholder="#{person.placeholder.firstNameEnglish}">
+                    <div class="field-error" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+                </div>
 
-        <div>
-            <label th:text="#{person.deathDate} + ':'">Death Date:</label>
-            <input type="date" th:field="*{deathDate}" />
-        </div>
+                <div class="field">
+                    <label th:text="#{person.middleName} + ':'">Middle Name:</label>
+                    <input type="text" th:field="*{middleName}" th:placeholder="#{person.placeholder.middleNameEnglish}">
+                </div>
 
-        <div>
-            <label th:text="#{person.notes} + ':'">Notes:</label>
-            <textarea th:field="*{notes}"></textarea>
-        </div>
+                <div class="field">
+                    <label th:text="#{person.lastName} + ':'">Last Name:</label>
+                    <input type="text" th:field="*{lastName}" th:placeholder="#{person.placeholder.lastNameEnglish}">
+                    <div class="field-error" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.nickname} + ':'">Nickname:</label>
+                    <input type="text" th:field="*{nickname}" th:placeholder="#{person.placeholder.nickname}">
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="section-heading">
+                <h2 th:text="#{person.form.section.nepali}">Nepali Name</h2>
+                <p th:text="#{person.form.exampleNepali}">Example: झङ्क नाथ</p>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label th:text="#{person.firstNameNepali} + ':'">First Name (NP):</label>
+                    <input type="text" th:field="*{firstNameNepali}" th:placeholder="#{person.placeholder.firstNameNepali}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.middleNameNepali} + ':'">Middle Name (NP):</label>
+                    <input type="text" th:field="*{middleNameNepali}" th:placeholder="#{person.placeholder.middleNameNepali}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.lastNameNepali} + ':'">Last Name (NP):</label>
+                    <input type="text" th:field="*{lastNameNepali}" th:placeholder="#{person.placeholder.lastNameNepali}">
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <div class="section-heading">
+                <h2 th:text="#{person.form.section.profile}">Profile Details</h2>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label th:text="#{person.generationNumber} + ':'">Generation Number:</label>
+                    <input type="number" th:field="*{generationNumber}" min="1" th:placeholder="#{person.placeholder.generation}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.gender} + ':'">Gender:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{gender}" value="Male">
+                            <span th:text="#{gender.Male}">Male</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" th:field="*{gender}" value="Female">
+                            <span th:text="#{gender.Female}">Female</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.birthDate} + ':'">Birth Date:</label>
+                    <input type="date" th:field="*{birthDate}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.deathDate} + ':'">Death Date:</label>
+                    <input type="date" th:field="*{deathDate}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.birthPlace} + ':'">Birth Place:</label>
+                    <input type="text" th:field="*{birthPlace}" th:placeholder="#{person.placeholder.birthPlace}">
+                </div>
+
+                <div class="field">
+                    <label th:text="#{person.currentAddress} + ':'">Current Address:</label>
+                    <input type="text" th:field="*{currentAddress}" th:placeholder="#{person.placeholder.currentAddress}">
+                </div>
+
+                <div class="field full-width">
+                    <label th:text="#{person.photoPath} + ':'">Photo Path:</label>
+                    <input type="text" th:field="*{photoPath}" th:placeholder="#{person.placeholder.photoPath}">
+                </div>
+
+                <div class="field full-width">
+                    <label th:text="#{person.notes} + ':'">Notes:</label>
+                    <textarea th:field="*{notes}" th:placeholder="#{person.placeholder.notes}"></textarea>
+                </div>
+            </div>
+        </section>
 
         <div class="actions">
-            <button type="submit" class="btn btn-primary" th:text="${editMode} ? #{person.update} : #{person.save}"></button>
+            <button type="submit" class="btn btn-primary" th:text="${editMode} ? #{person.update} : #{person.save}">Save</button>
+            <a href="/persons" class="btn btn-secondary" th:text="#{nav.backToPersons}">Back to Persons</a>
         </div>
     </form>
-
-    <div class="actions">
-        <a href="/" class="back-link" th:text="#{nav.backHome}">Back Home</a>
-    </div>
 </div>
 
 <script th:replace="~{fragments/language-switch :: script}"></script>
-<script>
-    async function autoFillNepaliNames() {
-        const firstName = document.querySelector('[name="firstName"]')?.value || '';
-        const middleName = document.querySelector('[name="middleName"]')?.value || '';
-        const lastName = document.querySelector('[name="lastName"]')?.value || '';
-        const firstNameNepali = document.querySelector('[name="firstNameNepali"]')?.value || '';
-        const middleNameNepali = document.querySelector('[name="middleNameNepali"]')?.value || '';
-        const lastNameNepali = document.querySelector('[name="lastNameNepali"]')?.value || '';
-
-        const params = new URLSearchParams({
-            firstName,
-            middleName,
-            lastName,
-            firstNameNepali,
-            middleNameNepali,
-            lastNameNepali
-        });
-
-        const response = await fetch('/persons/transliterate?' + params.toString());
-        if (!response.ok) {
-            return;
-        }
-
-        const data = await response.json();
-        if (document.querySelector('[name="firstNameNepali"]')) {
-            document.querySelector('[name="firstNameNepali"]').value = data.firstNameNepali || '';
-        }
-        if (document.querySelector('[name="middleNameNepali"]')) {
-            document.querySelector('[name="middleNameNepali"]').value = data.middleNameNepali || '';
-        }
-        if (document.querySelector('[name="lastNameNepali"]')) {
-            document.querySelector('[name="lastNameNepali"]').value = data.lastNameNepali || '';
-        }
-    }
-</script>
 </body>
 </html>

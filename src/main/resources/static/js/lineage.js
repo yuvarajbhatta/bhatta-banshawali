@@ -6,6 +6,7 @@ const ZOOM_STEP = 0.1;
 let nodeIdCounter = 1;
 let rootNode = null;
 const messages = window.lineageMessages || {};
+const isAdmin = Boolean(window.lineageIsAdmin);
 
 function t(key) {
     return messages[key] || '';
@@ -35,6 +36,9 @@ function createNode(name = t('defaultName') || 'Type Name Here', parentId = null
         parentDbId: parentId,
         generationNumber,
         name,
+        englishName: name,
+        nepaliName: '',
+        photoPath: '',
         children: []
     };
 }
@@ -49,7 +53,10 @@ function mapServerNodeToUiNode(serverNode) {
         dbId: serverNode.dbId,
         parentDbId: serverNode.parentDbId ?? null,
         generationNumber: serverNode.generationNumber ?? null,
-        name: serverNode.name || t('defaultName') || 'Type Name Here',
+        name: serverNode.englishName || serverNode.name || t('defaultName') || 'Type Name Here',
+        englishName: serverNode.englishName || serverNode.name || '',
+        nepaliName: serverNode.nepaliName || '',
+        photoPath: serverNode.photoPath || '',
         children: []
     };
 
@@ -88,6 +95,10 @@ async function loadLineageTree() {
 }
 
 function startRootNode() {
+    if (!isAdmin) {
+        return;
+    }
+
     if (rootNode !== null) {
         const replace = confirm(t('rootExists') || 'A lineage already exists on this page. Replace it and start over?');
         if (!replace) {
@@ -106,6 +117,10 @@ function startRootNode() {
 }
 
 function resetBoard() {
+    if (!isAdmin) {
+        return;
+    }
+
     const confirmed = confirm('Clear the entire lineage board?');
     if (!confirmed) {
         return;
@@ -114,7 +129,12 @@ function resetBoard() {
     rootNode = null;
     renderTree();
 }
+
 function askAndAddChildren(node) {
+    if (!isAdmin) {
+        return;
+    }
+
     const existingCount = Array.isArray(node.children) ? node.children.length : 0;
     const input = prompt(
         formatMessage(
@@ -206,15 +226,24 @@ function removeNodeById(parent, id) {
 }
 
 function updateNodeName(nodeId, element) {
+    if (!isAdmin) {
+        return;
+    }
+
     const node = findNodeById(rootNode, nodeId);
     if (!node) {
         return;
     }
 
     node.name = element.textContent.trim() || t('defaultName') || 'Type Name Here';
+    node.englishName = node.name;
 }
 
 function handleAddSons(nodeId) {
+    if (!isAdmin) {
+        return;
+    }
+
     const node = findNodeById(rootNode, nodeId);
     if (!node) {
         return;
@@ -230,6 +259,10 @@ function handleAddSons(nodeId) {
 }
 
 async function handleSaveNode(nodeId) {
+    if (!isAdmin) {
+        return;
+    }
+
     const node = findNodeById(rootNode, nodeId);
     if (!node) {
         return;
@@ -282,6 +315,9 @@ async function handleSaveNode(nodeId) {
 
         const data = await response.json();
         node.dbId = data.id;
+        node.englishName = data.englishName || node.name;
+        node.nepaliName = data.nepaliName || '';
+        node.photoPath = data.photoPath || '';
 
         for (const child of node.children) {
             child.parentDbId = node.dbId;
@@ -340,6 +376,9 @@ async function saveTreeRecursively(node) {
 
     const data = await response.json();
     node.dbId = data.id;
+    node.englishName = data.englishName || node.name;
+    node.nepaliName = data.nepaliName || '';
+    node.photoPath = data.photoPath || '';
 
     for (const child of node.children) {
         child.parentDbId = node.dbId;
@@ -351,6 +390,10 @@ async function saveTreeRecursively(node) {
 }
 
 async function handleSaveAll() {
+    if (!isAdmin) {
+        return;
+    }
+
     if (!rootNode) {
         alert(t('noTree') || 'There is no lineage tree to save.');
         return;
@@ -396,7 +439,7 @@ function resetZoom() {
 }
 
 function handleDeleteNode(nodeId) {
-    if (!rootNode) {
+    if (!isAdmin || !rootNode) {
         return;
     }
 
@@ -422,16 +465,29 @@ function buildTreeHtml(node) {
     const childrenHtml = node.children.length > 0
         ? '<ul>' + node.children.map(child => buildTreeHtml(child)).join('') + '</ul>'
         : '';
+    const photoHtml = node.photoPath
+        ? `<img class="node-photo" src="${escapeHtml(node.photoPath)}" alt="${escapeHtml(node.englishName || node.name || '')}">`
+        : '';
+    const nepaliHtml = node.nepaliName
+        ? `<div class="node-name-nepali">${escapeHtml(node.nepaliName)}</div>`
+        : '';
+    const actionsHtml = isAdmin
+        ? `
+            <div class="node-actions">
+                <button type="button" onclick="handleAddSons(${node.id})">${t('addSons') || 'Add Sons'}</button>
+                <button type="button" onclick="handleDeleteNode(${node.id})">${t('delete') || 'Delete'}</button>
+            </div>
+        `
+        : '';
 
     return `
         <li>
             <div class="node-box">
-                <div class="node-name" contenteditable="true" onblur="updateNodeName(${node.id}, this)">${escapeHtml(node.name)}</div>
+                ${photoHtml}
+                <div class="node-name" contenteditable="${isAdmin}" onblur="updateNodeName(${node.id}, this)">${escapeHtml(node.englishName || node.name)}</div>
+                ${nepaliHtml}
                 <div class="node-meta">${node.dbId ? (t('savedId') || 'Saved ID:') + ' ' + node.dbId : (t('notSaved') || 'Not saved yet')}</div>
-                <div class="node-actions">
-                    <button type="button" onclick="handleAddSons(${node.id})">${t('addSons') || 'Add Sons'}</button>
-                    <button type="button" onclick="handleDeleteNode(${node.id})">${t('delete') || 'Delete'}</button>
-                </div>
+                ${actionsHtml}
             </div>
             ${childrenHtml}
         </li>
@@ -475,7 +531,7 @@ function toggleBackToTopButton() {
 }
 
 function escapeHtml(text) {
-    return text
+    return String(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')

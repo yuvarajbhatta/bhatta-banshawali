@@ -75,7 +75,9 @@
         savedId: /*[[#{lineage.node.savedId}]]*/ 'Saved ID:',
         notSaved: /*[[#{lineage.node.notSaved}]]*/ 'Not saved yet'
     };
+    window.lineageIsAdmin = false;
 </script>
+<script sec:authorize="hasRole('ADMIN')">window.lineageIsAdmin = true;</script>
 <script src="/js/lineage.js?v=3"></script>
 <script th:replace="~{fragments/language-switch :: script}"></script>
 </body>

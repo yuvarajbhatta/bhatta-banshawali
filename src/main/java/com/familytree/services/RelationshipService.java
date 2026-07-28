@@ -206,13 +206,18 @@ public class RelationshipService {
 
         Map<String, Object> node = new LinkedHashMap<>();
         boolean nepali = locale != null && "ne".equalsIgnoreCase(locale.getLanguage());
-        String fullName = buildPersonName(person, nepali);
+        String englishName = buildPersonName(person, false);
+        String nepaliName = buildPersonName(person, true);
+        String fullName = nepali && !nepaliName.isBlank() ? nepaliName : englishName;
 
         node.put("id", person.getId());
         node.put("dbId", person.getId());
         node.put("parentDbId", null);
         node.put("generationNumber", person.getGenerationNumber());
         node.put("name", fullName);
+        node.put("englishName", englishName);
+        node.put("nepaliName", nepaliName);
+        node.put("photoPath", person.getPhotoPath());
 
         List<Map<String, Object>> children = new ArrayList<>();
         List<Relationship> childRelationships = childrenByPersonId.getOrDefault(person.getId(), Collections.emptyList());
@@ -233,13 +238,13 @@ public class RelationshipService {
         if (nepali) {
             addIfPresent(parts, person.getFirstNameNepali());
             addIfPresent(parts, person.getMiddleNameNepali());
-            if (!parts.isEmpty()) {
-                return String.join(" ", parts);
-            }
+            addIfPresent(parts, person.getLastNameNepali());
+            return String.join(" ", parts);
         }
 
         addIfPresent(parts, person.getFirstName());
         addIfPresent(parts, person.getMiddleName());
+        addIfPresent(parts, person.getLastName());
         return String.join(" ", parts);
     }
 

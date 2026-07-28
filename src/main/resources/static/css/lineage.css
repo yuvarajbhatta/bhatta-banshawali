@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #eff6ff, #f8fafc);
+    background: #f3f6fb;
     margin: 0;
     padding: 24px;
     color: #1f2937;
@@ -12,28 +12,28 @@ body {
     margin: 0 auto;
     background: #ffffff;
     padding: 28px;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     box-sizing: border-box;
 }
 
 .hero {
     padding: 22px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #dbeafe, #eff6ff);
-    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
     margin-bottom: 24px;
 }
 
 h1 {
-    margin: 0 0 8px 0;
-    color: #1e3a8a;
+    margin: 0 0 8px;
+    color: #0f172a;
     font-size: 30px;
 }
 
 .subtitle {
     margin: 0;
-    color: #374151;
+    color: #475569;
     line-height: 1.6;
 }
 
@@ -58,16 +58,18 @@ h1 {
     align-items: center;
     margin-bottom: 20px;
     padding: 18px;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    background: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
 }
 
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 10px 16px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
@@ -75,7 +77,7 @@ h1 {
 
 .btn-primary {
     background: #2563eb;
-    color: white;
+    color: #ffffff;
 }
 
 .btn-primary:hover {
@@ -83,24 +85,24 @@ h1 {
 }
 
 .btn-secondary {
-    background: #e5e7eb;
-    color: #111827;
+    background: #e2e8f0;
+    color: #0f172a;
 }
 
 .btn-secondary:hover {
-    background: #d1d5db;
+    background: #cbd5e1;
 }
 
 .hint {
-    color: #4b5563;
+    color: #475569;
     font-size: 14px;
     line-height: 1.6;
 }
 
 .board {
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    background: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
     padding: 24px;
     overflow: auto;
     min-height: 70vh;
@@ -112,7 +114,7 @@ h1 {
     min-width: max-content;
     min-height: max-content;
     width: max-content;
-    padding: 20px 40px 80px 0px;
+    padding: 20px 40px 80px 0;
     box-sizing: border-box;
     transition: transform 0.2s ease;
     text-align: left;
@@ -122,7 +124,6 @@ h1 {
 .tree ul {
     padding-top: 20px;
     position: relative;
-    transition: all 0.3s;
     margin: 0;
     text-align: left;
 }
@@ -195,17 +196,26 @@ h1 {
     display: inline-flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 180px;
-    background: white;
-    border: 1px solid #bfdbfe;
+    min-width: 210px;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
     border-radius: 12px;
-    padding: 12px 14px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    text-align: left;
+}
+
+.node-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dbe2ea;
 }
 
 .node-name {
     font-weight: 700;
-    color: #111827;
+    color: #0f172a;
     min-height: 22px;
     outline: none;
 }
@@ -215,15 +225,21 @@ h1 {
     padding-bottom: 2px;
 }
 
+.node-name-nepali {
+    color: #64748b;
+    font-size: 13px;
+    min-height: 18px;
+}
+
 .node-meta {
     font-size: 12px;
-    color: #6b7280;
+    color: #64748b;
 }
 
 .node-actions {
     display: flex;
     gap: 8px;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
 }
 
@@ -245,16 +261,16 @@ h1 {
 .empty-state {
     padding: 20px;
     border-radius: 12px;
-    background: white;
+    background: #ffffff;
     border: 1px dashed #cbd5e1;
-    color: #4b5563;
+    color: #475569;
     text-align: center;
 }
 
 .small-note {
     margin-top: 16px;
     font-size: 13px;
-    color: #6b7280;
+    color: #64748b;
     line-height: 1.6;
 }
 
@@ -267,7 +283,7 @@ h1 {
     border-radius: 999px;
     padding: 12px 16px;
     background: #2563eb;
-    color: white;
+    color: #ffffff;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;

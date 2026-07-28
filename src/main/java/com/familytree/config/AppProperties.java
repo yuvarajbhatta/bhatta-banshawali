@@ -90,7 +90,7 @@ public class AppProperties {
     }
 
     public static class Names {
-        private boolean backfillMissingNepaliOnStartup = true;
+        private boolean backfillMissingNepaliOnStartup = false;
 
         public boolean isBackfillMissingNepaliOnStartup() {
             return backfillMissingNepaliOnStartup;

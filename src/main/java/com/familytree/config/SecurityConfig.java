@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/persons", "/persons/*", "/relationships", "/lineage", "/lineage/tree", "/generations")
                         .hasAnyRole("ADMIN", "USER")
                         .requestMatchers(
+                                "/persons/admin/**",
                                 "/persons/new", "/persons/edit/**", "/persons/delete/**", "/persons/update/**",
                                 "/relationships/new", "/relationships/edit/**", "/relationships/delete/**", "/relationships/update/**",
                                 "/lineage/save-person"

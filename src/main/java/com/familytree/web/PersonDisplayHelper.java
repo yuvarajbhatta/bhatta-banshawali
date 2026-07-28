@@ -16,21 +16,41 @@ public class PersonDisplayHelper {
         }
 
         boolean nepali = locale != null && "ne".equalsIgnoreCase(locale.getLanguage());
-        List<String> parts = new ArrayList<>();
-
         if (nepali) {
-            appendIfPresent(parts, person.getFirstNameNepali());
-            appendIfPresent(parts, person.getMiddleNameNepali());
-            appendIfPresent(parts, person.getLastNameNepali());
-            if (!parts.isEmpty()) {
-                return String.join(" ", parts);
+            String nepaliName = nepaliFullName(person);
+            if (!nepaliName.isBlank()) {
+                return nepaliName;
             }
         }
+        return englishFullName(person);
+    }
 
+    public String englishFullName(Person person) {
+        if (person == null) {
+            return "";
+        }
+
+        List<String> parts = new ArrayList<>();
         appendIfPresent(parts, person.getFirstName());
         appendIfPresent(parts, person.getMiddleName());
         appendIfPresent(parts, person.getLastName());
         return String.join(" ", parts);
+    }
+
+    public String nepaliFullName(Person person) {
+        if (person == null) {
+            return "";
+        }
+
+        List<String> parts = new ArrayList<>();
+        appendIfPresent(parts, person.getFirstNameNepali());
+        appendIfPresent(parts, person.getMiddleNameNepali());
+        appendIfPresent(parts, person.getLastNameNepali());
+        return String.join(" ", parts);
+    }
+
+    public boolean hasNepaliName(Person person) {
+        return person != null && !nepaliFullName(person).isBlank();
     }
 
     public String givenName(Person person, Locale locale) {

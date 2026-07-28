@@ -32,11 +32,23 @@ public class Person {
     @Size(max = 100, message = "{validation.person.lastName.size}")
     private String lastNameNepali;
 
+    @Column(length = 100)
+    private String nickname;
+
     private String gender;
     private LocalDate birthDate;
     private LocalDate deathDate;
 
-    @Column(length = 1000)
+    @Column(length = 255)
+    private String photoPath;
+
+    @Column(length = 255)
+    private String birthPlace;
+
+    @Column(length = 500)
+    private String currentAddress;
+
+    @Column(length = 4000)
     private String notes;
 
     public Long getId() {
@@ -88,6 +100,12 @@ public class Person {
     public void setGender(String gender) {
         this.gender = gender;
     }
+    public String getNickname() {
+        return nickname;
+    }
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
     public LocalDate getBirthDate() {
         return birthDate;
     }
@@ -105,6 +123,24 @@ public class Person {
     }
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+    public String getPhotoPath() {
+        return photoPath;
+    }
+    public void setPhotoPath(String photoPath) {
+        this.photoPath = photoPath;
+    }
+    public String getBirthPlace() {
+        return birthPlace;
+    }
+    public void setBirthPlace(String birthPlace) {
+        this.birthPlace = birthPlace;
+    }
+    public String getCurrentAddress() {
+        return currentAddress;
+    }
+    public void setCurrentAddress(String currentAddress) {
+        this.currentAddress = currentAddress;
     }
 
     public Integer getGenerationNumber() {

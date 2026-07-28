@@ -249,7 +249,9 @@ class RelationshipServiceTest {
         Map<String, Object> tree = relationshipService.buildLineageTree(root);
 
         assertThat(tree.get("dbId")).isEqualTo(1L);
-        assertThat(tree.get("name")).isEqualTo("Root Ancestor");
+        assertThat(tree.get("name")).isEqualTo("Root Ancestor Bhatta");
+        assertThat(tree.get("englishName")).isEqualTo("Root Ancestor Bhatta");
+        assertThat(tree.get("nepaliName")).isEqualTo("");
         assertThat((List<?>) tree.get("children")).hasSize(1);
     }
 
