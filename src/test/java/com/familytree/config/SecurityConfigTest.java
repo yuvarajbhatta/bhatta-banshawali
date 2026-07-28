@@ -1,17 +1,12 @@
 package com.familytree.config;
 
-import com.familytree.entity.AppUser;
 import com.familytree.repository.AppUserRepository;
+import com.familytree.repository.UserAccountRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class SecurityConfigTest {
 
@@ -27,29 +22,17 @@ class SecurityConfigTest {
         assertThat(encoder.matches("secret123", encoded)).isTrue();
     }
 
+    // The actual authentication behavior (AppUser vs UserAccount, role
+    // mapping, inactive-account handling) is covered by
+    // BridgingUserDetailsServiceTest -- this just confirms the bean wires
+    // up to that implementation rather than duplicating those cases here.
     @Test
-    void userDetailsServiceLoadsUserFromRepository() {
-        AppUserRepository repository = mock(AppUserRepository.class);
-        AppUser user = new AppUser();
-        user.setUsername("admin");
-        user.setPassword("encoded-password");
-        user.setRole("ROLE_ADMIN");
-        when(repository.findByUsername("admin")).thenReturn(Optional.of(user));
+    void userDetailsServiceDelegatesToBridgingUserDetailsService() {
+        AppUserRepository appUserRepository = mock(AppUserRepository.class);
+        UserAccountRepository userAccountRepository = mock(UserAccountRepository.class);
 
-        var userDetails = securityConfig.userDetailsService(repository).loadUserByUsername("admin");
+        var userDetailsService = securityConfig.userDetailsService(appUserRepository, userAccountRepository);
 
-        assertThat(userDetails.getUsername()).isEqualTo("admin");
-        assertThat(userDetails.getPassword()).isEqualTo("encoded-password");
-        assertThat(userDetails.getAuthorities()).extracting("authority").contains("ROLE_ADMIN");
-    }
-
-    @Test
-    void userDetailsServiceThrowsWhenUserMissing() {
-        AppUserRepository repository = mock(AppUserRepository.class);
-        when(repository.findByUsername("missing")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> securityConfig.userDetailsService(repository).loadUserByUsername("missing"))
-                .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found: missing");
+        assertThat(userDetailsService).isInstanceOf(BridgingUserDetailsService.class);
     }
 }

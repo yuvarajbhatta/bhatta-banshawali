@@ -1,9 +1,11 @@
 package com.familytree.services;
 
+import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
+import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import org.springframework.stereotype.Service;
@@ -14,23 +16,22 @@ import java.time.LocalDateTime;
 /**
  * Admin actions on a signup VerificationRequest -- see
  * docs/05-auth-and-verification.md and docs/21 change management.
- *
- * Known gap: approving a request sets the linked UserAccount to ACTIVE,
- * but nothing in SecurityConfig can actually authenticate a UserAccount
- * yet (its UserDetailsService only reads AppUser) -- so an approved
- * applicant still can't log in with their new account today. That's
- * separate work: unifying (or bridging) the two user models.
  */
 @Service
 public class VerificationReviewService {
 
+    private static final String VERIFIED_MEMBER_ROLE = "VERIFIED_MEMBER";
+
     private final VerificationRequestRepository verificationRequestRepository;
     private final UserAccountRepository userAccountRepository;
+    private final RoleRepository roleRepository;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
-                                     UserAccountRepository userAccountRepository) {
+                                     UserAccountRepository userAccountRepository,
+                                     RoleRepository roleRepository) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Transactional
@@ -40,6 +41,7 @@ public class VerificationReviewService {
 
         UserAccount account = request.getUserAccount();
         account.setStatus(UserAccountStatus.ACTIVE);
+        roleRepository.findByName(VERIFIED_MEMBER_ROLE).ifPresent(role -> account.getRoles().add(role));
         userAccountRepository.save(account);
     }
 

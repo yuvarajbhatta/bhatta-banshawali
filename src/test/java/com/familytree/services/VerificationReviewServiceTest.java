@@ -1,9 +1,11 @@
 package com.familytree.services;
 
+import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
+import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,9 @@ class VerificationReviewServiceTest {
     @Mock
     private UserAccountRepository userAccountRepository;
 
+    @Mock
+    private RoleRepository roleRepository;
+
     @InjectMocks
     private VerificationReviewService verificationReviewService;
 
@@ -49,6 +54,36 @@ class VerificationReviewServiceTest {
 
         verify(verificationRequestRepository).save(request);
         verify(userAccountRepository).save(account);
+    }
+
+    @Test
+    void approveGrantsVerifiedMemberRoleSoTheAccountCanActuallyLogInWithAccess() {
+        Role verifiedMember = new Role();
+        verifiedMember.setName("VERIFIED_MEMBER");
+        when(roleRepository.findByName("VERIFIED_MEMBER")).thenReturn(Optional.of(verifiedMember));
+
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(10L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.approve(10L, "admin", null);
+
+        assertThat(account.getRoles()).contains(verifiedMember);
+    }
+
+    @Test
+    void approveDoesNotFailWhenVerifiedMemberRoleIsMissing() {
+        when(roleRepository.findByName("VERIFIED_MEMBER")).thenReturn(Optional.empty());
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(11L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.approve(11L, "admin", null);
+
+        assertThat(account.getStatus()).isEqualTo(UserAccountStatus.ACTIVE);
+        assertThat(account.getRoles()).isEmpty();
     }
 
     @Test
