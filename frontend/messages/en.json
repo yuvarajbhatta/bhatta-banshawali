@@ -61,7 +61,35 @@
       "none": "None recorded"
     },
     "notes": "Notes",
-    "noNotes": "No notes added."
+    "noNotes": "No notes added.",
+    "correction": {
+      "title": "Suggest a Correction",
+      "toggle": "Something wrong here?",
+      "fieldLabel": "Field",
+      "valueLabel": "Correct Value",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "How do you know this is correct? (e.g. family records, personal knowledge)",
+      "submit": "Submit Correction",
+      "submitting": "Submitting…",
+      "success": "Thank you. Your suggested correction has been submitted for review.",
+      "errorGeneric": "Something went wrong. Please try again.",
+      "fields": {
+        "FIRST_NAME": "First Name",
+        "MIDDLE_NAME": "Middle Name",
+        "LAST_NAME": "Last Name",
+        "FIRST_NAME_NEPALI": "First Name (Nepali)",
+        "MIDDLE_NAME_NEPALI": "Middle Name (Nepali)",
+        "LAST_NAME_NEPALI": "Last Name (Nepali)",
+        "NICKNAME": "Nickname",
+        "GENDER": "Gender",
+        "BIRTH_DATE": "Birth Date",
+        "DEATH_DATE": "Death Date",
+        "BIRTH_PLACE": "Birth Place",
+        "CURRENT_ADDRESS": "Current Address",
+        "NOTES": "Notes",
+        "GENERATION_NUMBER": "Generation Number"
+      }
+    }
   },
   "dashboardPage": {
     "title": "Your Profile",

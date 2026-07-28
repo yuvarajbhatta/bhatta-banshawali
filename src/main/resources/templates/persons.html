@@ -22,6 +22,7 @@
             <a href="/dashboard" class="text-link" th:text="#{nav.dashboard}">Dashboard</a>
             <a href="/directory" class="text-link" th:text="#{nav.directory}">Directory</a>
             <a sec:authorize="hasRole('ADMIN')" href="/admin/signups" class="text-link" th:text="#{adminSignups.title}">Signup Review</a>
+            <a sec:authorize="hasRole('ADMIN')" href="/admin/corrections" class="text-link" th:text="#{adminCorrections.title}">Correction Requests</a>
             <a sec:authorize="hasRole('ADMIN')" href="/persons/new" class="btn btn-primary" th:text="#{nav.addNewPerson}">Add New Person</a>
         </div>
     </div>

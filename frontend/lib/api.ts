@@ -202,3 +202,45 @@ export async function searchPersons(keyword: string): Promise<PersonSummaryDto[]
   }
   return response.json();
 }
+
+export const CORRECTABLE_PERSON_FIELDS = [
+  "FIRST_NAME",
+  "MIDDLE_NAME",
+  "LAST_NAME",
+  "FIRST_NAME_NEPALI",
+  "MIDDLE_NAME_NEPALI",
+  "LAST_NAME_NEPALI",
+  "NICKNAME",
+  "GENDER",
+  "BIRTH_DATE",
+  "DEATH_DATE",
+  "BIRTH_PLACE",
+  "CURRENT_ADDRESS",
+  "NOTES",
+  "GENERATION_NUMBER",
+] as const;
+
+export type CorrectablePersonField = (typeof CORRECTABLE_PERSON_FIELDS)[number];
+
+export interface CorrectionRequest {
+  field: CorrectablePersonField;
+  proposedValue: string;
+  reason: string;
+}
+
+export class CorrectionError extends Error {}
+
+// Called directly from the browser -- same-origin relative path, same
+// reasoning as submitSignup and searchPersons above.
+export async function submitCorrection(personId: number, request: CorrectionRequest): Promise<void> {
+  const response = await fetch(`/api/v1/persons/${personId}/corrections`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new CorrectionError(body?.message ?? "Failed to submit correction.");
+  }
+}

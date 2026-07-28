@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageShell } from "@/components/PageShell";
+import { CorrectionForm } from "@/components/CorrectionForm";
 import { getPersonDetail, type PersonSummaryDto } from "@/lib/api";
 import styles from "./page.module.css";
 
@@ -63,6 +64,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           <div className={styles.card}>
             <h3>{t("notes")}</h3>
             <p className={styles.notes}>{result.person.notes || t("noNotes")}</p>
+          </div>
+
+          <div className={styles.card}>
+            <CorrectionForm personId={result.person.id} />
           </div>
         </div>
       ) : null}

@@ -61,7 +61,35 @@
       "none": "कुनै रेकर्ड छैन"
     },
     "notes": "टिप्पणी",
-    "noNotes": "कुनै टिप्पणी थपिएको छैन।"
+    "noNotes": "कुनै टिप्पणी थपिएको छैन।",
+    "correction": {
+      "title": "सुधार सुझाव दिनुहोस्",
+      "toggle": "यहाँ केही गलत छ?",
+      "fieldLabel": "क्षेत्र",
+      "valueLabel": "सही मान",
+      "reasonLabel": "कारण",
+      "reasonPlaceholder": "तपाईंलाई यो सही हो भनेर कसरी थाहा छ? (जस्तै: पारिवारिक अभिलेख, व्यक्तिगत जानकारी)",
+      "submit": "सुधार पेश गर्नुहोस्",
+      "submitting": "पेश गर्दै…",
+      "success": "धन्यवाद। तपाईंको सुझाव गरिएको सुधार समीक्षाको लागि पेश गरिएको छ।",
+      "errorGeneric": "केही गडबड भयो। कृपया फेरि प्रयास गर्नुहोस्।",
+      "fields": {
+        "FIRST_NAME": "पहिलो नाम",
+        "MIDDLE_NAME": "बीचको नाम",
+        "LAST_NAME": "थर",
+        "FIRST_NAME_NEPALI": "पहिलो नाम (नेपाली)",
+        "MIDDLE_NAME_NEPALI": "बीचको नाम (नेपाली)",
+        "LAST_NAME_NEPALI": "थर (नेपाली)",
+        "NICKNAME": "घरायसी नाम",
+        "GENDER": "लिङ्ग",
+        "BIRTH_DATE": "जन्म मिति",
+        "DEATH_DATE": "मृत्यु मिति",
+        "BIRTH_PLACE": "जन्म स्थान",
+        "CURRENT_ADDRESS": "हालको ठेगाना",
+        "NOTES": "टिप्पणी",
+        "GENERATION_NUMBER": "पुस्ता संख्या"
+      }
+    }
   },
   "dashboardPage": {
     "title": "तपाईंको प्रोफाइल",

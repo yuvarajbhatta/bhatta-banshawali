@@ -21,6 +21,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PersonProfileAssemblerTest {
 
+    private static final ViewerContext ADMIN = new ViewerContext(true, null);
+    private static final ViewerContext STRANGER = new ViewerContext(false, 9999L);
+    private static final ViewerContext NO_LINK = new ViewerContext(false, null);
+
     @Mock
     private RelationshipService relationshipService;
 
@@ -42,7 +46,7 @@ class PersonProfileAssemblerTest {
         person.setGender("Male");
         person.setBirthDate(LocalDate.of(1995, 6, 15));
 
-        PersonSummaryDto summary = assembler().summarize(person);
+        PersonSummaryDto summary = assembler().summarize(person, ADMIN);
 
         assertThat(summary.id()).isEqualTo(1L);
         assertThat(summary.englishFullName()).isEqualTo("Yuva Bhatta");
@@ -50,6 +54,42 @@ class PersonProfileAssemblerTest {
         assertThat(summary.generationNumber()).isEqualTo(8);
         assertThat(summary.gender()).isEqualTo("Male");
         assertThat(summary.birthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
+    }
+
+    @Test
+    void summarizeHidesBirthDateFromAStrangerViewer() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setFirstName("Yuva");
+        person.setLastName("Bhatta");
+        person.setBirthDate(LocalDate.of(1995, 6, 15));
+
+        PersonSummaryDto summary = assembler().summarize(person, STRANGER);
+
+        assertThat(summary.birthDate()).isNull();
+        assertThat(summary.englishFullName()).isEqualTo("Yuva Bhatta");
+    }
+
+    @Test
+    void summarizeShowsBirthDateWhenViewingOwnLinkedPerson() {
+        Person person = new Person();
+        person.setId(42L);
+        person.setBirthDate(LocalDate.of(1995, 6, 15));
+
+        PersonSummaryDto summary = assembler().summarize(person, new ViewerContext(false, 42L));
+
+        assertThat(summary.birthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
+    }
+
+    @Test
+    void summarizeHidesBirthDateFromAnUnlinkedViewer() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setBirthDate(LocalDate.of(1995, 6, 15));
+
+        PersonSummaryDto summary = assembler().summarize(person, NO_LINK);
+
+        assertThat(summary.birthDate()).isNull();
     }
 
     @Test
@@ -77,7 +117,7 @@ class PersonProfileAssemblerTest {
         child.setFirstName("Kiran");
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of(child));
 
-        FamilySnapshotDto snapshot = assembler().familySnapshot(person);
+        FamilySnapshotDto snapshot = assembler().familySnapshot(person, ADMIN);
 
         assertThat(snapshot.father().englishFullName()).isEqualTo("Bhoj");
         assertThat(snapshot.mother()).isNull();
@@ -86,7 +126,7 @@ class PersonProfileAssemblerTest {
     }
 
     @Test
-    void detailIncludesFullFieldsAndFamilySnapshot() {
+    void detailIncludesFullFieldsAndFamilySnapshotForAdmin() {
         Person person = new Person();
         person.setId(5L);
         person.setFirstName("Yuva");
@@ -105,16 +145,84 @@ class PersonProfileAssemblerTest {
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
-        PersonDetailDto detail = assembler().detail(person);
+        PersonDetailDto detail = assembler().detail(person, ADMIN);
 
         assertThat(detail.id()).isEqualTo(5L);
         assertThat(detail.englishFullName()).isEqualTo("Yuva Bhatta");
         assertThat(detail.nickname()).isEqualTo("YB");
+        assertThat(detail.birthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
         assertThat(detail.birthPlace()).isEqualTo("Kispang");
         assertThat(detail.currentAddress()).isEqualTo("Kathmandu");
         assertThat(detail.notes()).isEqualTo("Some notes");
         assertThat(detail.photoPath()).isEqualTo("/uploads/yuva.jpg");
         assertThat(detail.family()).isNotNull();
         assertThat(detail.family().father()).isNull();
+    }
+
+    @Test
+    void detailHidesBirthDateAndCurrentAddressFromAStrangerViewer() {
+        Person person = new Person();
+        person.setId(5L);
+        person.setFirstName("Yuva");
+        person.setLastName("Bhatta");
+        person.setBirthDate(LocalDate.of(1995, 6, 15));
+        person.setBirthPlace("Kispang");
+        person.setCurrentAddress("Kathmandu");
+        person.setDeathDate(null);
+
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
+        when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
+
+        PersonDetailDto detail = assembler().detail(person, STRANGER);
+
+        assertThat(detail.birthDate()).isNull();
+        assertThat(detail.currentAddress()).isNull();
+        // Not sensitive by this rule -- birthPlace (general area, not exact
+        // contact info) stays visible so the directory remains genuinely useful.
+        assertThat(detail.birthPlace()).isEqualTo("Kispang");
+    }
+
+    @Test
+    void detailShowsSensitiveFieldsWhenViewingOwnLinkedPerson() {
+        Person person = new Person();
+        person.setId(77L);
+        person.setBirthDate(LocalDate.of(1995, 6, 15));
+        person.setCurrentAddress("Kathmandu");
+
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
+        when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
+
+        PersonDetailDto detail = assembler().detail(person, new ViewerContext(false, 77L));
+
+        assertThat(detail.birthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
+        assertThat(detail.currentAddress()).isEqualTo("Kathmandu");
+    }
+
+    @Test
+    void familySnapshotRedactsBirthDatesOfRelativesFromAStrangerViewer() {
+        Person person = new Person();
+        person.setId(1L);
+
+        Person father = new Person();
+        father.setId(2L);
+        father.setFirstName("Bhoj");
+        father.setBirthDate(LocalDate.of(1965, 1, 1));
+        Relationship fatherRel = new Relationship();
+        fatherRel.setRelatedPerson(father);
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
+                .thenReturn(List.of(fatherRel));
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER))
+                .thenReturn(List.of());
+        when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
+        when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
+
+        FamilySnapshotDto snapshot = assembler().familySnapshot(person, STRANGER);
+
+        assertThat(snapshot.father().englishFullName()).isEqualTo("Bhoj");
+        assertThat(snapshot.father().birthDate()).isNull();
     }
 }

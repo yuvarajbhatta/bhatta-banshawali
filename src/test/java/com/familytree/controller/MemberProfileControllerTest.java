@@ -11,12 +11,14 @@ import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.RelationshipService;
+import com.familytree.services.ViewerContextResolver;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -43,7 +45,8 @@ class MemberProfileControllerTest {
 
     private MemberProfileController controllerWithRealAssembler() {
         PersonProfileAssembler assembler = new PersonProfileAssembler(relationshipService, new PersonDisplayHelper());
-        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, assembler);
+        ViewerContextResolver viewerContextResolver = new ViewerContextResolver(userAccountRepository, userPersonLinkRepository);
+        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, assembler, viewerContextResolver);
     }
 
     @Test
@@ -82,6 +85,7 @@ class MemberProfileControllerTest {
     @Test
     void returnsLinkedProfileWithFamilySnapshotWhenVerified() {
         when(authentication.getName()).thenReturn("member@example.com");
+        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication).getAuthorities();
         UserAccount account = new UserAccount();
         account.setEmail("member@example.com");
         when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account));

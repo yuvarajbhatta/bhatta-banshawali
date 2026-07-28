@@ -8,6 +8,8 @@ import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.services.PersonProfileAssembler;
+import com.familytree.services.ViewerContext;
+import com.familytree.services.ViewerContextResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +32,16 @@ public class MemberProfileController {
     private final UserAccountRepository userAccountRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
     private final PersonProfileAssembler personProfileAssembler;
+    private final ViewerContextResolver viewerContextResolver;
 
     public MemberProfileController(UserAccountRepository userAccountRepository,
                                    UserPersonLinkRepository userPersonLinkRepository,
-                                   PersonProfileAssembler personProfileAssembler) {
+                                   PersonProfileAssembler personProfileAssembler,
+                                   ViewerContextResolver viewerContextResolver) {
         this.userAccountRepository = userAccountRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.personProfileAssembler = personProfileAssembler;
+        this.viewerContextResolver = viewerContextResolver;
     }
 
     @GetMapping
@@ -55,7 +60,8 @@ public class MemberProfileController {
             return MemberProfileDto.unlinked(account.getEmail());
         }
 
+        ViewerContext viewer = viewerContextResolver.resolve(authentication);
         return new MemberProfileDto(account.getEmail(), true,
-                personProfileAssembler.summarize(person), personProfileAssembler.familySnapshot(person));
+                personProfileAssembler.summarize(person, viewer), personProfileAssembler.familySnapshot(person, viewer));
     }
 }

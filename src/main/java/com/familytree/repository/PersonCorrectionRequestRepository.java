@@ -1,0 +1,11 @@
+package com.familytree.repository;
+
+import com.familytree.entity.CorrectionRequestStatus;
+import com.familytree.entity.PersonCorrectionRequest;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface PersonCorrectionRequestRepository extends JpaRepository<PersonCorrectionRequest, Long> {
+    List<PersonCorrectionRequest> findAllByStatusOrderBySubmittedAtAsc(CorrectionRequestStatus status);
+}

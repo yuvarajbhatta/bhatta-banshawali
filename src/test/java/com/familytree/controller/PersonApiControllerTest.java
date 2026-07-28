@@ -3,17 +3,23 @@ package com.familytree.controller;
 import com.familytree.dto.PersonDetailDto;
 import com.familytree.dto.PersonSummaryDto;
 import com.familytree.entity.Person;
+import com.familytree.repository.UserAccountRepository;
+import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.PersonService;
 import com.familytree.services.RelationshipService;
+import com.familytree.services.ViewerContextResolver;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,8 +34,24 @@ class PersonApiControllerTest {
     @Mock
     private RelationshipService relationshipService;
 
+    @Mock
+    private UserAccountRepository userAccountRepository;
+
+    @Mock
+    private UserPersonLinkRepository userPersonLinkRepository;
+
+    @Mock
+    private Authentication authentication;
+
     private PersonApiController controller() {
-        return new PersonApiController(personService, new PersonProfileAssembler(relationshipService, new PersonDisplayHelper()));
+        PersonProfileAssembler assembler = new PersonProfileAssembler(relationshipService, new PersonDisplayHelper());
+        ViewerContextResolver viewerContextResolver = new ViewerContextResolver(userAccountRepository, userPersonLinkRepository);
+        return new PersonApiController(personService, assembler, viewerContextResolver);
+    }
+
+    private Authentication asAdmin() {
+        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        return authentication;
     }
 
     @Test
@@ -40,7 +62,7 @@ class PersonApiControllerTest {
         person.setLastName("Bhatta");
         when(personService.searchPersons("Yuva")).thenReturn(List.of(person));
 
-        List<PersonSummaryDto> results = controller().search("Yuva");
+        List<PersonSummaryDto> results = controller().search("Yuva", asAdmin());
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).englishFullName()).isEqualTo("Yuva Bhatta");
@@ -50,7 +72,7 @@ class PersonApiControllerTest {
     void searchWithNoKeywordDelegatesToServiceAsIs() {
         when(personService.searchPersons(null)).thenReturn(List.of());
 
-        List<PersonSummaryDto> results = controller().search(null);
+        List<PersonSummaryDto> results = controller().search(null, asAdmin());
 
         assertThat(results).isEmpty();
     }
@@ -69,7 +91,7 @@ class PersonApiControllerTest {
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
-        PersonDetailDto detail = controller().detail(7L);
+        PersonDetailDto detail = controller().detail(7L, asAdmin());
 
         assertThat(detail.id()).isEqualTo(7L);
         assertThat(detail.englishFullName()).isEqualTo("Yuva Bhatta");
@@ -80,7 +102,7 @@ class PersonApiControllerTest {
     void detailThrows404WhenPersonDoesNotExist() {
         when(personService.getPersonById(999L)).thenThrow(new RuntimeException("Person not found with id: 999"));
 
-        assertThatThrownBy(() -> controller().detail(999L))
+        assertThatThrownBy(() -> controller().detail(999L, authentication))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Person not found");
     }
