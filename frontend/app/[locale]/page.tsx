@@ -14,21 +14,31 @@ export default async function LandingPage() {
       {/* /login and /signup are the existing Spring Boot/Thymeleaf pages,
           proxied through by nginx in production (see the banshawali.yrbhatta.com
           vhost) until they're rebuilt as Next.js pages -- they 404 under
-          `next dev` locally without that proxy in front. */}
+          `next dev` locally without that proxy in front.
+
+          Deliberately plain <a> tags, not the locale-aware Link from
+          @/i18n/navigation: that Link always prefixes the current locale
+          (e.g. "/en/login"), which is correct for real Next.js routes but
+          wrong here -- these paths don't exist inside this app at all, and
+          a locale-prefixed URL 404s in Next.js's own router before nginx
+          ever gets a chance to send it to the backend. This is exactly
+          the bug that was reported: login redirecting to /en/login. */}
       <header className={styles.header}>
         <LanguageSwitcher />
-        <Link href="/login">
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- intentionally leaving this app, see comment above */}
+        <a href="/login">
           <Button variant="ghost">{t("landing.login")}</Button>
-        </Link>
+        </a>
       </header>
 
       <section className={styles.hero}>
         <h1 className={styles.heroTitle}>{t("landing.heroTitle")}</h1>
         <p className={styles.heroSubtitle}>{t("landing.heroSubtitle")}</p>
         <div className={styles.actions}>
-          <Link href="/signup">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- intentionally leaving this app, see comment above */}
+          <a href="/signup">
             <Button variant="primary">{t("landing.requestMembership")}</Button>
-          </Link>
+          </a>
           <Link href="/about">
             <Button variant="secondary">{t("landing.learnAboutBanshawali")}</Button>
           </Link>
