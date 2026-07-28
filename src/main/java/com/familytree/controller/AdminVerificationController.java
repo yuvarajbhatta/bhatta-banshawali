@@ -61,8 +61,9 @@ public class AdminVerificationController {
 
     @PostMapping("/admin/signups/{id}/approve")
     public String approve(@PathVariable Long id, @RequestParam(required = false) String decisionNote,
+                          @RequestParam(required = false) Long linkedPersonId,
                           Authentication authentication) {
-        verificationReviewService.approve(id, authentication.getName(), decisionNote);
+        verificationReviewService.approve(id, authentication.getName(), decisionNote, linkedPersonId);
         return "redirect:/admin/signups";
     }
 

@@ -1,12 +1,17 @@
 package com.familytree.services;
 
+import com.familytree.entity.Person;
 import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
+import com.familytree.entity.UserPersonLink;
+import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
+import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
+import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +30,31 @@ public class VerificationReviewService {
     private final VerificationRequestRepository verificationRequestRepository;
     private final UserAccountRepository userAccountRepository;
     private final RoleRepository roleRepository;
+    private final PersonRepository personRepository;
+    private final UserPersonLinkRepository userPersonLinkRepository;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
-                                     RoleRepository roleRepository) {
+                                     RoleRepository roleRepository,
+                                     PersonRepository personRepository,
+                                     UserPersonLinkRepository userPersonLinkRepository) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
+        this.personRepository = personRepository;
+        this.userPersonLinkRepository = userPersonLinkRepository;
     }
 
+    /**
+     * @param linkedPersonId the existing Person record the admin has confirmed this
+     *                        applicant is, from the candidates shown in the review UI
+     *                        (docs/04-data-model.md UserPersonLink) -- null when no
+     *                        candidate matched (the applicant is a genuinely new person,
+     *                        or the admin couldn't confirm one). Approval still proceeds
+     *                        either way; only the link is skipped.
+     */
     @Transactional
-    public void approve(Long verificationRequestId, String reviewerUsername, String decisionNote) {
+    public void approve(Long verificationRequestId, String reviewerUsername, String decisionNote, Long linkedPersonId) {
         VerificationRequest request = getOrThrow(verificationRequestId);
         markReviewed(request, VerificationStatus.APPROVED, reviewerUsername, decisionNote);
 
@@ -43,6 +62,17 @@ public class VerificationReviewService {
         account.setStatus(UserAccountStatus.ACTIVE);
         roleRepository.findByName(VERIFIED_MEMBER_ROLE).ifPresent(role -> account.getRoles().add(role));
         userAccountRepository.save(account);
+
+        if (linkedPersonId != null) {
+            Person person = personRepository.findById(linkedPersonId)
+                    .orElseThrow(() -> new RuntimeException("Person not found with id: " + linkedPersonId));
+            UserPersonLink link = new UserPersonLink();
+            link.setUserAccount(account);
+            link.setPerson(person);
+            link.setLinkStatus(UserPersonLinkStatus.VERIFIED);
+            link.setVerifiedAt(LocalDateTime.now());
+            userPersonLinkRepository.save(link);
+        }
     }
 
     @Transactional

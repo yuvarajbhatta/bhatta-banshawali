@@ -73,11 +73,15 @@
         </p>
         <table th:if="${!#lists.isEmpty(candidatePersons)}">
             <tr>
+                <th th:if="${request.status.name() == 'PENDING'}" th:text="#{adminSignups.linkThisPerson}">Link</th>
                 <th th:text="#{persons.id}">ID</th>
                 <th th:text="#{persons.name}">Name</th>
                 <th th:text="#{persons.generation}">Generation</th>
             </tr>
             <tr th:each="candidate : ${candidatePersons}">
+                <td th:if="${request.status.name() == 'PENDING'}">
+                    <input type="radio" name="linkedPersonId" form="approve-form" th:value="${candidate.id}"/>
+                </td>
                 <td th:text="${candidate.id}"></td>
                 <td>
                     <a th:href="@{'/persons/' + ${candidate.id}}" th:text="${@personDisplay.englishFullName(candidate)}"></a>
@@ -92,7 +96,11 @@
 
     <div class="card" th:if="${request.status.name() == 'PENDING'}">
         <h2 th:text="#{adminSignups.decision}">Decision</h2>
-        <form th:action="@{'/admin/signups/' + ${request.id} + '/approve'}" method="post" class="decision-form">
+        <p th:if="${!#lists.isEmpty(candidatePersons)}" class="help-text" th:text="#{adminSignups.linkHelp}">
+            Select which candidate above this applicant actually is before approving, if any -- this links their
+            new account to that existing record. Leave unselected if none of the candidates are a match.
+        </p>
+        <form id="approve-form" th:action="@{'/admin/signups/' + ${request.id} + '/approve'}" method="post" class="decision-form">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <label th:text="#{adminSignups.decisionNote}">Decision Note (optional)</label>
             <textarea name="decisionNote" rows="2"></textarea>

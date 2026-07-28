@@ -1,12 +1,17 @@
 package com.familytree.services;
 
+import com.familytree.entity.Person;
 import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
+import com.familytree.entity.UserPersonLink;
+import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
+import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
+import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +38,12 @@ class VerificationReviewServiceTest {
     @Mock
     private RoleRepository roleRepository;
 
+    @Mock
+    private PersonRepository personRepository;
+
+    @Mock
+    private UserPersonLinkRepository userPersonLinkRepository;
+
     @InjectMocks
     private VerificationReviewService verificationReviewService;
 
@@ -44,7 +55,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(1L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(1L, "admin", "looks good");
+        verificationReviewService.approve(1L, "admin", "looks good", null);
 
         assertThat(request.getStatus()).isEqualTo(VerificationStatus.APPROVED);
         assertThat(request.getReviewedByUsername()).isEqualTo("admin");
@@ -67,7 +78,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(10L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(10L, "admin", null);
+        verificationReviewService.approve(10L, "admin", null, null);
 
         assertThat(account.getRoles()).contains(verifiedMember);
     }
@@ -80,10 +91,56 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(11L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(11L, "admin", null);
+        verificationReviewService.approve(11L, "admin", null, null);
 
         assertThat(account.getStatus()).isEqualTo(UserAccountStatus.ACTIVE);
         assertThat(account.getRoles()).isEmpty();
+    }
+
+    @Test
+    void approveWithLinkedPersonIdCreatesAVerifiedUserPersonLink() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(20L)).thenReturn(Optional.of(request));
+
+        Person person = new Person();
+        person.setId(77L);
+        when(personRepository.findById(77L)).thenReturn(Optional.of(person));
+
+        verificationReviewService.approve(20L, "admin", null, 77L);
+
+        ArgumentCaptor<UserPersonLink> captor = ArgumentCaptor.forClass(UserPersonLink.class);
+        verify(userPersonLinkRepository).save(captor.capture());
+        UserPersonLink savedLink = captor.getValue();
+        assertThat(savedLink.getUserAccount()).isEqualTo(account);
+        assertThat(savedLink.getPerson()).isEqualTo(person);
+        assertThat(savedLink.getLinkStatus()).isEqualTo(UserPersonLinkStatus.VERIFIED);
+        assertThat(savedLink.getVerifiedAt()).isNotNull();
+    }
+
+    @Test
+    void approveWithoutLinkedPersonIdNeverTouchesUserPersonLinkRepository() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(21L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.approve(21L, "admin", null, null);
+
+        org.mockito.Mockito.verifyNoInteractions(userPersonLinkRepository);
+    }
+
+    @Test
+    void approveThrowsWhenLinkedPersonIdDoesNotExist() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(22L)).thenReturn(Optional.of(request));
+        when(personRepository.findById(999L)).thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                () -> verificationReviewService.approve(22L, "admin", null, 999L));
     }
 
     @Test
@@ -119,7 +176,7 @@ class VerificationReviewServiceTest {
         when(verificationRequestRepository.findById(99L)).thenReturn(Optional.empty());
 
         org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> verificationReviewService.approve(99L, "admin", null));
+                () -> verificationReviewService.approve(99L, "admin", null, null));
     }
 
     @Test

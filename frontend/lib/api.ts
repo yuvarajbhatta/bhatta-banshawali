@@ -95,3 +95,53 @@ export async function convertAdToBs(dateAd: string): Promise<{ year: number; mon
   }
   return response.json();
 }
+
+export interface PersonSummaryDto {
+  id: number;
+  englishFullName: string;
+  nepaliFullName: string;
+  generationNumber: number | null;
+  gender: string | null;
+  birthDate: string | null;
+}
+
+export interface FamilySnapshotDto {
+  father: PersonSummaryDto | null;
+  mother: PersonSummaryDto | null;
+  spouses: PersonSummaryDto[];
+  children: PersonSummaryDto[];
+}
+
+export interface MemberProfileDto {
+  email: string;
+  linked: boolean;
+  person: PersonSummaryDto | null;
+  family: FamilySnapshotDto | null;
+}
+
+export type MemberProfileResult =
+  | { kind: "ok"; profile: MemberProfileDto }
+  | { kind: "unauthenticated" }
+  | { kind: "no-account" };
+
+// Server-to-server (see API_BASE_URL above), but /api/v1/me is
+// session-authenticated -- the caller must forward the browser's own
+// Cookie header along, since this app's Node process has no session of
+// its own and the backend only recognizes the end user's JSESSIONID.
+export async function getMemberProfile(cookieHeader: string): Promise<MemberProfileResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/me`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return { kind: "unauthenticated" };
+  }
+  if (response.status === 404) {
+    return { kind: "no-account" };
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load member profile: ${response.status}`);
+  }
+  return { kind: "ok", profile: await response.json() };
+}

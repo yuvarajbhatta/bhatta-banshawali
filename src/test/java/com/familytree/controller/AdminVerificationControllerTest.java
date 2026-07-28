@@ -95,10 +95,19 @@ class AdminVerificationControllerTest {
     void approveDelegatesToServiceWithReviewerNameAndRedirects() {
         when(authentication.getName()).thenReturn("admin");
 
-        String viewName = controller.approve(7L, "note", authentication);
+        String viewName = controller.approve(7L, "note", null, authentication);
 
         assertThat(viewName).isEqualTo("redirect:/admin/signups");
-        verify(verificationReviewService).approve(7L, "admin", "note");
+        verify(verificationReviewService).approve(7L, "admin", "note", null);
+    }
+
+    @Test
+    void approvePassesThroughTheSelectedLinkedPersonId() {
+        when(authentication.getName()).thenReturn("admin");
+
+        controller.approve(7L, "note", 42L, authentication);
+
+        verify(verificationReviewService).approve(7L, "admin", "note", 42L);
     }
 
     @Test

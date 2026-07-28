@@ -33,6 +33,20 @@
     "intro": "This site is a private family record, not a public service. Membership is limited to people who can be reasonably connected to the Bhatta family, and access to private details is a privilege extended to verified members, not a right.",
     "conduct": "Please use the information here respectfully: don't share private family details outside the site without the people involved agreeing, and let an administrator know if you spot something incorrect rather than editing it to be wrong on purpose."
   },
+  "dashboardPage": {
+    "title": "Your Profile",
+    "noAccount": "This area is for verified family members. It looks like you're signed in with an administrator account instead -- try Persons in the admin tools.",
+    "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
+    "generation": "Generation {number}",
+    "family": {
+      "title": "Immediate Family",
+      "father": "Father",
+      "mother": "Mother",
+      "spouses": "Spouse(s)",
+      "children": "Children",
+      "none": "None recorded"
+    }
+  },
   "contactPage": {
     "title": "Contact",
     "intro": "If you have a question about the family tree, a correction to suggest, or a membership request, please reach out to a family administrator directly, or use the correction tools available once you're signed in."
