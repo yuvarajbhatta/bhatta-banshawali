@@ -21,6 +21,7 @@
     <div class="error" th:if="${relationshipTypeError}" th:text="#{relationship.error.typeRequired}"></div>
     <div class="error" th:if="${samePersonError}" th:text="#{relationship.error.samePerson}"></div>
     <div class="error" th:if="${duplicateRelationshipError}" th:text="#{relationship.error.duplicate}"></div>
+    <div class="error" th:if="${cycleError}" th:text="#{relationship.error.cycle}"></div>
 
     <form sec:authorize="hasRole('ADMIN')"
           th:action="${editMode} ? @{'/relationships/update/' + ${relationshipId}} : @{/relationships}"

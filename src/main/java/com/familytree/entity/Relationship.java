@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import org.hibernate.type.descriptor.jdbc.JdbcTypeFamilyInformation;
 
 @Entity
-@Table(name = "relationships")
+@Table(name = "relationships", uniqueConstraints = @UniqueConstraint(
+        name = "uk_relationships_person_related_type",
+        columnNames = {"person_id", "related_person_id", "relationship_type"}
+))
 public class Relationship {
 
     @Id
@@ -24,6 +27,9 @@ public class Relationship {
 
     public Long getId() {
         return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
     }
     public Person getPerson() {
         return person;

@@ -67,6 +67,7 @@ class RelationshipServiceTest {
         Person father = createPerson(2L, "Father");
         when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
         when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER)).thenReturn(List.of());
+        noKnownParentsFor(father);
 
         relationshipService.saveRelationshipWithAutoLinks(child, father, RelationshipType.FATHER);
 
@@ -101,6 +102,7 @@ class RelationshipServiceTest {
         when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
         when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER))
                 .thenReturn(List.of(existingMotherRelationship));
+        noKnownParentsFor(father);
 
         relationshipService.saveRelationshipWithAutoLinks(child, father, RelationshipType.FATHER);
 
@@ -258,6 +260,91 @@ class RelationshipServiceTest {
     @Test
     void buildLineageTreeReturnsNullWhenRootIsNull() {
         assertThat(relationshipService.buildLineageTree(null)).isNull();
+    }
+
+    @Test
+    void wouldCreateCycleIsTrueForSelfRelationship() {
+        Person person = createPerson(1L, "Yuva");
+
+        assertThat(relationshipService.wouldCreateCycle(person, person, RelationshipType.FATHER)).isTrue();
+    }
+
+    @Test
+    void wouldCreateCycleIsFalseForSpouseRegardlessOfAncestry() {
+        Person person = createPerson(1L, "Yuva");
+        Person spouse = createPerson(2L, "Mina");
+
+        assertThat(relationshipService.wouldCreateCycle(person, spouse, RelationshipType.SPOUSE)).isFalse();
+    }
+
+    @Test
+    void wouldCreateCycleIsFalseWhenNoExistingAncestryLink() {
+        Person child = createPerson(1L, "Child");
+        Person father = createPerson(2L, "Father");
+        noKnownParentsFor(father);
+
+        assertThat(relationshipService.wouldCreateCycle(child, father, RelationshipType.FATHER)).isFalse();
+    }
+
+    @Test
+    void wouldCreateCycleDetectsTransitiveAncestryThroughFatherChain() {
+        // Existing data: A is father of C, C is father of B (A -> C -> B).
+        // Proposing "B is father of A" would close the loop A -> C -> B -> A.
+        Person a = createPerson(1L, "A");
+        Person b = createPerson(2L, "B");
+        Person c = createPerson(3L, "C");
+
+        when(relationshipRepository.findByPersonAndRelationshipType(b, RelationshipType.FATHER))
+                .thenReturn(List.of(relationship(b, c, RelationshipType.FATHER)));
+        when(relationshipRepository.findByPersonAndRelationshipType(b, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(b, RelationshipType.CHILD)).thenReturn(List.of());
+        when(relationshipRepository.findByPersonAndRelationshipType(c, RelationshipType.FATHER))
+                .thenReturn(List.of(relationship(c, a, RelationshipType.FATHER)));
+        when(relationshipRepository.findByPersonAndRelationshipType(c, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(c, RelationshipType.CHILD)).thenReturn(List.of());
+
+        assertThat(relationshipService.wouldCreateCycle(a, b, RelationshipType.FATHER)).isTrue();
+    }
+
+    @Test
+    void wouldCreateCycleIgnoresExcludedRelationshipWhenEditing() {
+        // The only path from B back to A is the very relationship being edited (id 99),
+        // so once excluded, editing it back to itself should not be flagged as a cycle.
+        Person a = createPerson(1L, "A");
+        Person b = createPerson(2L, "B");
+        Relationship editedRelationship = relationship(b, a, RelationshipType.FATHER);
+        editedRelationship.setId(99L);
+
+        when(relationshipRepository.findByPersonAndRelationshipType(b, RelationshipType.FATHER))
+                .thenReturn(List.of(editedRelationship));
+        when(relationshipRepository.findByPersonAndRelationshipType(b, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(b, RelationshipType.CHILD)).thenReturn(List.of());
+
+        assertThat(relationshipService.wouldCreateCycle(a, b, RelationshipType.FATHER, 99L)).isFalse();
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksThrowsWhenCycleDetected() {
+        Person person = createPerson(1L, "Yuva");
+
+        assertThatThrownBy(() -> relationshipService.saveRelationshipWithAutoLinks(person, person, RelationshipType.FATHER))
+                .isInstanceOf(RelationshipCycleException.class);
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRelationshipThrowsWhenCycleDetected() {
+        Person person = createPerson(1L, "Yuva");
+
+        assertThatThrownBy(() -> relationshipService.updateRelationship(5L, person, person, RelationshipType.FATHER))
+                .isInstanceOf(RelationshipCycleException.class);
+        verify(relationshipRepository, never()).findById(any());
+    }
+
+    private void noKnownParentsFor(Person person) {
+        when(relationshipRepository.findByPersonAndRelationshipType(person, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipRepository.findByPersonAndRelationshipType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(person, RelationshipType.CHILD)).thenReturn(List.of());
     }
 
     private Person createPerson(Long id, String firstName) {

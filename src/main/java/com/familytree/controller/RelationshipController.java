@@ -109,6 +109,11 @@ public class RelationshipController {
             return "add-relationship";
         }
 
+        if (relationshipService.wouldCreateCycle(person, relatedPerson, type)) {
+            model.addAttribute("cycleError", true);
+            return "add-relationship";
+        }
+
         relationshipService.saveRelationshipWithAutoLinks(person, relatedPerson, type);
         return "redirect:/relationships";
     }
@@ -157,6 +162,11 @@ public class RelationshipController {
         var person = personService.getPersonById(personId);
         var relatedPerson = personService.getPersonById(relatedPersonId);
         var type = RelationshipType.valueOf(relationshipType);
+
+        if (relationshipService.wouldCreateCycle(person, relatedPerson, type, id)) {
+            model.addAttribute("cycleError", true);
+            return "add-relationship";
+        }
 
         relationshipService.updateRelationship(id, person, relatedPerson, type);
         return "redirect:/relationships";

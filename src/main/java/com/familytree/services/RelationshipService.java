@@ -7,12 +7,16 @@ import com.familytree.repository.RelationshipRepository;
 import com.familytree.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +41,11 @@ public class RelationshipService {
         return relationshipRepository.findByRelatedPersonAndRelationshipType(relatedPerson, type);
     }
     public void saveRelationshipWithAutoLinks(Person person, Person relatedPerson, RelationshipType type) {
+        if (wouldCreateCycle(person, relatedPerson, type)) {
+            throw new RelationshipCycleException(
+                    "This relationship would make " + personLabel(person) + " their own ancestor.");
+        }
+
         saveIfMissing(person, relatedPerson, type);
         if (type == RelationshipType.FATHER || type == RelationshipType.MOTHER) {
             saveIfMissing(relatedPerson, person, RelationshipType.CHILD);
@@ -131,6 +140,11 @@ public class RelationshipService {
                 .orElseThrow(() -> new RuntimeException("Relationship with id " + id + " not found"));
     }
     public Relationship updateRelationship(Long id, Person person, Person relatedPerson, RelationshipType type) {
+        if (wouldCreateCycle(person, relatedPerson, type, id)) {
+            throw new RelationshipCycleException(
+                    "This relationship would make " + personLabel(person) + " their own ancestor.");
+        }
+
         Relationship existingRelationship = relationshipRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Relationship with id " + id + " not found"));
         existingRelationship.setPerson(person);
@@ -252,5 +266,106 @@ public class RelationshipService {
         if (value != null && !value.isBlank()) {
             parts.add(value.trim());
         }
+    }
+
+    /**
+     * Returns true if saving (person, relatedPerson, type) would make some
+     * person their own ancestor -- either directly (person == relatedPerson)
+     * or transitively through an existing parent/child chain.
+     */
+    public boolean wouldCreateCycle(Person person, Person relatedPerson, RelationshipType type) {
+        return wouldCreateCycle(person, relatedPerson, type, null);
+    }
+
+    /**
+     * Same as {@link #wouldCreateCycle(Person, Person, RelationshipType)},
+     * but ignores the relationship row identified by excludeRelationshipId
+     * when walking existing parent/child links -- used when checking an
+     * update, since the row being replaced should not count as evidence
+     * against itself.
+     */
+    public boolean wouldCreateCycle(Person person, Person relatedPerson, RelationshipType type, Long excludeRelationshipId) {
+        if (person == null || relatedPerson == null || type == null) {
+            return false;
+        }
+        if (person.getId() != null && person.getId().equals(relatedPerson.getId())) {
+            return true;
+        }
+
+        Person parentCandidate;
+        Person childCandidate;
+        switch (type) {
+            case FATHER, MOTHER -> {
+                parentCandidate = relatedPerson;
+                childCandidate = person;
+            }
+            case CHILD -> {
+                parentCandidate = person;
+                childCandidate = relatedPerson;
+            }
+            default -> {
+                return false;
+            }
+        }
+
+        return isAncestor(childCandidate, parentCandidate, excludeRelationshipId);
+    }
+
+    /**
+     * Walks up the parent chain from descendant, returning true if
+     * candidateAncestor is found along the way. Guards against pre-existing
+     * cycles in the data with a visited-set so it cannot loop forever.
+     */
+    private boolean isAncestor(Person candidateAncestor, Person descendant, Long excludeRelationshipId) {
+        Set<Long> visited = new HashSet<>();
+        Deque<Person> toVisit = new ArrayDeque<>();
+        toVisit.push(descendant);
+
+        while (!toVisit.isEmpty()) {
+            Person current = toVisit.pop();
+            if (current.getId() == null || !visited.add(current.getId())) {
+                continue;
+            }
+
+            for (Person parent : getParentsForPerson(current, excludeRelationshipId)) {
+                if (parent.getId() != null && parent.getId().equals(candidateAncestor.getId())) {
+                    return true;
+                }
+                toVisit.push(parent);
+            }
+        }
+
+        return false;
+    }
+
+    private List<Person> getParentsForPerson(Person person, Long excludeRelationshipId) {
+        Map<Long, Person> parents = new LinkedHashMap<>();
+
+        for (Relationship relationship : relationshipRepository.findByPersonAndRelationshipType(person, RelationshipType.FATHER)) {
+            if (!isExcluded(relationship, excludeRelationshipId)) {
+                parents.put(relationship.getRelatedPerson().getId(), relationship.getRelatedPerson());
+            }
+        }
+        for (Relationship relationship : relationshipRepository.findByPersonAndRelationshipType(person, RelationshipType.MOTHER)) {
+            if (!isExcluded(relationship, excludeRelationshipId)) {
+                parents.put(relationship.getRelatedPerson().getId(), relationship.getRelatedPerson());
+            }
+        }
+        for (Relationship relationship : relationshipRepository.findByRelatedPersonAndRelationshipType(person, RelationshipType.CHILD)) {
+            if (!isExcluded(relationship, excludeRelationshipId)) {
+                parents.put(relationship.getPerson().getId(), relationship.getPerson());
+            }
+        }
+
+        return new ArrayList<>(parents.values());
+    }
+
+    private boolean isExcluded(Relationship relationship, Long excludeRelationshipId) {
+        return excludeRelationshipId != null && excludeRelationshipId.equals(relationship.getId());
+    }
+
+    private String personLabel(Person person) {
+        String name = buildPersonName(person, false);
+        return name.isBlank() ? "this person" : name;
     }
 }

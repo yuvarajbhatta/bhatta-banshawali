@@ -3,17 +3,20 @@ package com.familytree.repository;
 import com.familytree.entity.Person;
 import com.familytree.entity.Relationship;
 import com.familytree.entity.RelationshipType;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:relationship-repo;DB_CLOSE_DELAY=-1",
@@ -34,6 +37,20 @@ class RelationshipRepositoryTest {
 
     @Autowired
     private RelationshipRepository relationshipRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Test
+    void duplicateRelationshipIsRejectedByDatabaseConstraint() {
+        Person child = personRepository.save(createPerson("Child"));
+        Person father = personRepository.save(createPerson("Father"));
+        relationshipRepository.save(createRelationship(child, father, RelationshipType.FATHER));
+        entityManager.flush();
+
+        assertThatThrownBy(() -> relationshipRepository.save(createRelationship(child, father, RelationshipType.FATHER)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
 
     @Test
     void queryMethodsReturnExpectedRelationships() {

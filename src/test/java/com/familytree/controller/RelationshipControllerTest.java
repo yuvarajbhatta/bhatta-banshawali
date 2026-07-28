@@ -94,6 +94,24 @@ class RelationshipControllerTest {
     }
 
     @Test
+    void saveRelationshipReturnsErrorForCycle() {
+        Model model = new ExtendedModelMap();
+        Person person = createPerson(1L, "Yuva");
+        Person relatedPerson = createPerson(2L, "Bhoj");
+        when(personService.getAllPersons()).thenReturn(List.of(person, relatedPerson));
+        when(personService.getPersonById(1L)).thenReturn(person);
+        when(personService.getPersonById(2L)).thenReturn(relatedPerson);
+        when(relationshipService.relationshipExists(person, relatedPerson, RelationshipType.FATHER)).thenReturn(false);
+        when(relationshipService.wouldCreateCycle(person, relatedPerson, RelationshipType.FATHER)).thenReturn(true);
+
+        String viewName = controller.saveRelationship(1L, 2L, "FATHER", model);
+
+        assertThat(viewName).isEqualTo("add-relationship");
+        assertThat(model.getAttribute("cycleError")).isEqualTo(true);
+        verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), any());
+    }
+
+    @Test
     void saveRelationshipPersistsValidRelationship() {
         Model model = new ExtendedModelMap();
         Person person = createPerson(1L, "Yuva");
@@ -118,6 +136,23 @@ class RelationshipControllerTest {
 
         assertThat(viewName).isEqualTo("add-relationship");
         assertThat(model.getAttribute("samePersonError")).isEqualTo(true);
+        verify(relationshipService, never()).updateRelationship(any(), any(), any(), any());
+    }
+
+    @Test
+    void updateRelationshipReturnsErrorForCycle() {
+        Model model = new ExtendedModelMap();
+        Person person = createPerson(1L, "Yuva");
+        Person relatedPerson = createPerson(2L, "Bhoj");
+        when(personService.getAllPersons()).thenReturn(List.of(person, relatedPerson));
+        when(personService.getPersonById(1L)).thenReturn(person);
+        when(personService.getPersonById(2L)).thenReturn(relatedPerson);
+        when(relationshipService.wouldCreateCycle(person, relatedPerson, RelationshipType.FATHER, 5L)).thenReturn(true);
+
+        String viewName = controller.updateRelationship(5L, 1L, 2L, "FATHER", model);
+
+        assertThat(viewName).isEqualTo("add-relationship");
+        assertThat(model.getAttribute("cycleError")).isEqualTo(true);
         verify(relationshipService, never()).updateRelationship(any(), any(), any(), any());
     }
 
