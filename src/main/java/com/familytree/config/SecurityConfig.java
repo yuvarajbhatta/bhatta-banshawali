@@ -41,6 +41,7 @@ public class SecurityConfig {
                         // Public, read-only admin-managed content (About, History, Membership
                         // explainer) for the unauthenticated marketing/public pages.
                         .requestMatchers(HttpMethod.GET, "/api/v1/content", "/api/v1/content/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public-stats").permitAll()
                         // Scraped by the local Prometheus only; the app port is bound on
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(

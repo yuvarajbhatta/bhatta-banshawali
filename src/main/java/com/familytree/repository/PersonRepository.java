@@ -26,4 +26,10 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
 
     List<Person> findAllByOrderByGenerationNumberAscIdAsc();
     List<Person> findAllByOrderByIdAsc();
+
+    @Query("select count(distinct p.generationNumber) from Person p where p.generationNumber is not null")
+    long countDistinctGenerationNumbers();
+
+    @Query("select min(p.generationNumber) from Person p where p.generationNumber is not null")
+    Integer findMinGenerationNumber();
 }

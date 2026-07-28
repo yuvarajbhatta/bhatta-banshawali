@@ -12,6 +12,23 @@ export interface ArticleDto {
   publishedAt: string | null;
 }
 
+export interface PublicStatsDto {
+  documentedFamilyMembers: number;
+  documentedGenerations: number;
+  oldestDocumentedGeneration: number | null;
+}
+
+export async function getPublicStats(): Promise<PublicStatsDto> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/public-stats`, {
+    next: { revalidate: 300 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load public stats: ${response.status}`);
+  }
+  return response.json();
+}
+
 export async function getPublishedArticle(slug: string): Promise<ArticleDto | null> {
   const response = await fetch(`${API_BASE_URL}/api/v1/content/${slug}`, {
     // Admin-managed content changes rarely; revalidate periodically rather

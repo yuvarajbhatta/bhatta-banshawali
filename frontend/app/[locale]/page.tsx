@@ -1,11 +1,13 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { getPublicStats, type PublicStatsDto } from "@/lib/api";
 import styles from "./page.module.css";
 
-export default function LandingPage() {
-  const t = useTranslations();
+export default async function LandingPage() {
+  const t = await getTranslations();
+  const stats = await loadStatsQuietly();
 
   return (
     <main className={styles.page}>
@@ -33,6 +35,25 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {stats ? (
+        <section className={styles.stats} aria-label={t("stats.title")}>
+          <div className={styles.statItem}>
+            <span className={styles.statValue}>{stats.documentedFamilyMembers}</span>
+            <span className={styles.statLabel}>{t("stats.familyMembers")}</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statValue}>{stats.documentedGenerations}</span>
+            <span className={styles.statLabel}>{t("stats.generations")}</span>
+          </div>
+          {stats.oldestDocumentedGeneration !== null ? (
+            <div className={styles.statItem}>
+              <span className={styles.statValue}>{stats.oldestDocumentedGeneration}</span>
+              <span className={styles.statLabel}>{t("stats.oldestGeneration")}</span>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <footer className={styles.footer}>
         <Link href="/history">{t("historyPage.title")}</Link>
         <Link href="/membership">{t("membershipPage.linkLabel")}</Link>
@@ -42,4 +63,14 @@ export default function LandingPage() {
       </footer>
     </main>
   );
+}
+
+async function loadStatsQuietly(): Promise<PublicStatsDto | null> {
+  try {
+    return await getPublicStats();
+  } catch {
+    // The landing page must render even if the stats endpoint is briefly
+    // unavailable -- this section is a nice-to-have, not load-bearing.
+    return null;
+  }
 }

@@ -16,6 +16,12 @@
   "membershipPage": {
     "linkLabel": "Membership"
   },
+  "stats": {
+    "title": "Public Statistics",
+    "familyMembers": "Documented Family Members",
+    "generations": "Documented Generations",
+    "oldestGeneration": "Oldest Documented Generation"
+  },
   "privacyPage": {
     "title": "Privacy",
     "intro": "This site holds genealogy information contributed by family members, including some information about living relatives. We try to share only what's appropriate for each viewer, and to be clear about what's known, submitted, or still unverified.",

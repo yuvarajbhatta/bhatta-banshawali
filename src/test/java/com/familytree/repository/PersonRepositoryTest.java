@@ -76,6 +76,32 @@ class PersonRepositoryTest {
         assertThat(results).extracting(Person::getId).containsSubsequence(first.getId(), second.getId());
     }
 
+    @Test
+    void countDistinctGenerationNumbersIgnoresNullsAndDuplicates() {
+        personRepository.save(createPerson("A", "Bhatta", 1));
+        personRepository.save(createPerson("B", "Bhatta", 2));
+        personRepository.save(createPerson("C", "Bhatta", 2));
+        personRepository.save(createPerson("D", "Bhatta", null));
+
+        assertThat(personRepository.countDistinctGenerationNumbers()).isEqualTo(2);
+    }
+
+    @Test
+    void findMinGenerationNumberIgnoresNulls() {
+        personRepository.save(createPerson("A", "Bhatta", 5));
+        personRepository.save(createPerson("B", "Bhatta", 2));
+        personRepository.save(createPerson("C", "Bhatta", null));
+
+        assertThat(personRepository.findMinGenerationNumber()).isEqualTo(2);
+    }
+
+    @Test
+    void findMinGenerationNumberReturnsNullWhenNoneSet() {
+        personRepository.save(createPerson("A", "Bhatta", null));
+
+        assertThat(personRepository.findMinGenerationNumber()).isNull();
+    }
+
     private Person createPerson(String firstName, String lastName, Integer generation) {
         Person person = new Person();
         person.setFirstName(firstName);
