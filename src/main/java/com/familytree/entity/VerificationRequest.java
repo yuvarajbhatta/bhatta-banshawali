@@ -18,11 +18,10 @@ import java.time.LocalDateTime;
 /**
  * A signup applicant's submitted identity/lineage information and the
  * resulting family-match outcome -- see docs/05-auth-and-verification.md.
- * Match evidence (which Person records were considered) is deliberately
- * not modeled as a queryable relationship here, only as an admin-readable
- * free-text summary (matchEvidenceSummary) -- it must never be exposed to
- * the applicant, and keeping it out of the domain model entirely reduces
- * the risk of it leaking through some other read path later.
+ * Match evidence (matchedCandidatePersonIds) is admin-only by
+ * convention: no controller ever returns this field to the applicant --
+ * see SignupController/SignupResponseDto, which never reads this entity
+ * at all.
  */
 @Entity
 @Table(name = "verification_requests")
@@ -92,6 +91,16 @@ public class VerificationRequest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by_user_account_id")
     private UserAccount reviewedBy;
+
+    /**
+     * Who actually reviewed this, captured as a plain username. Admins
+     * currently authenticate via the old AppUser system (username/password,
+     * no UserAccount row at all) -- reviewedBy above is for once that's
+     * unified, but right now no admin has a UserAccount to reference, so
+     * this is the only genuine record of who acted.
+     */
+    @Column(length = 255)
+    private String reviewedByUsername;
 
     private LocalDateTime reviewedAt;
 
@@ -263,6 +272,14 @@ public class VerificationRequest {
 
     public void setReviewedBy(UserAccount reviewedBy) {
         this.reviewedBy = reviewedBy;
+    }
+
+    public String getReviewedByUsername() {
+        return reviewedByUsername;
+    }
+
+    public void setReviewedByUsername(String reviewedByUsername) {
+        this.reviewedByUsername = reviewedByUsername;
     }
 
     public LocalDateTime getReviewedAt() {

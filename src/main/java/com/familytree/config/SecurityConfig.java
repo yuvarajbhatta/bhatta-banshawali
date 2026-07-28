@@ -64,7 +64,8 @@ public class SecurityConfig {
                                 "/persons/new", "/persons/edit/**", "/persons/delete/**", "/persons/update/**",
                                 "/relationships/new", "/relationships/edit/**", "/relationships/delete/**", "/relationships/update/**",
                                 "/lineage/save-person",
-                                "/v3/api-docs/**", "/v3/api-docs", "/swagger-ui/**", "/swagger-ui.html"
+                                "/v3/api-docs/**", "/v3/api-docs", "/swagger-ui/**", "/swagger-ui.html",
+                                "/admin/**"
                         ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

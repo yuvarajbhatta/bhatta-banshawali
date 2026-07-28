@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{adminSignups.title}">Signup Review</title>
+    <link rel="stylesheet" href="/css/admin-signups.css">
+</head>
+<body>
+<div th:replace="~{fragments/language-switch :: switcher}"></div>
+
+<div class="container">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow" th:text="#{adminSignups.eyebrow}">Administration</p>
+            <h1 th:text="#{adminSignups.title}">Signup Review</h1>
+        </div>
+        <div class="header-actions">
+            <a href="/persons" class="text-link" th:text="#{nav.backHome}">Back Home</a>
+        </div>
+    </div>
+
+    <nav class="status-filter">
+        <a th:each="s : ${statuses}"
+           th:href="@{/admin/signups(status=${s})}"
+           th:classappend="${s == selectedStatus} ? 'active'"
+           th:text="${#messages.msg('verificationStatus.' + s)}">Status</a>
+    </nav>
+
+    <table th:if="${!#lists.isEmpty(requests)}">
+        <tr>
+            <th th:text="#{adminSignups.submittedName}">Submitted Name</th>
+            <th th:text="#{adminSignups.fatherName}">Father</th>
+            <th th:text="#{adminSignups.grandfatherName}">Grandfather</th>
+            <th th:text="#{adminSignups.confidence}">Match Confidence</th>
+            <th th:text="#{adminSignups.submittedAt}">Submitted</th>
+            <th th:text="#{persons.actions}">Actions</th>
+        </tr>
+        <tr th:each="request : ${requests}">
+            <td th:text="${request.submittedFullName}"></td>
+            <td th:text="${request.submittedFatherName}"></td>
+            <td th:text="${request.submittedGrandfatherName}"></td>
+            <td>
+                <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(request.matchConfidence)}"
+                      th:text="${#messages.msg('matchConfidence.' + request.matchConfidence)}">HIGH</span>
+            </td>
+            <td th:text="${#temporals.format(request.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+            <td>
+                <a th:href="@{'/admin/signups/' + ${request.id}}" th:text="#{adminSignups.review}">Review</a>
+            </td>
+        </tr>
+    </table>
+
+    <div class="empty-state" th:if="${#lists.isEmpty(requests)}" th:text="#{adminSignups.empty}">
+        No signup requests in this status.
+    </div>
+</div>
+
+<script th:replace="~{fragments/language-switch :: script}"></script>
+</body>
+</html>
