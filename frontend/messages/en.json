@@ -310,6 +310,60 @@
       "duplicate": "Username is already in use."
     }
   },
+  "signupPage": {
+    "title": "Join the Bhatta Banshawali",
+    "subtitle": "Membership is limited to people connected to the Bhatta family. Your request will be reviewed by an administrator before you can log in.",
+    "sections": {
+      "personal": "Your Information",
+      "family": "Family Connection",
+      "account": "Account",
+      "additional": "Additional Information"
+    },
+    "fields": {
+      "fullName": "Full Name",
+      "email": "Email",
+      "dobAd": "Date of Birth (AD)",
+      "dobBsPreview": "Bikram Sambat: {date}",
+      "placeOfBirth": "Place of Birth",
+      "fatherName": "Father's Full Name",
+      "grandfatherName": "Grandfather's Full Name",
+      "motherName": "Mother's Full Name",
+      "ancestralVillage": "Ancestral Village",
+      "familyBranch": "Family Branch",
+      "knownRelativeName": "Name of a Relative Already in the Records",
+      "invitationCode": "Invitation Code",
+      "invitationCodeHint": "Optional -- if a family member gave you one",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "applicantNote": "Anything else you'd like the reviewer to know"
+    },
+    "optional": "(optional)",
+    "agreeToTerms": "I agree to the <terms>Membership Guidelines</terms> and <privacy>Privacy Policy</privacy>.",
+    "submit": "Submit Application",
+    "submitting": "Submitting…",
+    "success": {
+      "title": "Application Submitted",
+      "body": "Thank you. Your application is pending review by a family administrator. You'll be able to log in once it's approved.",
+      "backHome": "Back to Home"
+    },
+    "errors": {
+      "fullNameRequired": "Full name is required.",
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "dobRequired": "Date of birth is required.",
+      "dobFuture": "Date of birth must be in the past.",
+      "fatherNameRequired": "Father's full name is required.",
+      "grandfatherNameRequired": "Grandfather's full name is required.",
+      "passwordRequired": "Password is required.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "confirmPasswordRequired": "Please confirm your password.",
+      "passwordMismatch": "Passwords do not match.",
+      "agreeToTermsRequired": "You must agree to the Membership Guidelines and Privacy Policy.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Log in"
+  },
   "validation": {
     "person": {
       "firstName": {

@@ -44,3 +44,54 @@ export async function getPublishedArticle(slug: string): Promise<ArticleDto | nu
   }
   return response.json();
 }
+
+export interface SignupRequest {
+  email: string;
+  fullName: string;
+  dobAd: string;
+  fatherName: string;
+  grandfatherName: string;
+  password: string;
+  confirmPassword: string;
+  preferredLanguage: string;
+  agreedToTerms: boolean;
+  motherName?: string;
+  placeOfBirth?: string;
+  ancestralVillage?: string;
+  familyBranch?: string;
+  knownRelativeName?: string;
+  invitationCode?: string;
+  applicantNote?: string;
+}
+
+export interface SignupResponse {
+  status: string;
+}
+
+export class SignupError extends Error {}
+
+// Called directly from the browser (not server-to-server), so this is a
+// relative path -- nginx proxies /api/ to the backend on the same origin
+// in production (see banshawali.yrbhatta.com vhost), same as the live
+// AD/BS conversion below.
+export async function submitSignup(request: SignupRequest): Promise<SignupResponse> {
+  const response = await fetch("/api/v1/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new SignupError(body.message ?? "Signup failed.");
+  }
+  return body;
+}
+
+export async function convertAdToBs(dateAd: string): Promise<{ year: number; month: number; day: number }> {
+  const response = await fetch(`/api/v1/date-conversion/ad-to-bs?date=${encodeURIComponent(dateAd)}`);
+  if (!response.ok) {
+    throw new Error(`Failed to convert date: ${response.status}`);
+  }
+  return response.json();
+}

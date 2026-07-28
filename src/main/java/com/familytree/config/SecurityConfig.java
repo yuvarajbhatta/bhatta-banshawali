@@ -37,7 +37,7 @@ public class SecurityConfig {
                 // including the session-authenticated Thymeleaf admin forms.
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/signup"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         // Public, read-only admin-managed content (About, History, Membership
                         // explainer) for the unauthenticated marketing/public pages.

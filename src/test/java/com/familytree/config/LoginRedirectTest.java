@@ -57,11 +57,8 @@ class LoginRedirectTest {
                 .andExpect(redirectedUrl("/persons"));
     }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void alreadyAuthenticatedSignupRedirectsToABackendOwnedPathNotRoot() throws Exception {
-        mockMvc.perform(get("/signup"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
-    }
+    // /signup used to be a backend-rendered page with the same
+    // already-authenticated redirect as /login above; it was retired in
+    // favor of the Next.js verification-based signup flow, so that
+    // regression case no longer applies here.
 }

@@ -310,6 +310,60 @@
       "duplicate": "यो प्रयोगकर्ता नाम पहिले नै प्रयोगमा छ।"
     }
   },
+  "signupPage": {
+    "title": "भट्ट बंशावलीमा सामेल हुनुहोस्",
+    "subtitle": "सदस्यता भट्ट परिवारसँग सम्बन्धित व्यक्तिहरूमा मात्र सीमित छ। लगइन गर्नु अघि तपाईंको अनुरोध प्रशासकद्वारा समीक्षा गरिनेछ।",
+    "sections": {
+      "personal": "तपाईंको जानकारी",
+      "family": "पारिवारिक सम्बन्ध",
+      "account": "खाता",
+      "additional": "थप जानकारी"
+    },
+    "fields": {
+      "fullName": "पूरा नाम",
+      "email": "इमेल",
+      "dobAd": "जन्म मिति (AD)",
+      "dobBsPreview": "बिक्रम सम्बत्: {date}",
+      "placeOfBirth": "जन्म स्थान",
+      "fatherName": "बुबाको पूरा नाम",
+      "grandfatherName": "हजुरबुबाको पूरा नाम",
+      "motherName": "आमाको पूरा नाम",
+      "ancestralVillage": "पुर्ख्यौली गाउँ",
+      "familyBranch": "पारिवारिक शाखा",
+      "knownRelativeName": "अभिलेखमा पहिले नै भएको नातेदारको नाम",
+      "invitationCode": "आमन्त्रण कोड",
+      "invitationCodeHint": "वैकल्पिक -- यदि परिवारको सदस्यले तपाईंलाई दिनुभएको छ भने",
+      "password": "पासवर्ड",
+      "confirmPassword": "पासवर्ड पुष्टि गर्नुहोस्",
+      "applicantNote": "समीक्षकलाई थाहा दिन चाहनुभएको अरू केही"
+    },
+    "optional": "(वैकल्पिक)",
+    "agreeToTerms": "म <terms>सदस्यता निर्देशिका</terms> र <privacy>गोपनीयता नीति</privacy> मा सहमत छु।",
+    "submit": "आवेदन पेश गर्नुहोस्",
+    "submitting": "पेश गर्दै…",
+    "success": {
+      "title": "आवेदन पेश गरियो",
+      "body": "धन्यवाद। तपाईंको आवेदन परिवार प्रशासकको समीक्षामा छ। स्वीकृत भएपछि तपाईं लगइन गर्न सक्नुहुनेछ।",
+      "backHome": "गृहपृष्ठमा फर्कनुहोस्"
+    },
+    "errors": {
+      "fullNameRequired": "पूरा नाम आवश्यक छ।",
+      "emailRequired": "इमेल आवश्यक छ।",
+      "emailInvalid": "मान्य इमेल ठेगाना लेख्नुहोस्।",
+      "dobRequired": "जन्म मिति आवश्यक छ।",
+      "dobFuture": "जन्म मिति विगतको हुनुपर्छ।",
+      "fatherNameRequired": "बुबाको पूरा नाम आवश्यक छ।",
+      "grandfatherNameRequired": "हजुरबुबाको पूरा नाम आवश्यक छ।",
+      "passwordRequired": "पासवर्ड आवश्यक छ।",
+      "passwordTooShort": "पासवर्ड कम्तिमा ८ अक्षरको हुनुपर्छ।",
+      "confirmPasswordRequired": "कृपया पासवर्ड पुष्टि गर्नुहोस्।",
+      "passwordMismatch": "पासवर्ड मिलेन।",
+      "agreeToTermsRequired": "तपाईंले सदस्यता निर्देशिका र गोपनीयता नीतिमा सहमत हुनुपर्छ।",
+      "generic": "केही गडबड भयो। कृपया फेरि प्रयास गर्नुहोस्।"
+    },
+    "alreadyHaveAccount": "पहिले नै खाता छ?",
+    "login": "लगइन गर्नुहोस्"
+  },
   "validation": {
     "person": {
       "firstName": {

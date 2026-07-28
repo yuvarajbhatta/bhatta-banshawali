@@ -1,25 +1,20 @@
 package com.familytree.controller;
 
-import com.familytree.dto.SignupForm;
-import com.familytree.services.AppUserService;
-import jakarta.validation.Valid;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 
+/**
+ * The unverified username/password self-registration flow that used to live
+ * at GET/POST /signup was retired in favor of the verification-based
+ * pipeline (SignupController, POST /api/v1/signup, reviewed through
+ * /admin/signups) -- see docs/05-auth-and-verification.md. Anyone hitting
+ * /signup now lands on the Next.js signup page instead (nginx routes it
+ * there; see the banshawali.yrbhatta.com vhost).
+ */
 @Controller
 public class AuthController {
-
-    private final AppUserService appUserService;
-
-    public AuthController(AppUserService appUserService) {
-        this.appUserService = appUserService;
-    }
 
     @GetMapping("/login")
     public String login(Authentication authentication) {
@@ -31,43 +26,6 @@ public class AuthController {
             return "redirect:/persons";
         }
         return "login";
-    }
-
-    @GetMapping("/signup")
-    public String signup(Model model, Authentication authentication) {
-        if (isAuthenticated(authentication)) {
-            // Not "/" -- that path is now routed by nginx to the Next.js
-            // public landing page, not this backend (see the
-            // banshawali.yrbhatta.com vhost and SecurityConfig's
-            // defaultSuccessUrl, which redirects here for the same reason).
-            return "redirect:/persons";
-        }
-        if (!model.containsAttribute("signupForm")) {
-            model.addAttribute("signupForm", new SignupForm());
-        }
-        return "signup";
-    }
-
-    @PostMapping("/signup")
-    public String registerUser(@Valid @ModelAttribute("signupForm") SignupForm signupForm,
-                               BindingResult bindingResult) {
-        if (!signupForm.passwordsMatch()) {
-            bindingResult.rejectValue("confirmPassword", "signup.confirmPassword.mismatch",
-                    "Passwords do not match.");
-        }
-
-        if (bindingResult.hasErrors()) {
-            return "signup";
-        }
-
-        try {
-            appUserService.registerUser(signupForm.getUsername(), signupForm.getPassword());
-        } catch (IllegalArgumentException exception) {
-            bindingResult.rejectValue("username", "signup.username.duplicate", exception.getMessage());
-            return "signup";
-        }
-
-        return "redirect:/login?registered";
     }
 
     private boolean isAuthenticated(Authentication authentication) {
