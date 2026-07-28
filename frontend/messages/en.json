@@ -1,0 +1,297 @@
+{
+  "app": {
+    "name": "Family Tree App"
+  },
+  "landing": {
+    "heroTitle": "Bhatta Banshawali",
+    "heroSubtitle": "A living record of our family's history, preserved and verified.",
+    "requestMembership": "Request Membership",
+    "learnAboutBanshawali": "Learn About the Banshawali",
+    "login": "Login"
+  },
+  "gender": {
+    "Female": "Female",
+    "Male": "Male"
+  },
+  "generations": {
+    "empty": "No generation data has been added yet.",
+    "label": "Generation {0}",
+    "subtitle": "Browse the lineage register generation by generation. This view is designed for long ancestral records where father-child continuity and generational sequence matter more than a general family tree layout.",
+    "title": "Bhatta Generations"
+  },
+  "home": {
+    "cardTag": {
+      "links": "Links",
+      "records": "Records",
+      "tree": "Tree"
+    },
+    "dashboard": "Dashboard",
+    "footer": "© 2026 Bhatta Banshawali. All rights reserved.",
+    "heroText": "Build a living record of people, relationships, generations, and lineage branches in one secure place.",
+    "heroTitle": "Preserve your family history",
+    "lineage": {
+      "text": "Open the lineage register to review branches, zoom the tree, and save changes when logged in as admin.",
+      "title": "Lineage Register"
+    },
+    "loggedInAs": "Logged in as:",
+    "persons": {
+      "add": "Add Person",
+      "text": "Add new people, browse the list, search records, and explore person details.",
+      "title": "Persons",
+      "view": "View Persons"
+    },
+    "relationships": {
+      "add": "Add Relationship",
+      "generations": "View Generations",
+      "lineage": "Open Lineage View",
+      "text": "Browse family links, generation views, and lineage structure from one place.",
+      "title": "Relationships",
+      "view": "View Relationships"
+    },
+    "role": {
+      "admin": {
+        "badge": "ADMIN",
+        "label": "(ADMIN)"
+      },
+      "user": {
+        "badge": "USER",
+        "label": "(USER)"
+      }
+    },
+    "subtitle": "Manage people, relationships, lineage, and family history from one beautiful place.",
+    "welcome": "Welcome to Family Tree App",
+    "welcomeUser": "Welcome,"
+  },
+  "language": {
+    "english": "English",
+    "label": "Language",
+    "nepali": "Nepali",
+    "switch": "Switch language"
+  },
+  "lineage": {
+    "empty": "No lineage started yet. Click Start Root Person to begin.",
+    "js": {
+      "branchDelete": "Delete this branch?",
+      "childrenPrompt": "How many NEW sons do you want to add under {0}?\\nExisting sons already on this branch: {1}",
+      "defaultName": "Type Name Here",
+      "enterNameBeforeAdd": "Please type the person's name in this box before adding sons.",
+      "enterRealName": "Please type a real name before saving.",
+      "fillAllNames": "Please fill in every node name before saving.",
+      "loadFailed": "Could not load lineage tree",
+      "noTree": "There is no lineage tree to save.",
+      "nodeSaveFailed": "Could not save this node.",
+      "personFallback": "this person",
+      "rootDelete": "Delete the entire lineage root?",
+      "rootExists": "A lineage already exists on this page. Replace it and start over?",
+      "rootPrompt": "Enter the root ancestor name:",
+      "saveFailed": "Save failed",
+      "savedSuccessfully": "Saved successfully.",
+      "treeSaveFailed": "Could not save lineage tree.",
+      "treeSaved": "Entire lineage saved successfully.",
+      "wholeNumber": "Please enter a whole number like 0, 1, 2, 3, ..."
+    },
+    "node": {
+      "addSons": "Add Sons",
+      "delete": "Delete",
+      "notSaved": "Not saved yet",
+      "savedId": "Saved ID:"
+    },
+    "note": "This lineage builder saves people and parent-child links to the database. Use it for fast lineage entry, then open the saved records in the persons and relationships views for further editing.",
+    "reset": "Reset",
+    "saveAll": "Save All",
+    "startRoot": "Start Root Person",
+    "subtitle": "This page works more like a register builder. Start with one root ancestor, then keep adding sons under each person. You can type directly inside the boxes and grow the tree on the same page, similar to your sketch.",
+    "title": "Bhatta Lineage Builder",
+    "top": "Top",
+    "viewOnly": "You are in view-only mode. Only admin users can modify the lineage tree.",
+    "workflow": "Workflow: create the root person, type the names in the boxes, click Add Sons where needed, and keep adding more sons later without replacing the existing branch. Then use Save All once to save the whole lineage tree.",
+    "zoomIn": "+ Zoom",
+    "zoomOut": "- Zoom"
+  },
+  "login": {
+    "bottom": "Don't have an account?",
+    "heading": "Login",
+    "invalid": "Invalid username or password.",
+    "loggedOut": "You have been logged out successfully.",
+    "password": "Password",
+    "registered": "Account created successfully. Please log in.",
+    "subtitle": "Access Family Tree account.",
+    "title": "Login",
+    "username": "Username"
+  },
+  "nav": {
+    "addNewPerson": "Add New Person",
+    "addNewRelationship": "Add New Relationship",
+    "backHome": "Back Home",
+    "backToPersons": "Back to Persons",
+    "login": "Login",
+    "logout": "Logout",
+    "signUp": "Sign Up",
+    "viewAllPersons": "View All Persons"
+  },
+  "person": {
+    "birthDate": "Birth Date",
+    "birthPlace": "Birth Place",
+    "currentAddress": "Current Address",
+    "deathDate": "Death Date",
+    "details": {
+      "basicInfo": "Basic Information",
+      "children": "Children",
+      "englishName": "English Name",
+      "father": "Father",
+      "mother": "Mother",
+      "nepaliName": "Nepali Name",
+      "noNotes": "No notes added.",
+      "notAdded": "Not added",
+      "parents": "Parents",
+      "photoUnavailable": "Photo not added",
+      "spouse": "Spouse",
+      "title": "Person Details"
+    },
+    "firstName": "First Name",
+    "firstNameNepali": "First Name (NP)",
+    "form": {
+      "add": "Add Person",
+      "adminOnly": "Only admin users can add or edit persons.",
+      "edit": "Edit Person",
+      "exampleEnglish": "Example: Jhanka Nath",
+      "exampleNepali": "Example: झङ्क नाथ",
+      "fixErrors": "Please fix the errors below.",
+      "manualNepaliHint": "Enter English and Nepali names directly. Nepali fields are optional and can be corrected manually at any time.",
+      "section": {
+        "english": "English / Roman Name",
+        "nepali": "Nepali Name",
+        "profile": "Profile Details",
+        "register": "Bhatta Banshawali Register"
+      },
+      "title": "Person Form"
+    },
+    "gender": "Gender",
+    "generationNumber": "Generation Number",
+    "lastName": "Last Name",
+    "lastNameNepali": "Last Name (NP)",
+    "middleName": "Middle Name",
+    "middleNameNepali": "Middle Name (NP)",
+    "nickname": "Nickname",
+    "notes": "Notes",
+    "photoPath": "Photo Path",
+    "placeholder": {
+      "birthPlace": "e.g. Kispang, Nuwakot",
+      "currentAddress": "e.g. Kathmandu, Nepal",
+      "firstNameEnglish": "e.g. Jhanka",
+      "firstNameNepali": "जस्तै: झङ्क",
+      "generation": "e.g. 7",
+      "lastNameEnglish": "e.g. Bhatta",
+      "lastNameNepali": "जस्तै: भट्ट",
+      "middleNameEnglish": "e.g. Nath",
+      "middleNameNepali": "जस्तै: नाथ",
+      "nickname": "e.g. JN",
+      "notes": "Add lineage notes, occupation, migration details, or oral history references.",
+      "photoPath": "e.g. /uploads/persons/jhanka-nath.jpg"
+    },
+    "save": "Save",
+    "update": "Update"
+  },
+  "persons": {
+    "actions": "Actions",
+    "cleanup": {
+      "action": "Clear Generated Nepali",
+      "done": "Cleared autogenerated Nepali names:",
+      "text": "If older records still show machine-generated Nepali spellings, clear them and re-enter proper Nepali manually.",
+      "title": "Generated Nepali cleanup"
+    },
+    "clear": "Clear",
+    "delete": {
+      "confirm": "Are you sure you want to delete this person?",
+      "label": "Delete"
+    },
+    "edit": "Edit",
+    "empty": "No persons found.",
+    "generation": "Generation",
+    "id": "ID",
+    "name": "Name",
+    "photo": {
+      "label": "Photo",
+      "none": "No photo"
+    },
+    "register": "Lineage Register",
+    "search": {
+      "help": "Search by English or Nepali name, nickname, notes, or generation number.",
+      "label": "Search",
+      "placeholder": "Search by English/Nepali name, nickname, notes, or generation"
+    },
+    "title": "All Persons"
+  },
+  "relationship": {
+    "error": {
+      "cycle": "This relationship would make a person their own ancestor. Please check the direction of the relationship.",
+      "duplicate": "This relationship already exists.",
+      "personRequired": "Please select a person.",
+      "relatedPersonRequired": "Please select a related person.",
+      "samePerson": "Person and related person cannot be the same.",
+      "typeRequired": "Please select a relationship type."
+    },
+    "form": {
+      "add": "Add Relationship",
+      "adminOnly": "Only admin users can add or edit relationships.",
+      "edit": "Edit Relationship",
+      "help": "Example: choose Yuva as Person, Bhoj as Related Person, and FATHER to mean “Yuva's father is Bhoj”.",
+      "title": "Add Relationship"
+    },
+    "person": "Person",
+    "relatedPerson": "Related Person",
+    "save": "Save Relationship",
+    "selectPerson": "-- Select Person --",
+    "selectRelatedPerson": "-- Select Related Person --",
+    "selectType": "-- Select Type --",
+    "type": "Relationship Type",
+    "update": "Update Relationship"
+  },
+  "relationshipType": {
+    "CHILD": "Child",
+    "FATHER": "Father",
+    "MOTHER": "Mother",
+    "SPOUSE": "Spouse"
+  },
+  "relationships": {
+    "actions": "Actions",
+    "delete": {
+      "confirm": "Are you sure you want to delete this relationship?",
+      "label": "Delete"
+    },
+    "edit": "Edit",
+    "empty": "No relationships found.",
+    "id": "ID",
+    "person": "Person",
+    "relatedPerson": "Related Person",
+    "title": "All Relationships",
+    "type": "Relationship Type"
+  },
+  "signup": {
+    "bottom": "Already have an account?",
+    "confirmPassword": {
+      "label": "Confirm Password",
+      "mismatch": "Passwords do not match."
+    },
+    "fixErrors": "Please fix the highlighted fields.",
+    "heading": "Create Account",
+    "submit": "Sign Up",
+    "subtitle": "Register a new user account for the Family Tree App.",
+    "title": "Sign Up",
+    "username": {
+      "duplicate": "Username is already in use."
+    }
+  },
+  "validation": {
+    "person": {
+      "firstName": {
+        "required": "First name is required.",
+        "size": "First name must be 100 characters or fewer."
+      },
+      "lastName": {
+        "required": "Last name is required.",
+        "size": "Last name must be 100 characters or fewer."
+      }
+    }
+  }
+}
