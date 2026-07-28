@@ -238,7 +238,7 @@ export class CorrectionError extends Error {}
 // rejected with 403 regardless of how valid the session is.
 function readXsrfTokenCookie(): string | null {
   const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 // Called directly from the browser -- same-origin relative path, same
