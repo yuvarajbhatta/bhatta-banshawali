@@ -230,12 +230,27 @@ export interface CorrectionRequest {
 
 export class CorrectionError extends Error {}
 
+// This is a session-authenticated POST, unlike submitSignup (anonymous,
+// CSRF-exempt on the backend). The backend issues its CSRF token as a
+// plain "XSRF-TOKEN" cookie (CookieCsrfTokenRepository.withHttpOnlyFalse())
+// specifically so client-side JS can read it here and echo it back in
+// the "X-XSRF-TOKEN" header -- without this, every submission would be
+// rejected with 403 regardless of how valid the session is.
+function readXsrfTokenCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // Called directly from the browser -- same-origin relative path, same
 // reasoning as submitSignup and searchPersons above.
 export async function submitCorrection(personId: number, request: CorrectionRequest): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
   const response = await fetch(`/api/v1/persons/${personId}/corrections`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    },
     body: JSON.stringify(request),
   });
 

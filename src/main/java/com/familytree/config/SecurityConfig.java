@@ -15,6 +15,9 @@ import org.springframework.security.web.access.expression.WebExpressionAuthoriza
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
@@ -36,12 +39,35 @@ public class SecurityConfig {
         http
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
-                // session to hijack, and there is no same-origin HTML form here
-                // to carry a CSRF token (this is a JSON API called directly by
-                // the Next.js frontend). CSRF stays enabled for everything else,
-                // including the session-authenticated Thymeleaf admin forms.
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/signup"))
+                // session to hijack, so that one endpoint stays exempt. Every
+                // other mutation (including authenticated JSON POSTs from the
+                // Next.js frontend, e.g. POST /api/v1/persons/{id}/corrections)
+                // needs a real CSRF token -- a Thymeleaf form gets one via the
+                // server-rendered hidden _csrf field, but a Next.js fetch() call
+                // has no such field to read. CookieCsrfTokenRepository exposes
+                // the token as a plain (non-HttpOnly) "XSRF-TOKEN" cookie so
+                // client-side JS can read it and echo it back in the
+                // "X-XSRF-TOKEN" header -- Spring Security's built-in
+                // SPA-friendly pattern, unaffected for the existing Thymeleaf
+                // forms since th:value="${_csrf.token}" reads the same
+                // resolved CsrfToken regardless of where it's stored.
+                //
+                // csrfTokenRequestHandler must be the plain
+                // CsrfTokenRequestAttributeHandler, not the (6.x) default
+                // XorCsrfTokenRequestAttributeHandler: the Xor handler
+                // BREACH-masks the token, so the plain value written to the
+                // cookie is not the value it expects back in the header --
+                // the naive "read cookie, echo header" pattern the frontend
+                // uses 403s on every request without this.
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .ignoringRequestMatchers("/api/v1/signup"))
                 .addFilterBefore(new RateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class)
+                // Forces the XSRF-TOKEN cookie to actually be written on
+                // every request, not just when a Thymeleaf form reads
+                // _csrf -- see CsrfCookieFilter.
+                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 // Without this, an unauthenticated call to a protected
                 // /api/** endpoint hits formLogin's default entry point,
                 // which redirects to /login -- fine for a browser

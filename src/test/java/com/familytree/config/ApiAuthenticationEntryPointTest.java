@@ -4,9 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -40,5 +42,21 @@ class ApiAuthenticationEntryPointTest {
     void unauthenticatedProtectedPageCallStillRedirectsToLogin() throws Exception {
         mockMvc.perform(get("/persons"))
                 .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void postWithNoCsrfTokenIsRejectedWithForbiddenNotASilentRedirect() throws Exception {
+        // A missing/invalid CSRF token is a CsrfFilter AccessDeniedException,
+        // a different mechanism from the "not authenticated" case above --
+        // it's handled by the default AccessDeniedHandler (403), not the
+        // AuthenticationEntryPoint, regardless of auth status. What matters
+        // for a fetch()-based caller is that this is a real error status
+        // (fails response.ok), not a 200 (e.g. a followed redirect landing
+        // on the login page's HTML) that a naive caller could mistake for
+        // success.
+        mockMvc.perform(post("/api/v1/persons/1/corrections")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"field\":\"NICKNAME\",\"proposedValue\":\"x\",\"reason\":\"y\"}"))
+                .andExpect(status().isForbidden());
     }
 }
