@@ -105,6 +105,26 @@ class RateLimitFilterTest {
         assertThat(blockedResponse.getStatus()).isEqualTo(429);
     }
 
+    @Test
+    void cfConnectingIpTakesPrecedenceSoASpoofedXForwardedForCannotBypassTheLimit() throws Exception {
+        for (int i = 0; i < RateLimitFilter.SIGNUP_CAPACITY; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/signup");
+            request.addHeader("CF-Connecting-IP", "203.0.113.30");
+            // A different, attacker-controlled X-Forwarded-For on every request --
+            // this must not let the real client dodge its own bucket.
+            request.addHeader("X-Forwarded-For", "1.2.3." + i);
+            filter.doFilter(request, new MockHttpServletResponse(), filterChain);
+        }
+
+        MockHttpServletRequest blockedRequest = new MockHttpServletRequest("POST", "/api/v1/signup");
+        blockedRequest.addHeader("CF-Connecting-IP", "203.0.113.30");
+        blockedRequest.addHeader("X-Forwarded-For", "9.9.9.9");
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(blockedRequest, blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
     private MockHttpServletRequest signupRequest(String clientIp) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/signup");
         request.addHeader("X-Forwarded-For", clientIp);

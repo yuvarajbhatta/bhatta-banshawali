@@ -72,6 +72,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String clientIp(HttpServletRequest request) {
+        // CF-Connecting-IP first: production sits behind a Cloudflare Tunnel
+        // (see /etc/cloudflared/config.yml), and Cloudflare's edge always
+        // sets this header itself, overwriting anything a client sends --
+        // unlike X-Forwarded-For, which nginx (proxy_add_x_forwarded_for)
+        // appends the real peer address to rather than replacing, so a
+        // caller can freely prepend an arbitrary fake value to it and
+        // defeat a leftmost-entry rate limit entirely. X-Forwarded-For
+        // stays as a fallback only for local/dev access with no Cloudflare
+        // in front.
+        String cfConnectingIp = request.getHeader("CF-Connecting-IP");
+        if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
+            return cfConnectingIp.trim();
+        }
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
             return forwardedFor.split(",")[0].trim();
