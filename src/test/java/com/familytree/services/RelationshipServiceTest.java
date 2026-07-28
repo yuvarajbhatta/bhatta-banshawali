@@ -227,6 +227,21 @@ class RelationshipServiceTest {
     }
 
     @Test
+    void getParentsForPersonCombinesFatherAndMother() {
+        Person child = createPerson(1L, "Child");
+        Person father = createPerson(2L, "Father");
+        Person mother = createPerson(3L, "Mother");
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.FATHER))
+                .thenReturn(List.of(relationship(child, father, RelationshipType.FATHER)));
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER))
+                .thenReturn(List.of(relationship(child, mother, RelationshipType.MOTHER)));
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(child, RelationshipType.CHILD))
+                .thenReturn(List.of());
+
+        assertThat(relationshipService.getParentsForPerson(child)).containsExactlyInAnyOrder(father, mother);
+    }
+
+    @Test
     void getRootPersonForLineageReturnsPersonWithoutParentChildLink() {
         Person root = createPerson(1L, "Root");
         Person child = createPerson(2L, "Child");

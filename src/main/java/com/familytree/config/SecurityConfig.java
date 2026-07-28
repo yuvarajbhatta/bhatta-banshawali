@@ -35,6 +35,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF protects state-changing requests made using an existing
+                // authenticated session cookie; an anonymous signup POST has no
+                // session to hijack, and there is no same-origin HTML form here
+                // to carry a CSRF token (this is a JSON API called directly by
+                // the Next.js frontend). CSRF stays enabled for everything else,
+                // including the session-authenticated Thymeleaf admin forms.
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/signup"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/signup", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
@@ -45,6 +52,7 @@ public class SecurityConfig {
                         // Needed by the signup form before an applicant has an
                         // account; reveals nothing about any person or family data.
                         .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
                         // Scraped by the local Prometheus only; the app port is bound on
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(

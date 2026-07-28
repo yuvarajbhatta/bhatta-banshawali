@@ -338,6 +338,10 @@ public class RelationshipService {
         return false;
     }
 
+    public List<Person> getParentsForPerson(Person person) {
+        return getParentsForPerson(person, null);
+    }
+
     private List<Person> getParentsForPerson(Person person, Long excludeRelationshipId) {
         Map<Long, Person> parents = new LinkedHashMap<>();
 

@@ -12,6 +12,12 @@ public class NameTransliterationService {
     private static final Map<Character, String> LETTERS = new LinkedHashMap<>();
 
     static {
+        // Must come before "bh" below: DIGRAPHS is matched in insertion
+        // order, and the lookup key is compared against an already-
+        // lowercased string, so this has to be the lowercase whole word,
+        // not "Bhatta" -- otherwise "bh" always wins first, consuming
+        // just the prefix, and this entry can never match.
+        DIGRAPHS.put("bhatta", "भट्ट");
         DIGRAPHS.put("ksh", "क्ष");
         DIGRAPHS.put("chh", "छ");
         DIGRAPHS.put("ch", "च");
@@ -32,7 +38,6 @@ public class NameTransliterationService {
         DIGRAPHS.put("ou", "औ");
         DIGRAPHS.put("ai", "ऐ");
         DIGRAPHS.put("au", "औ");
-        DIGRAPHS.put("Bhatta", "भट्ट");
 
         LETTERS.put('a', "अ");
         LETTERS.put('b', "ब");
@@ -118,15 +123,12 @@ public class NameTransliterationService {
 
     private String cleanup(String text) {
         return text
-                .replace("भअट्टअ", "भट्ट")
-                .replace("भअट्ट", "भट्ट")
                 .replace("नअथ", "नाथ")
                 .replace("प्रअसअद", "प्रसाद")
                 .replace("किशओर", "किशोर")
                 .replace("ज्ह", "झ")
                 .replace("छ्ह", "छ")
                 .replace("  ", " ")
-                .replace("Bhatta", "भट्ट")
                 .trim();
     }
 }
