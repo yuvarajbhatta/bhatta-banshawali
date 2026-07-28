@@ -22,3 +22,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Fully tool-managed: its content depends on whether `next dev` or
+# `next build` ran last (imports .next/dev/types vs .next/types), so
+# committing it just makes every deploy dirty the tree. Regenerated
+# automatically on any dev/build run.
+next-env.d.ts
