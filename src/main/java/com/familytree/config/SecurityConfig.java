@@ -42,6 +42,9 @@ public class SecurityConfig {
                         // explainer) for the unauthenticated marketing/public pages.
                         .requestMatchers(HttpMethod.GET, "/api/v1/content", "/api/v1/content/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public-stats").permitAll()
+                        // Needed by the signup form before an applicant has an
+                        // account; reveals nothing about any person or family data.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()
                         // Scraped by the local Prometheus only; the app port is bound on
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(
