@@ -18,7 +18,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 
 @Configuration
 public class SecurityConfig {
@@ -64,6 +66,27 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers("/api/v1/signup"))
                 .addFilterBefore(new RateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class)
+                // Default HttpSessionRequestCache caches ANY unauthenticated
+                // GET, including the Next.js login page's own "is this
+                // visitor already signed in?" SSR check (a GET /api/v1/me
+                // made with whatever session cookie the browser currently
+                // has). If that check runs while unauthenticated -- e.g.
+                // right after a failed login attempt on /login?error, which
+                // (unlike /login?logout) doesn't skip the check -- it gets
+                // cached, and formLogin's defaultSuccessUrl(url, false)
+                // below replays it as the post-login redirect target
+                // instead of "/dashboard": the browser navigates straight
+                // to a raw JSON API endpoint, which 404s outright for a
+                // legacy AppUser admin login (MemberProfileController has
+                // no UserAccount to look up). Only real page requests
+                // should ever be "the page to return to after login" --
+                // API calls never should, whether hit directly by the
+                // browser or via SSR.
+                .requestCache(cache -> {
+                    HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+                    requestCache.setRequestMatcher(new NegatedRequestMatcher(PathPatternRequestMatcher.pathPattern("/api/**")));
+                    cache.requestCache(requestCache);
+                })
                 // Forces the XSRF-TOKEN cookie to actually be written on
                 // every request, not just when a Thymeleaf form reads
                 // _csrf -- see CsrfCookieFilter.

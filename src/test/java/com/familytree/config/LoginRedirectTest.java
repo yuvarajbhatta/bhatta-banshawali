@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -47,6 +48,38 @@ class LoginRedirectTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "regressiontestuser")
+                        .param("password", "password123")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/dashboard"));
+    }
+
+    /**
+     * Regression test for a second bug this same defaultSuccessUrl(url,
+     * false) setting opened up: Spring Security's default
+     * HttpSessionRequestCache caches ANY unauthenticated GET, including
+     * app/[locale]/login/page.tsx's own "is this visitor already signed
+     * in?" SSR check (GET /api/v1/me), not just real page navigations.
+     * That check runs whenever /login is reached with an ?error param
+     * (a failed login attempt) rather than ?logout -- so failing a login
+     * once, then succeeding, replayed the cached /api/v1/me request as
+     * the post-login redirect instead of "/dashboard". For a legacy
+     * AppUser admin login (no UserAccount to look up), that API call
+     * 404s outright, and the browser lands on a raw Whitelabel error
+     * page. SecurityConfig now excludes /api/** from the request cache
+     * so only real page requests are ever replayed.
+     */
+    @Test
+    void aStrayApiCallInTheSameSessionNeverReplacesTheDefaultSuccessUrl() throws Exception {
+        appUserService.registerUserIfMissing("regressiontestuser2", "password123");
+        MockHttpSession session = new MockHttpSession();
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/me").session(session))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .session(session)
+                        .param("username", "regressiontestuser2")
                         .param("password", "password123")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
