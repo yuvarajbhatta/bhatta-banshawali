@@ -91,7 +91,12 @@ public class SecurityConfig {
                                 new LoginUrlAuthenticationEntryPoint("/login"),
                                 PathPatternRequestMatcher.pathPattern("/**")))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+                        // "/login" itself is no longer backend-owned -- it's a
+                        // Next.js page now (nginx routes it there), matching
+                        // how "/signup" was migrated earlier. Only the actual
+                        // session-establishing POST stays on this backend.
+                        .requestMatchers("/css/**", "/js/**").permitAll()
+                        .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         // Public, read-only admin-managed content (About, History, Membership
                         // explainer) for the unauthenticated marketing/public pages.
@@ -113,20 +118,33 @@ public class SecurityConfig {
                                 "/relationships/new", "/relationships/edit/**", "/relationships/delete/**", "/relationships/update/**",
                                 "/lineage/save-person",
                                 "/v3/api-docs/**", "/v3/api-docs", "/swagger-ui/**", "/swagger-ui.html",
-                                "/admin/**"
+                                "/admin/**", "/api/v1/admin/**"
                         ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
+                        // The page itself is Next.js-rendered now (see the
+                        // banshawali.yrbhatta.com nginx vhost) -- this is only
+                        // the redirect target for "you must log in first" and
+                        // the base for the default failure URL
+                        // ("/login?error", unchanged). The Next.js login page
+                        // reads the XSRF-TOKEN cookie and does a native form
+                        // POST (not fetch) to loginProcessingUrl below, so the
+                        // browser's normal session-cookie/redirect handling
+                        // is unaffected by which app renders the form.
                         .loginPage("/login")
-                        // Not "/" -- nginx routes that path to the Next.js
-                        // public landing page now (banshawali.yrbhatta.com
-                        // vhost), not this backend, so a login with no
-                        // saved request (e.g. navigating straight to
-                        // /login) must not fall back to it. alwaysUse=false
-                        // still honors a saved request (e.g. being
-                        // redirected here from /persons) when one exists.
-                        .defaultSuccessUrl("/persons", false)
+                        // Can no longer be "/login" (Next.js owns that path
+                        // now) -- this backend still processes the actual
+                        // credential check, just at its own dedicated path
+                        // under the already-proxied /api/v1/** prefix.
+                        .loginProcessingUrl("/api/v1/auth/login")
+                        // Not "/persons" -- everyone lands on the new
+                        // dashboard after login now, admin or member;
+                        // dashboard content itself is role-aware.
+                        // alwaysUse=false still honors a saved request (e.g.
+                        // being redirected here from a protected page) when
+                        // one exists.
+                        .defaultSuccessUrl("/dashboard", false)
                         .permitAll()
                 )
                 .logout(logout -> logout

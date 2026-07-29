@@ -21,9 +21,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Proves the entire point of BridgingUserDetailsService end-to-end: a
- * UserAccount approved through the admin review flow (VerificationReviewServiceTest
- * covers that it gets set ACTIVE + VERIFIED_MEMBER) can actually
- * authenticate here, not just that the data model changes look right.
+ * UserAccount approved through the admin review flow can actually
+ * authenticate here. Posts to /api/v1/auth/login (loginProcessingUrl),
+ * not /login -- that path is now a Next.js page with no backend mapping
+ * at all (see app/[locale]/login/page.tsx).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = {
         "spring.datasource.url=jdbc:h2:mem:useraccount-login;DB_CLOSE_DELAY=-1",
@@ -48,19 +49,19 @@ class UserAccountLoginTest {
     private PasswordEncoder passwordEncoder;
 
     @Test
-    void activeVerifiedMemberAccountCanLogInAndReachesPersons() throws Exception {
+    void activeVerifiedMemberAccountCanLogInAndReachesDashboard() throws Exception {
         UserAccount account = new UserAccount();
         account.setEmail("approved-applicant@example.com");
         account.setPasswordHash(passwordEncoder.encode("password123"));
         account.setStatus(UserAccountStatus.ACTIVE);
         userAccountRepository.save(account);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "approved-applicant@example.com")
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
+                .andExpect(redirectedUrl("/dashboard"));
     }
 
     @Test
@@ -76,12 +77,12 @@ class UserAccountLoginTest {
         account.setRoles(Set.of(administrator));
         userAccountRepository.save(account);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "admin-applicant@example.com")
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
+                .andExpect(redirectedUrl("/dashboard"));
 
         mockMvc.perform(MockMvcRequestBuilders.get("/admin/signups")
                         .with(SecurityMockMvcRequestPostProcessors.user("admin-applicant@example.com").roles("ADMIN")))
@@ -96,7 +97,7 @@ class UserAccountLoginTest {
         account.setStatus(UserAccountStatus.PENDING_EMAIL_VERIFICATION);
         userAccountRepository.save(account);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "pending-applicant@example.com")
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
@@ -112,7 +113,7 @@ class UserAccountLoginTest {
         account.setStatus(UserAccountStatus.DISABLED);
         userAccountRepository.save(account);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "disabled-applicant@example.com")
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
@@ -128,11 +129,11 @@ class UserAccountLoginTest {
         account.setStatus(UserAccountStatus.ACTIVE);
         userAccountRepository.save(account);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "  MixedCase@Example.com  ")
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
+                .andExpect(redirectedUrl("/dashboard"));
     }
 }

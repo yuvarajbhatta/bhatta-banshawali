@@ -259,3 +259,30 @@ export async function submitCorrection(personId: number, request: CorrectionRequ
     throw new CorrectionError(body?.message ?? "Failed to submit correction.");
   }
 }
+
+export interface AdminSummaryDto {
+  pendingSignupCount: number;
+  pendingCorrectionCount: number;
+  recentPendingSignups: { id: number; submittedFullName: string; submittedAt: string }[];
+  recentPendingCorrections: { id: number; personName: string; field: string; submittedAt: string }[];
+}
+
+// Server-to-server with the browser's session cookie forwarded, same
+// pattern as getMemberProfile/getPersonDetail. Only ever called for an
+// admin session (dashboard checks this before rendering the admin
+// view), so a non-403/401 failure here is a genuine error, not an
+// expected "not an admin" case.
+export async function getAdminSummary(cookieHeader: string): Promise<AdminSummaryDto | null> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/summary`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load admin summary: ${response.status}`);
+  }
+  return response.json();
+}

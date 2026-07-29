@@ -1,47 +1,79 @@
 .page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: var(--space-8) var(--space-4);
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-16);
+  overflow-x: hidden;
 }
 
 .hero {
+  position: relative;
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    min-height: 100vh;
+  }
+}
+
+.header {
+  position: relative;
+  z-index: var(--z-canvas-overlay);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-6) var(--space-8);
+}
+
+.heroContent {
+  position: relative;
+  z-index: var(--z-canvas-overlay);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  margin-bottom: var(--space-12);
+  padding: var(--space-8) var(--space-4) var(--space-16);
+  /* Lets pointer events pass through to the canvas behind for hover, but
+     the actual interactive children (buttons/links) opt back in below. */
+  pointer-events: none;
+}
+
+.heroContent > * {
+  pointer-events: auto;
 }
 
 .heroTitle {
-  font-size: var(--text-4xl);
+  font-size: var(--text-5xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   margin: 0 0 var(--space-4);
+  max-width: 20ch;
 }
 
 .heroSubtitle {
   font-size: var(--text-lg);
-  color: var(--color-text-muted);
+  color: var(--color-neutral-200);
+  max-width: 46ch;
   margin: 0 0 var(--space-8);
 }
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
   justify-content: center;
 }
 
 .stats {
+  max-width: var(--container-max);
+  margin: 0 auto;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-12);
-  padding: var(--space-8) 0;
-  margin-bottom: var(--space-8);
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-16) var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -64,13 +96,17 @@
   color: var(--color-text-muted);
 }
 
+.footerWrapper {
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
 .footer {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6);
   justify-content: center;
-  padding-top: var(--space-12);
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-12) var(--space-4);
 }
 
 .footer a {

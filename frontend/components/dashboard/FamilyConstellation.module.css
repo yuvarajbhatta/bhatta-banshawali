@@ -1,0 +1,25 @@
+.canvasWrapper {
+  width: 100%;
+  height: 420px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 640px) {
+  .canvasWrapper {
+    height: 320px;
+  }
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fallbackLabel {
+  color: var(--color-stage-text);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+}

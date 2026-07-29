@@ -1,0 +1,97 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+  background:
+    radial-gradient(circle at 30% 20%, var(--color-primary-700) 0%, transparent 45%),
+    radial-gradient(circle at 80% 80%, var(--color-gold-700) 0%, transparent 40%),
+    var(--color-stage);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .branding {
+    padding: var(--space-12) var(--space-6);
+  }
+}
+
+.brandTitle {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin: 0 0 var(--space-4);
+}
+
+.brandTagline {
+  font-size: var(--text-lg);
+  color: var(--color-neutral-200);
+  max-width: 32ch;
+  margin: 0 auto;
+}
+
+.formPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-4) var(--space-16);
+  position: relative;
+}
+
+.languageSwitcherRow {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--space-6);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--space-8);
+}
+
+.heading {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-2);
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-6);
+}
+
+.notice {
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.notice[data-variant="error"] {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--color-error);
+}
+
+.notice[data-variant="success"] {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--color-success);
+}

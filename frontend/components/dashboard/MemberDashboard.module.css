@@ -1,0 +1,84 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-8);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-600);
+  margin: 0 0 var(--space-2);
+}
+
+.name {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-1);
+}
+
+.nepaliName {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.familyPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+}
+
+.familyHeader {
+  margin-bottom: var(--space-4);
+}
+
+.familyHeader h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xl);
+}
+
+.familyHint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.notice {
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}

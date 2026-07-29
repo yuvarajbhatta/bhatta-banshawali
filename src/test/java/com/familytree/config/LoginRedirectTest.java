@@ -5,11 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * after a successful login. That was fine when "/" was this backend's own
  * home page; it silently became a dead end once nginx started routing "/"
  * (banshawali.yrbhatta.com) to the separate Next.js public landing page.
+ *
+ * The GET /login "already authenticated" variant of this same regression
+ * used to live here too; it no longer applies now that /login itself is
+ * a Next.js page with no backend mapping at all (see
+ * app/[locale]/login/page.tsx) -- only the credential-processing POST
+ * below is still this backend's concern.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = {
         "spring.datasource.url=jdbc:h2:mem:login-redirect;DB_CLOSE_DELAY=-1",
@@ -38,27 +42,14 @@ class LoginRedirectTest {
     private AppUserService appUserService;
 
     @Test
-    void freshLoginWithNoSavedRequestRedirectsToABackendOwnedPathNotRoot() throws Exception {
+    void freshLoginWithNoSavedRequestRedirectsToTheDashboardNotRoot() throws Exception {
         appUserService.registerUserIfMissing("regressiontestuser", "password123");
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "regressiontestuser")
                         .param("password", "password123")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
+                .andExpect(redirectedUrl("/dashboard"));
     }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void alreadyAuthenticatedLoginRedirectsToABackendOwnedPathNotRoot() throws Exception {
-        mockMvc.perform(get("/login"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/persons"));
-    }
-
-    // /signup used to be a backend-rendered page with the same
-    // already-authenticated redirect as /login above; it was retired in
-    // favor of the Next.js verification-based signup flow, so that
-    // regression case no longer applies here.
 }

@@ -92,17 +92,34 @@
     }
   },
   "dashboardPage": {
-    "title": "Your Profile",
-    "noAccount": "This area is for verified family members. It looks like you're signed in with an administrator account instead -- try Persons in the admin tools.",
-    "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
-    "generation": "Generation {number}",
-    "family": {
-      "title": "Immediate Family",
+    "title": "Dashboard",
+    "member": {
+      "welcomeBack": "Welcome back",
+      "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
+      "generation": "Generation {number}",
+      "viewFullProfile": "View full profile",
+      "familyTitle": "Your Family",
+      "familyHint": "Drag to rotate the view -- click a name to open their profile.",
       "father": "Father",
       "mother": "Mother",
-      "spouses": "Spouse(s)",
-      "children": "Children",
-      "none": "None recorded"
+      "browseDirectory": "Browse the Directory"
+    },
+    "admin": {
+      "welcome": "Welcome back, Administrator",
+      "subtitle": "Here's what needs your attention.",
+      "notAdmin": "Your account doesn't have a linked family profile yet, and doesn't have administrator access either. If you believe this is a mistake, contact another administrator.",
+      "pendingSignups": "Pending Signups",
+      "pendingCorrections": "Pending Corrections",
+      "reviewAll": "Review all",
+      "noneWaiting": "Nothing waiting for review.",
+      "familyMembers": "Documented Family Members",
+      "generationsRecorded": "Documented Generations",
+      "classicTools": "Classic Tools",
+      "classicToolsHint": "Full-CRUD management -- being rebuilt with the new design in a later pass.",
+      "managePersons": "Manage Persons",
+      "manageRelationships": "Manage Relationships",
+      "lineageBuilder": "Lineage Builder",
+      "generationsView": "Generations View"
     }
   },
   "contactPage": {
@@ -210,14 +227,20 @@
   },
   "login": {
     "bottom": "Don't have an account?",
-    "heading": "Login",
+    "signUp": "Request membership",
+    "heading": "Welcome back",
     "invalid": "Invalid username or password.",
     "loggedOut": "You have been logged out successfully.",
     "password": "Password",
     "registered": "Account created successfully. Please log in.",
-    "subtitle": "Access Family Tree account.",
+    "subtitle": "Sign in to your Bhatta Banshawali account.",
     "title": "Login",
-    "username": "Username"
+    "username": "Username or Email",
+    "submit": "Log in",
+    "submitting": "Signing in…",
+    "preparing": "Preparing secure connection…",
+    "brandTitle": "Bhatta Banshawali",
+    "brandTagline": "A living record of our family's history, preserved and verified."
   },
   "nav": {
     "addNewPerson": "Add New Person",

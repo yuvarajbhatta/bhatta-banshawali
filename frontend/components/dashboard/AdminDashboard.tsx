@@ -1,0 +1,137 @@
+import { getTranslations } from "next-intl/server";
+import { Reveal } from "@/components/motion/Reveal";
+import { ScrollReveal } from "@/components/motion/ScrollReveal";
+import type { AdminSummaryDto, PublicStatsDto } from "@/lib/api";
+import styles from "./AdminDashboard.module.css";
+
+interface AdminDashboardProps {
+  summary: AdminSummaryDto | null;
+  stats: PublicStatsDto | null;
+}
+
+export async function AdminDashboard({ summary, stats }: AdminDashboardProps) {
+  const t = await getTranslations("dashboardPage.admin");
+
+  if (!summary) {
+    return (
+      <Reveal>
+        <div className={styles.notice}>{t("notAdmin")}</div>
+      </Reveal>
+    );
+  }
+
+  const signupItems = summary.recentPendingSignups.map((s) => ({
+    id: s.id,
+    label: s.submittedFullName,
+    meta: formatDate(s.submittedAt),
+  }));
+  const correctionItems = summary.recentPendingCorrections.map((c) => ({
+    id: c.id,
+    label: `${c.personName} — ${c.field}`,
+    meta: formatDate(c.submittedAt),
+  }));
+
+  return (
+    <div className={styles.dashboard}>
+      <Reveal>
+        <div className={styles.hero}>
+          <p className={styles.eyebrow}>{t("welcome")}</p>
+          <p className={styles.subtitle}>{t("subtitle")}</p>
+        </div>
+      </Reveal>
+
+      <ScrollReveal className={styles.statGrid}>
+        <StatCard value={summary.pendingSignupCount} label={t("pendingSignups")} />
+        <StatCard value={summary.pendingCorrectionCount} label={t("pendingCorrections")} />
+        {stats ? <StatCard value={stats.documentedFamilyMembers} label={t("familyMembers")} /> : null}
+        {stats ? <StatCard value={stats.documentedGenerations} label={t("generationsRecorded")} /> : null}
+      </ScrollReveal>
+
+      <Reveal delay={0.1}>
+        <div className={styles.queueGrid}>
+          <QueueCard
+            title={t("pendingSignups")}
+            items={signupItems}
+            reviewHref="/admin/signups"
+            reviewLabel={t("reviewAll")}
+            emptyLabel={t("noneWaiting")}
+          />
+          <QueueCard
+            title={t("pendingCorrections")}
+            items={correctionItems}
+            reviewHref="/admin/corrections"
+            reviewLabel={t("reviewAll")}
+            emptyLabel={t("noneWaiting")}
+          />
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.2}>
+        <div className={styles.classicTools}>
+          <h3>{t("classicTools")}</h3>
+          <p className={styles.classicToolsHint}>{t("classicToolsHint")}</p>
+          <div className={styles.toolLinks}>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
+            <a href="/persons">{t("managePersons")}</a>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
+            <a href="/relationships">{t("manageRelationships")}</a>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
+            <a href="/lineage">{t("lineageBuilder")}</a>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
+            <a href="/generations">{t("generationsView")}</a>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+function StatCard({ value, label }: { value: number; label: string }) {
+  return (
+    <div className={styles.statCard}>
+      <span className={styles.statValue}>{value}</span>
+      <span className={styles.statLabel}>{label}</span>
+    </div>
+  );
+}
+
+function QueueCard({
+  title,
+  items,
+  reviewHref,
+  reviewLabel,
+  emptyLabel,
+}: {
+  title: string;
+  items: { id: number; label: string; meta: string }[];
+  reviewHref: string;
+  reviewLabel: string;
+  emptyLabel: string;
+}) {
+  return (
+    <div className={styles.queueCard}>
+      <div className={styles.queueHeader}>
+        <h3>{title}</h3>
+        <a href={reviewHref} className={styles.reviewLink}>
+          {reviewLabel}
+        </a>
+      </div>
+      {items.length === 0 ? (
+        <p className={styles.empty}>{emptyLabel}</p>
+      ) : (
+        <ul className={styles.queueList}>
+          {items.map((item) => (
+            <li key={item.id}>
+              <span>{item.label}</span>
+              <span className={styles.meta}>{item.meta}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
