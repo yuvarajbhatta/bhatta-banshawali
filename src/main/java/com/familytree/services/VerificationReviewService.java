@@ -13,10 +13,12 @@ import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.web.PersonDisplayHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Admin actions on a signup VerificationRequest -- see
@@ -33,19 +35,22 @@ public class VerificationReviewService {
     private final PersonRepository personRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
     private final AuditLogService auditLogService;
+    private final PersonDisplayHelper personDisplay;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
                                      RoleRepository roleRepository,
                                      PersonRepository personRepository,
                                      UserPersonLinkRepository userPersonLinkRepository,
-                                     AuditLogService auditLogService) {
+                                     AuditLogService auditLogService,
+                                     PersonDisplayHelper personDisplay) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
         this.personRepository = personRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.auditLogService = auditLogService;
+        this.personDisplay = personDisplay;
     }
 
     /**
@@ -103,6 +108,41 @@ public class VerificationReviewService {
 
         auditLogService.record(AuditLogService.ACTION_SIGNUP_MORE_INFO_REQUESTED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
                 verificationRequestId, "Requested more info for signup from " + request.getSubmittedFullName(), reviewerUsername);
+    }
+
+    /**
+     * ACTIVE accounts (i.e. an approved signup) with no VERIFIED
+     * UserPersonLink -- the gap that opens when an admin approves a
+     * signup without selecting a candidate at the time (or the matcher
+     * found nothing to select). See docs/frontend-redesign-plan.md
+     * "link account" tool: previously there was no way to fix this
+     * after the fact, since the candidate-selection UI only appeared
+     * on a still-PENDING request.
+     */
+    public List<UserAccount> findUnlinkedActiveAccounts() {
+        return userAccountRepository.findAll().stream()
+                .filter(account -> account.getStatus() == UserAccountStatus.ACTIVE)
+                .filter(account -> userPersonLinkRepository.findByUserAccountId(account.getId()).stream()
+                        .noneMatch(link -> link.getLinkStatus() == UserPersonLinkStatus.VERIFIED))
+                .toList();
+    }
+
+    @Transactional
+    public void linkAccountToPerson(Long userAccountId, Long personId, String actorUsername) {
+        UserAccount account = userAccountRepository.findById(userAccountId)
+                .orElseThrow(() -> new RuntimeException("Account not found with id: " + userAccountId));
+        Person person = personRepository.findById(personId)
+                .orElseThrow(() -> new RuntimeException("Person not found with id: " + personId));
+
+        UserPersonLink link = new UserPersonLink();
+        link.setUserAccount(account);
+        link.setPerson(person);
+        link.setLinkStatus(UserPersonLinkStatus.VERIFIED);
+        link.setVerifiedAt(LocalDateTime.now());
+        userPersonLinkRepository.save(link);
+
+        auditLogService.record(AuditLogService.ACTION_ACCOUNT_LINKED, AuditLogService.ENTITY_USER_ACCOUNT, userAccountId,
+                "Linked account " + account.getEmail() + " to person " + personDisplay.englishFullName(person), actorUsername);
     }
 
     private void markReviewed(VerificationRequest request, VerificationStatus status, String reviewerUsername,

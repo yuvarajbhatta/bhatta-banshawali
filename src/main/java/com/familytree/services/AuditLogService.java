@@ -35,11 +35,13 @@ public class AuditLogService {
     public static final String ACTION_SIGNUP_MORE_INFO_REQUESTED = "SIGNUP_MORE_INFO_REQUESTED";
     public static final String ACTION_CORRECTION_APPROVED = "CORRECTION_APPROVED";
     public static final String ACTION_CORRECTION_REJECTED = "CORRECTION_REJECTED";
+    public static final String ACTION_ACCOUNT_LINKED = "ACCOUNT_LINKED";
 
     public static final String ENTITY_PERSON = "PERSON";
     public static final String ENTITY_RELATIONSHIP = "RELATIONSHIP";
     public static final String ENTITY_VERIFICATION_REQUEST = "VERIFICATION_REQUEST";
     public static final String ENTITY_CORRECTION_REQUEST = "CORRECTION_REQUEST";
+    public static final String ENTITY_USER_ACCOUNT = "USER_ACCOUNT";
 
     private final AuditLogRepository auditLogRepository;
 

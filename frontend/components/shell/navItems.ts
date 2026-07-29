@@ -1,5 +1,18 @@
 import type { LucideIcon } from "lucide-react";
-import { FileCheck, GitFork, History, LayoutDashboard, Link2, ShieldCheck, UserCog, Users, Workflow } from "lucide-react";
+import {
+  FileCheck,
+  GitFork,
+  History,
+  Layers,
+  LayoutDashboard,
+  Link2,
+  Sprout,
+  ShieldCheck,
+  UserCog,
+  UserPlus,
+  Users,
+  Workflow,
+} from "lucide-react";
 
 export interface AppNavItem {
   href: "/dashboard" | "/family" | "/tree" | "/directory";
@@ -18,8 +31,24 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 ];
 
 export interface AdminNavItem {
-  href: "/admin/signups" | "/admin/corrections" | "/admin/persons" | "/admin/relationships" | "/admin/audit-log";
-  labelKey: "signupReview" | "correctionReview" | "people" | "relationships" | "auditLog";
+  href:
+    | "/admin/signups"
+    | "/admin/corrections"
+    | "/admin/persons"
+    | "/admin/relationships"
+    | "/admin/unlinked-accounts"
+    | "/admin/lineage"
+    | "/admin/generations"
+    | "/admin/audit-log";
+  labelKey:
+    | "signupReview"
+    | "correctionReview"
+    | "people"
+    | "relationships"
+    | "unlinkedAccounts"
+    | "lineageBuilder"
+    | "generationsView"
+    | "auditLog";
   icon: LucideIcon;
   countKey?: "pendingSignupCount" | "pendingCorrectionCount";
 }
@@ -29,7 +58,10 @@ export interface AdminNavItem {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/signups", labelKey: "signupReview", icon: ShieldCheck, countKey: "pendingSignupCount" },
   { href: "/admin/corrections", labelKey: "correctionReview", icon: FileCheck, countKey: "pendingCorrectionCount" },
+  { href: "/admin/unlinked-accounts", labelKey: "unlinkedAccounts", icon: UserPlus },
   { href: "/admin/persons", labelKey: "people", icon: UserCog },
   { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
+  { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },
+  { href: "/admin/generations", labelKey: "generationsView", icon: Layers },
   { href: "/admin/audit-log", labelKey: "auditLog", icon: History },
 ];

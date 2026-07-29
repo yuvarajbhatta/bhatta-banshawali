@@ -68,23 +68,6 @@ export async function AdminDashboard({ summary, stats }: AdminDashboardProps) {
           />
         </div>
       </Reveal>
-
-      <Reveal delay={0.2}>
-        <div className={styles.classicTools}>
-          <h3>{t("classicTools")}</h3>
-          <p className={styles.classicToolsHint}>{t("classicToolsHint")}</p>
-          <div className={styles.toolLinks}>
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
-            <a href="/persons">{t("managePersons")}</a>
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
-            <a href="/relationships">{t("manageRelationships")}</a>
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
-            <a href="/lineage">{t("lineageBuilder")}</a>
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- still a backend Thymeleaf page, not a route in this app */}
-            <a href="/generations">{t("generationsView")}</a>
-          </div>
-        </div>
-      </Reveal>
     </div>
   );
 }

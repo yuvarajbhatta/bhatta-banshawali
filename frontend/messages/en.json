@@ -13,7 +13,10 @@
       "correctionReview": "Corrections",
       "people": "People",
       "relationships": "Relationships",
-      "auditLog": "Audit Log"
+      "auditLog": "Audit Log",
+      "unlinkedAccounts": "Unlinked Accounts",
+      "lineageBuilder": "Lineage Builder",
+      "generationsView": "Generations"
     },
     "header": {
       "searchPlaceholder": "Search family members...",
@@ -193,13 +196,7 @@
       "reviewAll": "Review all",
       "noneWaiting": "Nothing waiting for review.",
       "familyMembers": "Documented Family Members",
-      "generationsRecorded": "Documented Generations",
-      "classicTools": "Classic Tools",
-      "classicToolsHint": "Full-CRUD management -- being rebuilt with the new design in a later pass.",
-      "managePersons": "Manage Persons",
-      "manageRelationships": "Manage Relationships",
-      "lineageBuilder": "Lineage Builder",
-      "generationsView": "Generations View"
+      "generationsRecorded": "Documented Generations"
     }
   },
   "familyPage": {
@@ -386,6 +383,51 @@
     "subtitle": "A record of admin actions -- who did what, and when.",
     "empty": "No admin actions recorded yet.",
     "forbidden": "You don't have permission to view this."
+  },
+  "adminUnlinkedAccountsPage": {
+    "title": "Unlinked Accounts",
+    "subtitle": "Approved accounts that were never matched to a family record -- link them to the right person.",
+    "empty": "Every approved account is linked to a family record.",
+    "forbidden": "You don't have permission to view this.",
+    "submittedAs": "Signed up as {name}",
+    "father": "Father",
+    "grandfather": "Grandfather",
+    "noSignupRecord": "No signup record on file.",
+    "selectPerson": "Person to link",
+    "selectPersonPlaceholder": "Search and select the correct person...",
+    "clear": "Change",
+    "link": "Link Account",
+    "linkError": "Could not link this account. Please try again."
+  },
+  "adminGenerationsPage": {
+    "title": "Generations",
+    "subtitle": "Browse the register generation by generation.",
+    "label": "Generation {number}",
+    "empty": "No generation data has been added yet.",
+    "forbidden": "You don't have permission to view this."
+  },
+  "adminLineagePage": {
+    "title": "Lineage Builder",
+    "subtitle": "Quickly sketch out a chain of descendants by name, then save the whole branch at once.",
+    "hint": "Type names, add children, then Save All when the branch is ready.",
+    "empty": "No lineage started yet.",
+    "forbidden": "You don't have permission to view this.",
+    "rootNamePlaceholder": "Root ancestor's name...",
+    "startRoot": "Start Root Person",
+    "saveAll": "Save All",
+    "saving": "Saving…",
+    "saveError": "Could not save the lineage tree. Make sure every node has a name.",
+    "noTree": "There is no lineage tree to save.",
+    "confirmDeleteRoot": "Delete the entire lineage root?",
+    "confirmDeleteBranch": "Delete this branch?",
+    "toggle": "Expand or collapse",
+    "namePlaceholder": "Name...",
+    "nodeName": "Name",
+    "saved": "Saved (#{id})",
+    "notSaved": "Not saved yet",
+    "childCount": "{count, plural, one {# child} other {# children}}",
+    "addChild": "Add child",
+    "delete": "Delete"
   },
   "contactPage": {
     "title": "Contact",

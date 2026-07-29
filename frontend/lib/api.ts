@@ -639,3 +639,103 @@ export async function getAdminAuditLog(cookieHeader: string, limit?: number): Pr
   if (!response.ok) throw new Error(`Failed to load audit log: ${response.status}`);
   return { kind: "ok", items: await response.json() };
 }
+
+// Mirrors com.familytree.dto.UnlinkedAccountDto -- an approved account
+// with no Person link yet (docs/frontend-redesign-plan.md "link account" tool).
+export interface UnlinkedAccountDto {
+  userAccountId: number;
+  email: string;
+  createdAt: string;
+  submittedFullName: string | null;
+  submittedFatherName: string | null;
+  submittedGrandfatherName: string | null;
+}
+
+export async function getUnlinkedAccounts(cookieHeader: string): Promise<AdminListResult<UnlinkedAccountDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/unlinked-accounts`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load unlinked accounts: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function linkAccountToPerson(userAccountId: number, personId: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/unlinked-accounts/${userAccountId}/link`, "POST", { personId });
+}
+
+// Mirrors the JSON shape RelationshipService#buildLineageTree already
+// produces for the legacy /lineage page -- reused as-is (not under
+// /api/v1/admin, a pre-existing endpoint) rather than building a new
+// one, per docs/frontend-redesign-plan.md's "reuse existing APIs"
+// approach.
+export interface LineageTreeNode {
+  id: number;
+  dbId: number;
+  parentDbId: number | null;
+  generationNumber: number | null;
+  name: string;
+  englishName: string;
+  nepaliName: string;
+  photoPath: string | null;
+  children: LineageTreeNode[];
+}
+
+// Server-to-server with the browser's session cookie forwarded, same
+// pattern as the rest of lib/api.ts. Allowed for ADMIN or USER on the
+// backend (SecurityConfig), but this app only ever links to it from
+// the admin-only sidebar section.
+export async function getLineageTree(cookieHeader: string): Promise<LineageTreeNode | null> {
+  const response = await fetch(`${API_BASE_URL}/lineage/tree`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to load lineage tree: ${response.status}`);
+  }
+  const data = await response.json();
+  return data && data.dbId ? data : null;
+}
+
+export interface SaveLineagePersonResult {
+  id: number;
+  englishName: string;
+  nepaliName: string;
+  photoPath: string | null;
+}
+
+export interface SaveLineagePersonParams {
+  fullName: string;
+  personId?: number;
+  parentId?: number;
+  generationNumber?: number;
+}
+
+// POST /lineage/save-person is form-urlencoded, not JSON (it's the
+// pre-existing legacy endpoint, unchanged) -- same CSRF pattern as the
+// rest of the browser-originated mutations in this file.
+export async function saveLineagePerson(params: SaveLineagePersonParams): Promise<SaveLineagePersonResult> {
+  const xsrfToken = readXsrfTokenCookie();
+  const body = new URLSearchParams();
+  body.append("fullName", params.fullName);
+  if (params.personId != null) body.append("personId", String(params.personId));
+  if (params.parentId != null) body.append("parentId", String(params.parentId));
+  if (params.generationNumber != null) body.append("generationNumber", String(params.generationNumber));
+
+  const response = await fetch("/lineage/save-person", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new AdminActionError(`Failed to save: ${response.status}`);
+  }
+  return response.json();
+}
