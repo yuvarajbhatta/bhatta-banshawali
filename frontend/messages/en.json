@@ -12,7 +12,8 @@
       "signupReview": "Signup Review",
       "correctionReview": "Corrections",
       "people": "People",
-      "relationships": "Relationships"
+      "relationships": "Relationships",
+      "auditLog": "Audit Log"
     },
     "header": {
       "searchPlaceholder": "Search family members...",
@@ -378,6 +379,12 @@
       "cycle": "This relationship would make a person their own ancestor. Please check the direction.",
       "generic": "Something went wrong. Please try again."
     },
+    "forbidden": "You don't have permission to view this."
+  },
+  "adminAuditLogPage": {
+    "title": "Audit Log",
+    "subtitle": "A record of admin actions -- who did what, and when.",
+    "empty": "No admin actions recorded yet.",
     "forbidden": "You don't have permission to view this."
   },
   "contactPage": {

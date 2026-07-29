@@ -14,23 +14,29 @@ public class PersonService {
     private final PersonRepository personRepository;
     private final RelationshipService relationshipService;
     private final NameTransliterationService nameTransliterationService;
+    private final AuditLogService auditLogService;
     private final String lineageDefaultLastName;
     private final String lineageDefaultGender;
 
     public PersonService(PersonRepository personRepository,
                          RelationshipService relationshipService,
                          NameTransliterationService nameTransliterationService,
+                         AuditLogService auditLogService,
                          AppProperties appProperties) {
         this.personRepository = personRepository;
         this.relationshipService = relationshipService;
         this.nameTransliterationService = nameTransliterationService;
+        this.auditLogService = auditLogService;
         this.lineageDefaultLastName = normalize(appProperties.getLineage().getDefaultLastName());
         this.lineageDefaultGender = normalize(appProperties.getLineage().getDefaultGender());
     }
 
     public Person savePerson(Person person) {
         normalizePersonFields(person);
-        return personRepository.save(person);
+        Person saved = personRepository.save(person);
+        auditLogService.record(AuditLogService.ACTION_PERSON_CREATED, AuditLogService.ENTITY_PERSON, saved.getId(),
+                "Created person " + fullNameFor(saved));
+        return saved;
     }
 
     public Person updatePerson(Long id, Person updatedPerson) {
@@ -54,7 +60,10 @@ public class PersonService {
         existingPerson.setNotes(updatedPerson.getNotes());
         normalizePersonFields(existingPerson);
 
-        return personRepository.save(existingPerson);
+        Person saved = personRepository.save(existingPerson);
+        auditLogService.record(AuditLogService.ACTION_PERSON_UPDATED, AuditLogService.ENTITY_PERSON, saved.getId(),
+                "Updated person " + fullNameFor(saved));
+        return saved;
     }
 
     public List<Person> getAllPersons() {
@@ -75,12 +84,25 @@ public class PersonService {
     public void deletePersonById(Long id) {
         Person person = personRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Person not found with id: " + id));
+        String name = fullNameFor(person);
 
         // delete all relationships first
         relationshipService.deleteRelationshipsByPerson(person);
 
         // then delete person
         personRepository.delete(person);
+
+        auditLogService.record(AuditLogService.ACTION_PERSON_DELETED, AuditLogService.ENTITY_PERSON, id, "Deleted person " + name);
+    }
+
+    private String fullNameFor(Person person) {
+        StringBuilder name = new StringBuilder();
+        if (person.getFirstName() != null) name.append(person.getFirstName());
+        if (person.getLastName() != null) {
+            if (!name.isEmpty()) name.append(" ");
+            name.append(person.getLastName());
+        }
+        return name.isEmpty() ? ("#" + person.getId()) : name.toString();
     }
     public List<Person> getAllPersonsOrderedByGeneration(){
         return personRepository.findAllByOrderByGenerationNumberAscIdAsc();

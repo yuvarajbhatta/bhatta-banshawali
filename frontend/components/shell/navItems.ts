@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileCheck, GitFork, LayoutDashboard, Link2, ShieldCheck, UserCog, Users, Workflow } from "lucide-react";
+import { FileCheck, GitFork, History, LayoutDashboard, Link2, ShieldCheck, UserCog, Users, Workflow } from "lucide-react";
 
 export interface AppNavItem {
   href: "/dashboard" | "/family" | "/tree" | "/directory";
@@ -18,8 +18,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 ];
 
 export interface AdminNavItem {
-  href: "/admin/signups" | "/admin/corrections" | "/admin/persons" | "/admin/relationships";
-  labelKey: "signupReview" | "correctionReview" | "people" | "relationships";
+  href: "/admin/signups" | "/admin/corrections" | "/admin/persons" | "/admin/relationships" | "/admin/audit-log";
+  labelKey: "signupReview" | "correctionReview" | "people" | "relationships" | "auditLog";
   icon: LucideIcon;
   countKey?: "pendingSignupCount" | "pendingCorrectionCount";
 }
@@ -31,4 +31,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/corrections", labelKey: "correctionReview", icon: FileCheck, countKey: "pendingCorrectionCount" },
   { href: "/admin/persons", labelKey: "people", icon: UserCog },
   { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
+  { href: "/admin/audit-log", labelKey: "auditLog", icon: History },
 ];

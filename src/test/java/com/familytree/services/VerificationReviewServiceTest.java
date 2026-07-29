@@ -44,6 +44,9 @@ class VerificationReviewServiceTest {
     @Mock
     private UserPersonLinkRepository userPersonLinkRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private VerificationReviewService verificationReviewService;
 

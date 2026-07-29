@@ -27,13 +27,16 @@ public class PersonCorrectionService {
     private final PersonCorrectionRequestRepository correctionRequestRepository;
     private final PersonRepository personRepository;
     private final UserAccountRepository userAccountRepository;
+    private final AuditLogService auditLogService;
 
     public PersonCorrectionService(PersonCorrectionRequestRepository correctionRequestRepository,
                                    PersonRepository personRepository,
-                                   UserAccountRepository userAccountRepository) {
+                                   UserAccountRepository userAccountRepository,
+                                   AuditLogService auditLogService) {
         this.correctionRequestRepository = correctionRequestRepository;
         this.personRepository = personRepository;
         this.userAccountRepository = userAccountRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -64,12 +67,20 @@ public class PersonCorrectionService {
         applyField(request.getPerson(), request.getField(), request.getProposedValue());
         personRepository.save(request.getPerson());
         markReviewed(request, CorrectionRequestStatus.APPROVED, reviewerUsername, decisionNote);
+
+        auditLogService.record(AuditLogService.ACTION_CORRECTION_APPROVED, AuditLogService.ENTITY_CORRECTION_REQUEST,
+                requestId, "Approved correction to " + request.getField() + " for person #" + request.getPerson().getId(),
+                reviewerUsername);
     }
 
     @Transactional
     public void reject(Long requestId, String reviewerUsername, String decisionNote) {
         PersonCorrectionRequest request = getOrThrow(requestId);
         markReviewed(request, CorrectionRequestStatus.REJECTED, reviewerUsername, decisionNote);
+
+        auditLogService.record(AuditLogService.ACTION_CORRECTION_REJECTED, AuditLogService.ENTITY_CORRECTION_REQUEST,
+                requestId, "Rejected correction to " + request.getField() + " for person #" + request.getPerson().getId(),
+                reviewerUsername);
     }
 
     private void markReviewed(PersonCorrectionRequest request, CorrectionRequestStatus status,

@@ -33,6 +33,9 @@ class PersonServiceTest {
     @Mock
     private NameTransliterationService nameTransliterationService;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private PersonService personService;
 
     @org.junit.jupiter.api.BeforeEach
@@ -40,7 +43,7 @@ class PersonServiceTest {
         AppProperties appProperties = new AppProperties();
         appProperties.getLineage().setDefaultLastName("Bhatta");
         appProperties.getLineage().setDefaultGender("Male");
-        personService = new PersonService(personRepository, relationshipService, nameTransliterationService, appProperties);
+        personService = new PersonService(personRepository, relationshipService, nameTransliterationService, auditLogService, appProperties);
     }
 
     @Test

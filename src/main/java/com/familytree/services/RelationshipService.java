@@ -23,10 +23,13 @@ import java.util.stream.Collectors;
 public class RelationshipService {
     private final RelationshipRepository relationshipRepository;
     private final PersonRepository personRepository;
+    private final AuditLogService auditLogService;
 
-    public RelationshipService(RelationshipRepository relationshipRepository, PersonRepository personRepository) {
+    public RelationshipService(RelationshipRepository relationshipRepository, PersonRepository personRepository,
+                               AuditLogService auditLogService) {
         this.relationshipRepository = relationshipRepository;
         this.personRepository = personRepository;
+        this.auditLogService = auditLogService;
     }
     public Relationship saveRelationship(Relationship relationship) {
         return relationshipRepository.save(relationship);
@@ -54,6 +57,12 @@ public class RelationshipService {
         if (type == RelationshipType.SPOUSE){
             saveIfMissing(relatedPerson, person, RelationshipType.SPOUSE);
         }
+
+        // Logs only the primary relationship the caller asked for, not the
+        // reciprocal/auto-linked edges above -- those are implied by it,
+        // not a separate admin decision worth their own log line.
+        auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_CREATED, AuditLogService.ENTITY_RELATIONSHIP, null,
+                "Linked " + personLabel(person) + " as " + type + " of " + personLabel(relatedPerson));
     }
     private void saveIfMissing(Person person, Person relatedPerson, RelationshipType type) {
         boolean exists = relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(
@@ -129,7 +138,13 @@ public class RelationshipService {
     }
 
     public void deleteRelationshipById(Long id) {
+        Relationship relationship = relationshipRepository.findById(id).orElse(null);
         relationshipRepository.deleteById(id);
+        if (relationship != null) {
+            auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_DELETED, AuditLogService.ENTITY_RELATIONSHIP, id,
+                    "Removed " + relationship.getRelationshipType() + " link between " + personLabel(relationship.getPerson())
+                            + " and " + personLabel(relationship.getRelatedPerson()));
+        }
     }
     public void deleteRelationshipsByPerson(Person person) {
         relationshipRepository.deleteByPersonOrRelatedPerson(person, person);
@@ -151,7 +166,10 @@ public class RelationshipService {
         existingRelationship.setRelatedPerson(relatedPerson);
         existingRelationship.setRelationshipType(type);
 
-        return relationshipRepository.save(existingRelationship);
+        Relationship saved = relationshipRepository.save(existingRelationship);
+        auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_UPDATED, AuditLogService.ENTITY_RELATIONSHIP, id,
+                "Updated relationship: " + personLabel(person) + " as " + type + " of " + personLabel(relatedPerson));
+        return saved;
     }
     public List<Person> getDirectChildren(Person person) {
         return relationshipRepository

@@ -35,8 +35,11 @@ class PersonCorrectionServiceTest {
     @Mock
     private UserAccountRepository userAccountRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private PersonCorrectionService service() {
-        return new PersonCorrectionService(correctionRequestRepository, personRepository, userAccountRepository);
+        return new PersonCorrectionService(correctionRequestRepository, personRepository, userAccountRepository, auditLogService);
     }
 
     @Test

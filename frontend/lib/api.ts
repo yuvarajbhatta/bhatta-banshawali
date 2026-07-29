@@ -615,3 +615,27 @@ export function createAdminRelationship(body: AdminRelationshipRequest): Promise
 export function deleteAdminRelationship(id: number): Promise<void> {
   return adminApiRequest(`/api/v1/admin/relationships/${id}`, "DELETE");
 }
+
+// Mirrors com.familytree.dto.AuditLogEntryDto.
+export interface AuditLogEntryDto {
+  id: number;
+  actorUsername: string;
+  action: string;
+  entityType: string;
+  entityId: number | null;
+  summary: string;
+  createdAt: string;
+}
+
+export async function getAdminAuditLog(cookieHeader: string, limit?: number): Promise<AdminListResult<AuditLogEntryDto>> {
+  const query = limit ? `?limit=${limit}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/audit-log${query}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load audit log: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}

@@ -33,6 +33,9 @@ class RelationshipServiceTest {
     @Mock
     private PersonRepository personRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private RelationshipService relationshipService;
 

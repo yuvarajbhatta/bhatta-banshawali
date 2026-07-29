@@ -32,17 +32,20 @@ public class VerificationReviewService {
     private final RoleRepository roleRepository;
     private final PersonRepository personRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
+    private final AuditLogService auditLogService;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
                                      RoleRepository roleRepository,
                                      PersonRepository personRepository,
-                                     UserPersonLinkRepository userPersonLinkRepository) {
+                                     UserPersonLinkRepository userPersonLinkRepository,
+                                     AuditLogService auditLogService) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
         this.personRepository = personRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
+        this.auditLogService = auditLogService;
     }
 
     /**
@@ -73,6 +76,9 @@ public class VerificationReviewService {
             link.setVerifiedAt(LocalDateTime.now());
             userPersonLinkRepository.save(link);
         }
+
+        auditLogService.record(AuditLogService.ACTION_SIGNUP_APPROVED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
+                verificationRequestId, "Approved signup for " + request.getSubmittedFullName(), reviewerUsername);
     }
 
     @Transactional
@@ -83,6 +89,9 @@ public class VerificationReviewService {
         UserAccount account = request.getUserAccount();
         account.setStatus(UserAccountStatus.DISABLED);
         userAccountRepository.save(account);
+
+        auditLogService.record(AuditLogService.ACTION_SIGNUP_REJECTED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
+                verificationRequestId, "Rejected signup for " + request.getSubmittedFullName(), reviewerUsername);
     }
 
     @Transactional
@@ -91,6 +100,9 @@ public class VerificationReviewService {
         markReviewed(request, VerificationStatus.NEEDS_MORE_INFO, reviewerUsername, decisionNote);
         // UserAccount status is left as-is: the applicant hasn't been
         // rejected, just asked for more information before a decision.
+
+        auditLogService.record(AuditLogService.ACTION_SIGNUP_MORE_INFO_REQUESTED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
+                verificationRequestId, "Requested more info for signup from " + request.getSubmittedFullName(), reviewerUsername);
     }
 
     private void markReviewed(VerificationRequest request, VerificationStatus status, String reviewerUsername,
