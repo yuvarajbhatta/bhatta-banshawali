@@ -10,7 +10,9 @@
       "members": "सदस्यहरू",
       "administration": "प्रशासन",
       "signupReview": "साइनअप समीक्षा",
-      "correctionReview": "सुधारहरू"
+      "correctionReview": "सुधारहरू",
+      "people": "व्यक्तिहरू",
+      "relationships": "सम्बन्धहरू"
     },
     "header": {
       "searchPlaceholder": "परिवारका सदस्य खोज्नुहोस्...",
@@ -299,6 +301,83 @@
     "actionError": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।",
     "notAdded": "थपिएको छैन",
     "status": "स्थिति",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।"
+  },
+  "adminPersonsPage": {
+    "title": "व्यक्तिहरू",
+    "subtitle": "व्यक्ति अभिलेखहरू थप्नुहोस्, सम्पादन गर्नुहोस् र हटाउनुहोस्।",
+    "searchPlaceholder": "नाम, उपनाम, वा पुस्ताद्वारा खोज्नुहोस्...",
+    "addPerson": "+ व्यक्ति थप्नुहोस्",
+    "columns": {
+      "name": "नाम",
+      "generation": "पुस्ता",
+      "birthDate": "जन्म मिति"
+    },
+    "edit": "सम्पादन गर्नुहोस्",
+    "delete": "मेट्नुहोस्",
+    "deleteConfirm": "{name} लाई मेट्ने हो? यसले उनीहरूको सम्बन्धहरू पनि हटाउँछ। यो फिर्ता गर्न सकिँदैन।",
+    "deleteError": "यो व्यक्तिलाई मेटाउन सकिएन। फेरि प्रयास गर्नुहोस्।",
+    "empty": "कुनै व्यक्ति फेला परेन।",
+    "backToList": "व्यक्तिहरूमा फर्कनुहोस्",
+    "newTitle": "नयाँ व्यक्ति थप्नुहोस्",
+    "editTitle": "{name} सम्पादन गर्नुहोस्",
+    "notFound": "व्यक्ति फेला परेन।",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।",
+    "form": {
+      "nameSection": "नाम",
+      "firstName": "पहिलो नाम",
+      "firstNameNepali": "पहिलो नाम (नेपाली)",
+      "middleName": "बीचको नाम",
+      "middleNameNepali": "बीचको नाम (नेपाली)",
+      "lastName": "थर",
+      "lastNameNepali": "थर (नेपाली)",
+      "nickname": "उपनाम",
+      "gender": "लिङ्ग",
+      "genderUnspecified": "उल्लेख नगरिएको",
+      "genderMale": "पुरुष",
+      "genderFemale": "महिला",
+      "datesSection": "मिति र स्थान",
+      "generationNumber": "पुस्ता संख्या",
+      "birthDate": "जन्म मिति",
+      "deathDate": "मृत्यु मिति",
+      "birthPlace": "जन्मस्थान",
+      "currentAddress": "हालको ठेगाना",
+      "notesSection": "टिप्पणीहरू",
+      "notes": "टिप्पणीहरू",
+      "firstNameRequired": "पहिलो नाम आवश्यक छ।",
+      "lastNameRequired": "थर आवश्यक छ।",
+      "saveError": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।"
+    },
+    "save": "सुरक्षित गर्नुहोस्",
+    "create": "व्यक्ति थप्नुहोस्"
+  },
+  "adminRelationshipsPage": {
+    "title": "सम्बन्धहरू",
+    "subtitle": "व्यक्तिहरूबीच आमाबुबा, जीवनसाथी र सन्तान सम्बन्ध थप्नुहोस् र हटाउनुहोस्।",
+    "addRelationship": "सम्बन्ध थप्नुहोस्",
+    "person": "व्यक्ति",
+    "relatedPerson": "सम्बन्धित व्यक्ति",
+    "type": "सम्बन्धको प्रकार",
+    "selectPerson": "व्यक्ति खोजेर छान्नुहोस्...",
+    "selectRelatedPerson": "सम्बन्धित व्यक्ति खोजेर छान्नुहोस्...",
+    "clear": "परिवर्तन गर्नुहोस्",
+    "save": "सम्बन्ध सुरक्षित गर्नुहोस्",
+    "delete": "मेट्नुहोस्",
+    "deleteConfirm": "यो सम्बन्ध मेट्ने हो? यो फिर्ता गर्न सकिँदैन।",
+    "empty": "कुनै सम्बन्ध फेला परेन।",
+    "columns": {
+      "person": "व्यक्ति",
+      "relatedPerson": "सम्बन्धित व्यक्ति",
+      "type": "प्रकार"
+    },
+    "errors": {
+      "personRequired": "व्यक्ति छान्नुहोस्।",
+      "relatedPersonRequired": "सम्बन्धित व्यक्ति छान्नुहोस्।",
+      "samePerson": "व्यक्ति र सम्बन्धित व्यक्ति उस्तै हुन सक्दैन।",
+      "duplicate": "यो सम्बन्ध पहिले नै अवस्थित छ।",
+      "cycle": "यो सम्बन्धले कुनै व्यक्तिलाई आफ्नै पुर्खा बनाउनेछ। दिशा जाँच गर्नुहोस्।",
+      "generic": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।"
+    },
     "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।"
   },
   "contactPage": {

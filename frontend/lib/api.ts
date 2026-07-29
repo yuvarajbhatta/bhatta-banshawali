@@ -474,41 +474,144 @@ export interface AdminDecisionRequest {
 export class AdminActionError extends Error {}
 
 // Called directly from the browser -- same CSRF pattern as
-// submitCorrection. All admin decision actions share this one helper.
-async function postAdminAction<T>(path: string, body: unknown): Promise<T> {
+// submitCorrection. Every admin mutation (decision actions, person/
+// relationship CRUD) shares this one helper. A 204 (delete) has no
+// body to parse, so callers that don't need a return value pass
+// `void` as T and this resolves to undefined instead of calling
+// response.json() on an empty body.
+async function adminApiRequest<T>(path: string, method: "POST" | "PUT" | "DELETE", body?: unknown): Promise<T> {
   const xsrfToken = readXsrfTokenCookie();
   const response = await fetch(path, {
-    method: "POST",
+    method,
     headers: {
-      "Content-Type": "application/json",
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
     },
-    body: JSON.stringify(body),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
     throw new AdminActionError(errorBody?.message ?? `Request failed: ${response.status}`);
   }
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json();
 }
 
 export function approveSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
-  return postAdminAction(`/api/v1/admin/signups/${id}/approve`, body);
+  return adminApiRequest(`/api/v1/admin/signups/${id}/approve`, "POST", body);
 }
 
 export function rejectSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
-  return postAdminAction(`/api/v1/admin/signups/${id}/reject`, body);
+  return adminApiRequest(`/api/v1/admin/signups/${id}/reject`, "POST", body);
 }
 
 export function requestMoreInfoSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
-  return postAdminAction(`/api/v1/admin/signups/${id}/request-more-info`, body);
+  return adminApiRequest(`/api/v1/admin/signups/${id}/request-more-info`, "POST", body);
 }
 
 export function approveCorrection(id: number, body: AdminDecisionRequest): Promise<AdminCorrectionSummaryDto> {
-  return postAdminAction(`/api/v1/admin/corrections/${id}/approve`, body);
+  return adminApiRequest(`/api/v1/admin/corrections/${id}/approve`, "POST", body);
 }
 
 export function rejectCorrection(id: number, body: AdminDecisionRequest): Promise<AdminCorrectionSummaryDto> {
-  return postAdminAction(`/api/v1/admin/corrections/${id}/reject`, body);
+  return adminApiRequest(`/api/v1/admin/corrections/${id}/reject`, "POST", body);
+}
+
+// Mirrors com.familytree.dto.AdminPersonDto / AdminPersonRequestDto.
+export interface AdminPersonDto {
+  id: number;
+  generationNumber: number | null;
+  firstName: string;
+  firstNameNepali: string | null;
+  middleName: string | null;
+  middleNameNepali: string | null;
+  lastName: string;
+  lastNameNepali: string | null;
+  nickname: string | null;
+  gender: string | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  photoPath: string | null;
+  birthPlace: string | null;
+  currentAddress: string | null;
+  notes: string | null;
+}
+
+export type AdminPersonRequest = Omit<AdminPersonDto, "id">;
+
+export async function getAdminPersons(cookieHeader: string, keyword?: string): Promise<AdminListResult<AdminPersonDto>> {
+  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/persons${query}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load persons: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export async function getAdminPersonDetail(cookieHeader: string, id: string): Promise<AdminDetailResult<AdminPersonDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/persons/${encodeURIComponent(id)}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (response.status === 404) return { kind: "not-found" };
+  if (!response.ok) throw new Error(`Failed to load person: ${response.status}`);
+  return { kind: "ok", detail: await response.json() };
+}
+
+export function createAdminPerson(body: AdminPersonRequest): Promise<AdminPersonDto> {
+  return adminApiRequest("/api/v1/admin/persons", "POST", body);
+}
+
+export function updateAdminPerson(id: number, body: AdminPersonRequest): Promise<AdminPersonDto> {
+  return adminApiRequest(`/api/v1/admin/persons/${id}`, "PUT", body);
+}
+
+export function deleteAdminPerson(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/persons/${id}`, "DELETE");
+}
+
+// Mirrors com.familytree.dto.AdminRelationshipDto / AdminRelationshipRequestDto.
+export interface AdminRelationshipDto {
+  id: number;
+  personId: number;
+  personName: string;
+  relatedPersonId: number;
+  relatedPersonName: string;
+  relationshipType: "FATHER" | "MOTHER" | "SPOUSE" | "CHILD";
+}
+
+export interface AdminRelationshipRequest {
+  personId: number;
+  relatedPersonId: number;
+  relationshipType: AdminRelationshipDto["relationshipType"];
+}
+
+export async function getAdminRelationships(cookieHeader: string): Promise<AdminListResult<AdminRelationshipDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/relationships`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load relationships: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function createAdminRelationship(body: AdminRelationshipRequest): Promise<AdminRelationshipDto> {
+  return adminApiRequest("/api/v1/admin/relationships", "POST", body);
+}
+
+export function deleteAdminRelationship(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/relationships/${id}`, "DELETE");
 }

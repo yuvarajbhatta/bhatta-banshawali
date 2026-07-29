@@ -1,0 +1,72 @@
+.wrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+}
+
+.selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-primary-500);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-50);
+  font-size: var(--text-sm);
+}
+
+.clearButton {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  text-decoration: underline;
+}
+
+.results {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: var(--z-canvas-overlay);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+}
+
+.resultButton {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.resultButton:hover {
+  background: var(--color-primary-50);
+}

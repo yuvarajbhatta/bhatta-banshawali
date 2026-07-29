@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileCheck, GitFork, LayoutDashboard, ShieldCheck, Users, Workflow } from "lucide-react";
+import { FileCheck, GitFork, LayoutDashboard, Link2, ShieldCheck, UserCog, Users, Workflow } from "lucide-react";
 
 export interface AppNavItem {
   href: "/dashboard" | "/family" | "/tree" | "/directory";
@@ -18,10 +18,10 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 ];
 
 export interface AdminNavItem {
-  href: "/admin/signups" | "/admin/corrections";
-  labelKey: "signupReview" | "correctionReview";
+  href: "/admin/signups" | "/admin/corrections" | "/admin/persons" | "/admin/relationships";
+  labelKey: "signupReview" | "correctionReview" | "people" | "relationships";
   icon: LucideIcon;
-  countKey: "pendingSignupCount" | "pendingCorrectionCount";
+  countKey?: "pendingSignupCount" | "pendingCorrectionCount";
 }
 
 // Only shown to admins (docs/08 Phase 6) -- Sidebar checks isAdmin before
@@ -29,4 +29,6 @@ export interface AdminNavItem {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/signups", labelKey: "signupReview", icon: ShieldCheck, countKey: "pendingSignupCount" },
   { href: "/admin/corrections", labelKey: "correctionReview", icon: FileCheck, countKey: "pendingCorrectionCount" },
+  { href: "/admin/persons", labelKey: "people", icon: UserCog },
+  { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
 ];

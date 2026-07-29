@@ -60,7 +60,7 @@ export function Sidebar({ onNavigate, footer, adminCounts }: SidebarProps) {
             <p className={styles.sectionLabel}>{t("administration")}</p>
             {ADMIN_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const count = adminCounts[item.countKey];
+              const count = item.countKey ? adminCounts[item.countKey] : undefined;
               return (
                 <Link
                   key={item.href}
@@ -71,7 +71,7 @@ export function Sidebar({ onNavigate, footer, adminCounts }: SidebarProps) {
                 >
                   <Icon size={18} className={styles.navIcon} aria-hidden="true" />
                   {t(item.labelKey)}
-                  {count > 0 ? <span className={styles.countBadge}>{count}</span> : null}
+                  {count != null && count > 0 ? <span className={styles.countBadge}>{count}</span> : null}
                 </Link>
               );
             })}

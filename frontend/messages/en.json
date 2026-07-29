@@ -10,7 +10,9 @@
       "members": "Members",
       "administration": "Administration",
       "signupReview": "Signup Review",
-      "correctionReview": "Corrections"
+      "correctionReview": "Corrections",
+      "people": "People",
+      "relationships": "Relationships"
     },
     "header": {
       "searchPlaceholder": "Search family members...",
@@ -299,6 +301,83 @@
     "actionError": "Something went wrong. Please try again.",
     "notAdded": "Not added",
     "status": "Status",
+    "forbidden": "You don't have permission to view this."
+  },
+  "adminPersonsPage": {
+    "title": "People",
+    "subtitle": "Add, edit, and remove person records.",
+    "searchPlaceholder": "Search by name, nickname, or generation...",
+    "addPerson": "+ Add Person",
+    "columns": {
+      "name": "Name",
+      "generation": "Generation",
+      "birthDate": "Birth Date"
+    },
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {name}? This also removes their relationships. This cannot be undone.",
+    "deleteError": "Could not delete this person. Please try again.",
+    "empty": "No people found.",
+    "backToList": "Back to People",
+    "newTitle": "Add New Person",
+    "editTitle": "Edit {name}",
+    "notFound": "Person not found.",
+    "forbidden": "You don't have permission to view this.",
+    "form": {
+      "nameSection": "Name",
+      "firstName": "First Name",
+      "firstNameNepali": "First Name (Nepali)",
+      "middleName": "Middle Name",
+      "middleNameNepali": "Middle Name (Nepali)",
+      "lastName": "Last Name",
+      "lastNameNepali": "Last Name (Nepali)",
+      "nickname": "Nickname",
+      "gender": "Gender",
+      "genderUnspecified": "Unspecified",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "datesSection": "Dates and Location",
+      "generationNumber": "Generation Number",
+      "birthDate": "Birth Date",
+      "deathDate": "Death Date",
+      "birthPlace": "Birth Place",
+      "currentAddress": "Current Address",
+      "notesSection": "Notes",
+      "notes": "Notes",
+      "firstNameRequired": "First name is required.",
+      "lastNameRequired": "Last name is required.",
+      "saveError": "Something went wrong. Please try again."
+    },
+    "save": "Save",
+    "create": "Add Person"
+  },
+  "adminRelationshipsPage": {
+    "title": "Relationships",
+    "subtitle": "Add and remove parent, spouse, and child links between people.",
+    "addRelationship": "Add Relationship",
+    "person": "Person",
+    "relatedPerson": "Related Person",
+    "type": "Relationship Type",
+    "selectPerson": "Search and select a person...",
+    "selectRelatedPerson": "Search and select a related person...",
+    "clear": "Change",
+    "save": "Save Relationship",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this relationship? This cannot be undone.",
+    "empty": "No relationships found.",
+    "columns": {
+      "person": "Person",
+      "relatedPerson": "Related Person",
+      "type": "Type"
+    },
+    "errors": {
+      "personRequired": "Select a person.",
+      "relatedPersonRequired": "Select a related person.",
+      "samePerson": "Person and related person cannot be the same.",
+      "duplicate": "This relationship already exists.",
+      "cycle": "This relationship would make a person their own ancestor. Please check the direction.",
+      "generic": "Something went wrong. Please try again."
+    },
     "forbidden": "You don't have permission to view this."
   },
   "contactPage": {
