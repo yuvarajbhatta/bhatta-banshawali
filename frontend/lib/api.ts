@@ -347,3 +347,168 @@ export async function getFamilyTree(cookieHeader: string): Promise<FamilyTreeRes
   }
   return { kind: "ok", tree: await response.json() };
 }
+
+// Mirrors the backend enums exactly (com.familytree.entity.*).
+export type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED" | "NEEDS_MORE_INFO";
+export type MatchConfidence = "HIGH" | "MEDIUM" | "LOW";
+export type CorrectionRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+// Mirrors com.familytree.dto.AdminSignupSummaryDto / AdminSignupDetailDto
+// (docs/08 Phase 6 admin review queues).
+export interface AdminSignupSummaryDto {
+  id: number;
+  submittedFullName: string;
+  submittedFatherName: string;
+  submittedGrandfatherName: string;
+  matchConfidence: MatchConfidence;
+  status: VerificationStatus;
+  createdAt: string;
+}
+
+export interface AdminSignupDetailDto {
+  id: number;
+  submittedFullName: string;
+  submittedFullNameNepali: string | null;
+  submittedFatherName: string;
+  submittedGrandfatherName: string;
+  submittedDobAd: string | null;
+  submittedDobBsYear: number | null;
+  submittedDobBsMonth: number | null;
+  submittedDobBsDay: number | null;
+  motherName: string | null;
+  placeOfBirth: string | null;
+  ancestralVillage: string | null;
+  familyBranch: string | null;
+  knownRelativeName: string | null;
+  invitationCode: string | null;
+  applicantNote: string | null;
+  matchConfidence: MatchConfidence;
+  status: VerificationStatus;
+  reviewedByUsername: string | null;
+  reviewedAt: string | null;
+  decisionNote: string | null;
+  createdAt: string;
+  candidates: PersonSummaryDto[];
+}
+
+// Mirrors com.familytree.dto.AdminCorrectionSummaryDto.
+export interface AdminCorrectionSummaryDto {
+  id: number;
+  personId: number;
+  personName: string;
+  field: CorrectablePersonField;
+  currentValueSnapshot: string | null;
+  proposedValue: string;
+  reason: string;
+  submittedByEmail: string;
+  submittedAt: string;
+  status: CorrectionRequestStatus;
+  reviewedByUsername: string | null;
+  reviewedAt: string | null;
+  decisionNote: string | null;
+}
+
+export type AdminListResult<T> =
+  | { kind: "ok"; items: T[] }
+  | { kind: "unauthenticated" }
+  | { kind: "forbidden" };
+
+export type AdminDetailResult<T> =
+  | { kind: "ok"; detail: T }
+  | { kind: "unauthenticated" }
+  | { kind: "forbidden" }
+  | { kind: "not-found" };
+
+// Server-to-server with the browser's session cookie forwarded, same
+// pattern as getAdminSummary -- "forbidden" (a 403) is an expected,
+// distinct outcome from "unauthenticated" (a 401): a signed-in
+// non-admin member hitting an admin-only page, not a missing session.
+export async function getAdminSignups(cookieHeader: string, status?: VerificationStatus): Promise<AdminListResult<AdminSignupSummaryDto>> {
+  const query = status ? `?status=${status}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/signups${query}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load signup requests: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export async function getAdminSignupDetail(cookieHeader: string, id: string): Promise<AdminDetailResult<AdminSignupDetailDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/signups/${encodeURIComponent(id)}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (response.status === 404) return { kind: "not-found" };
+  if (!response.ok) throw new Error(`Failed to load signup request: ${response.status}`);
+  return { kind: "ok", detail: await response.json() };
+}
+
+export async function getAdminCorrections(cookieHeader: string, status?: CorrectionRequestStatus): Promise<AdminListResult<AdminCorrectionSummaryDto>> {
+  const query = status ? `?status=${status}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/corrections${query}`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load correction requests: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export interface AdminSignupDecisionRequest {
+  decisionNote?: string;
+  linkedPersonId?: number;
+}
+
+export interface AdminDecisionRequest {
+  decisionNote?: string;
+}
+
+export class AdminActionError extends Error {}
+
+// Called directly from the browser -- same CSRF pattern as
+// submitCorrection. All admin decision actions share this one helper.
+async function postAdminAction<T>(path: string, body: unknown): Promise<T> {
+  const xsrfToken = readXsrfTokenCookie();
+  const response = await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new AdminActionError(errorBody?.message ?? `Request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export function approveSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
+  return postAdminAction(`/api/v1/admin/signups/${id}/approve`, body);
+}
+
+export function rejectSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
+  return postAdminAction(`/api/v1/admin/signups/${id}/reject`, body);
+}
+
+export function requestMoreInfoSignup(id: number, body: AdminSignupDecisionRequest): Promise<AdminSignupDetailDto> {
+  return postAdminAction(`/api/v1/admin/signups/${id}/request-more-info`, body);
+}
+
+export function approveCorrection(id: number, body: AdminDecisionRequest): Promise<AdminCorrectionSummaryDto> {
+  return postAdminAction(`/api/v1/admin/corrections/${id}/approve`, body);
+}
+
+export function rejectCorrection(id: number, body: AdminDecisionRequest): Promise<AdminCorrectionSummaryDto> {
+  return postAdminAction(`/api/v1/admin/corrections/${id}/reject`, body);
+}

@@ -7,7 +7,10 @@
       "dashboard": "Dashboard",
       "yourFamily": "Your Family",
       "familyTree": "Family Tree",
-      "members": "Members"
+      "members": "Members",
+      "administration": "Administration",
+      "signupReview": "Signup Review",
+      "correctionReview": "Corrections"
     },
     "header": {
       "searchPlaceholder": "Search family members...",
@@ -226,6 +229,77 @@
       "notConnected": "No relationship path could be found between you and this person.",
       "viewFullProfile": "View full profile"
     }
+  },
+  "verificationStatus": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "NEEDS_MORE_INFO": "Needs More Info"
+  },
+  "matchConfidence": {
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low"
+  },
+  "correctionRequestStatus": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "adminSignupsPage": {
+    "title": "Signup Review",
+    "subtitle": "Review applicants against existing family records before approving membership.",
+    "submittedName": "Submitted Name",
+    "fatherName": "Father",
+    "grandfatherName": "Grandfather",
+    "confidence": "Match Confidence",
+    "submittedAt": "Submitted",
+    "review": "Review",
+    "empty": "No signup requests in this status.",
+    "backToList": "Back to Signup Review",
+    "detailTitle": "Signup Request",
+    "submittedInfo": "Submitted Information",
+    "birthDate": "Birth Date",
+    "motherName": "Mother",
+    "birthPlace": "Birth Place",
+    "ancestralVillage": "Ancestral Village",
+    "familyBranch": "Family Branch",
+    "knownRelative": "Known Relative",
+    "invitationCode": "Invitation Code",
+    "applicantNote": "Applicant Note",
+    "matchEvidence": "Match Evidence",
+    "matchEvidenceHelp": "Existing family records the matcher considered. This is never shown to the applicant.",
+    "noCandidates": "No existing records matched the submitted name.",
+    "linkThisPerson": "Link",
+    "linkHelp": "Select which candidate above this applicant actually is before approving, if any -- this links their new account to that existing record. Leave unselected if none of the candidates are a match.",
+    "decision": "Decision",
+    "decisionNote": "Decision Note (optional)",
+    "approve": "Approve",
+    "requestMoreInfo": "Request More Info",
+    "reject": "Reject",
+    "reviewedBy": "Reviewed by {username}",
+    "notFound": "Signup request not found.",
+    "forbidden": "You don't have permission to view this.",
+    "actionError": "Something went wrong. Please try again.",
+    "notAdded": "Not added",
+    "generation": "Generation"
+  },
+  "adminCorrectionsPage": {
+    "title": "Correction Requests",
+    "subtitle": "Review member-submitted corrections to person records.",
+    "person": "Person",
+    "field": "Field",
+    "currentValue": "Current Value",
+    "proposedValue": "Proposed Value",
+    "reason": "Reason",
+    "submittedBy": "Submitted By",
+    "empty": "No correction requests in this status.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "actionError": "Something went wrong. Please try again.",
+    "notAdded": "Not added",
+    "status": "Status",
+    "forbidden": "You don't have permission to view this."
   },
   "contactPage": {
     "title": "Contact",

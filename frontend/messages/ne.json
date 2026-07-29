@@ -7,7 +7,10 @@
       "dashboard": "ड्यासबोर्ड",
       "yourFamily": "तपाईंको परिवार",
       "familyTree": "पारिवारिक रूख",
-      "members": "सदस्यहरू"
+      "members": "सदस्यहरू",
+      "administration": "प्रशासन",
+      "signupReview": "साइनअप समीक्षा",
+      "correctionReview": "सुधारहरू"
     },
     "header": {
       "searchPlaceholder": "परिवारका सदस्य खोज्नुहोस्...",
@@ -226,6 +229,77 @@
       "notConnected": "तपाईं र यो व्यक्तिबीच कुनै नाता मार्ग फेला परेन।",
       "viewFullProfile": "पूरा प्रोफाइल हेर्नुहोस्"
     }
+  },
+  "verificationStatus": {
+    "PENDING": "विचाराधीन",
+    "APPROVED": "स्वीकृत",
+    "REJECTED": "अस्वीकृत",
+    "NEEDS_MORE_INFO": "थप जानकारी आवश्यक"
+  },
+  "matchConfidence": {
+    "HIGH": "उच्च",
+    "MEDIUM": "मध्यम",
+    "LOW": "न्यून"
+  },
+  "correctionRequestStatus": {
+    "PENDING": "विचाराधीन",
+    "APPROVED": "स्वीकृत",
+    "REJECTED": "अस्वीकृत"
+  },
+  "adminSignupsPage": {
+    "title": "साइनअप समीक्षा",
+    "subtitle": "सदस्यता स्वीकृत गर्नु अघि आवेदकहरूलाई अवस्थित पारिवारिक अभिलेखसँग तुलना गर्नुहोस्।",
+    "submittedName": "पेश गरिएको नाम",
+    "fatherName": "बुबा",
+    "grandfatherName": "हजुरबुबा",
+    "confidence": "मेल विश्वसनीयता",
+    "submittedAt": "पेश गरिएको",
+    "review": "समीक्षा गर्नुहोस्",
+    "empty": "यो स्थितिमा कुनै साइनअप अनुरोध छैन।",
+    "backToList": "साइनअप समीक्षामा फर्कनुहोस्",
+    "detailTitle": "साइनअप अनुरोध",
+    "submittedInfo": "पेश गरिएको जानकारी",
+    "birthDate": "जन्म मिति",
+    "motherName": "आमा",
+    "birthPlace": "जन्मस्थान",
+    "ancestralVillage": "पुर्खाको गाउँ",
+    "familyBranch": "पारिवारिक शाखा",
+    "knownRelative": "चिनेको नातेदार",
+    "invitationCode": "आमन्त्रण कोड",
+    "applicantNote": "आवेदकको टिप्पणी",
+    "matchEvidence": "मेल प्रमाण",
+    "matchEvidenceHelp": "मिलानकर्ताले विचार गरेको अवस्थित पारिवारिक अभिलेखहरू। यो आवेदकलाई कहिल्यै देखाइँदैन।",
+    "noCandidates": "पेश गरिएको नामसँग कुनै अवस्थित अभिलेख मेल खाएन।",
+    "linkThisPerson": "लिंक",
+    "linkHelp": "स्वीकृत गर्नु अघि माथिका उम्मेदवारहरूमध्ये यो आवेदक साँच्चै को हो छान्नुहोस्, यदि छ भने -- यसले उनीहरूको नयाँ खातालाई त्यो अवस्थित अभिलेखसँग जोड्छ। यदि कुनै उम्मेदवार मिल्दैन भने चयन नगर्नुहोस्।",
+    "decision": "निर्णय",
+    "decisionNote": "निर्णय टिप्पणी (वैकल्पिक)",
+    "approve": "स्वीकृत गर्नुहोस्",
+    "requestMoreInfo": "थप जानकारी माग्नुहोस्",
+    "reject": "अस्वीकार गर्नुहोस्",
+    "reviewedBy": "{username} द्वारा समीक्षा गरिएको",
+    "notFound": "साइनअप अनुरोध फेला परेन।",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।",
+    "actionError": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।",
+    "notAdded": "थपिएको छैन",
+    "generation": "पुस्ता"
+  },
+  "adminCorrectionsPage": {
+    "title": "सुधार अनुरोधहरू",
+    "subtitle": "व्यक्ति अभिलेखहरूमा सदस्यले पेश गरेका सुधारहरू समीक्षा गर्नुहोस्।",
+    "person": "व्यक्ति",
+    "field": "क्षेत्र",
+    "currentValue": "हालको मान",
+    "proposedValue": "प्रस्तावित मान",
+    "reason": "कारण",
+    "submittedBy": "पेश गर्ने",
+    "empty": "यो स्थितिमा कुनै सुधार अनुरोध छैन।",
+    "approve": "स्वीकृत गर्नुहोस्",
+    "reject": "अस्वीकार गर्नुहोस्",
+    "actionError": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।",
+    "notAdded": "थपिएको छैन",
+    "status": "स्थिति",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।"
   },
   "contactPage": {
     "title": "सम्पर्क",

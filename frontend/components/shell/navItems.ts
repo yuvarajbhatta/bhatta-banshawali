@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { GitFork, LayoutDashboard, Users, Workflow } from "lucide-react";
+import { FileCheck, GitFork, LayoutDashboard, ShieldCheck, Users, Workflow } from "lucide-react";
 
 export interface AppNavItem {
   href: "/dashboard" | "/family" | "/tree" | "/directory";
@@ -15,4 +15,18 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { href: "/family", labelKey: "yourFamily", icon: Workflow },
   { href: "/tree", labelKey: "familyTree", icon: GitFork },
   { href: "/directory", labelKey: "members", icon: Users },
+];
+
+export interface AdminNavItem {
+  href: "/admin/signups" | "/admin/corrections";
+  labelKey: "signupReview" | "correctionReview";
+  icon: LucideIcon;
+  countKey: "pendingSignupCount" | "pendingCorrectionCount";
+}
+
+// Only shown to admins (docs/08 Phase 6) -- Sidebar checks isAdmin before
+// rendering this section at all.
+export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+  { href: "/admin/signups", labelKey: "signupReview", icon: ShieldCheck, countKey: "pendingSignupCount" },
+  { href: "/admin/corrections", labelKey: "correctionReview", icon: FileCheck, countKey: "pendingCorrectionCount" },
 ];

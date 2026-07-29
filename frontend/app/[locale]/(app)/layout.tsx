@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/AppShell";
-import { getMemberProfile } from "@/lib/api";
+import { getAdminSummary, getMemberProfile } from "@/lib/api";
 
 /**
  * Shared chrome (sidebar + header) for the authenticated section of the
@@ -18,7 +18,13 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
 
-  const result = await getMemberProfile(cookieHeader);
+  const [result, adminSummary] = await Promise.all([
+    getMemberProfile(cookieHeader),
+    // Cheap enough to call for every authenticated page load: returns
+    // null on a 403 (not an admin), which also doubles as the sidebar's
+    // "should the Administration section render at all" check.
+    getAdminSummary(cookieHeader),
+  ]);
 
   if (result.kind === "unauthenticated") {
     redirect("/login");
@@ -43,7 +49,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   }
 
   return (
-    <AppShell displayName={displayName} roleLabel={roleLabel}>
+    <AppShell displayName={displayName} roleLabel={roleLabel} adminCounts={adminSummary}>
       {children}
     </AppShell>
   );

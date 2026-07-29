@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, type AdminNavCounts } from "./Sidebar";
 import { TopHeader } from "./TopHeader";
 import { UserMenu } from "./UserMenu";
 import { DURATION, EASE_OUT } from "@/lib/motion";
@@ -15,10 +15,11 @@ import styles from "./AppShell.module.css";
 interface AppShellProps {
   displayName: string;
   roleLabel: string;
+  adminCounts?: AdminNavCounts | null;
   children: ReactNode;
 }
 
-export function AppShell({ displayName, roleLabel, children }: AppShellProps) {
+export function AppShell({ displayName, roleLabel, adminCounts, children }: AppShellProps) {
   const t = useTranslations("appShell.header");
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -80,7 +81,10 @@ export function AppShell({ displayName, roleLabel, children }: AppShellProps) {
   return (
     <div className={styles.shell}>
       <aside className={styles.desktopSidebar}>
-        <Sidebar footer={<UserMenu displayName={displayName} roleLabel={roleLabel} placement="above" />} />
+        <Sidebar
+          adminCounts={adminCounts}
+          footer={<UserMenu displayName={displayName} roleLabel={roleLabel} placement="above" />}
+        />
       </aside>
 
       <div className={styles.main}>
@@ -128,6 +132,7 @@ export function AppShell({ displayName, roleLabel, children }: AppShellProps) {
               <div className={styles.drawerBody}>
                 <Sidebar
                   onNavigate={() => setMobileNavOpen(false)}
+                  adminCounts={adminCounts}
                   footer={<UserMenu displayName={displayName} roleLabel={roleLabel} placement="above" />}
                 />
               </div>

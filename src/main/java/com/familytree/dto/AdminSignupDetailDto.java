@@ -1,0 +1,41 @@
+package com.familytree.dto;
+
+import com.familytree.entity.MatchConfidence;
+import com.familytree.entity.VerificationStatus;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Full submitted profile + match evidence for one signup request
+ * (docs/06 "Match Evidence panel"), mirrors admin-signup-detail.html.
+ * candidates is never shown to the applicant themselves -- see
+ * VerificationRequest.matchedCandidatePersonIds.
+ */
+public record AdminSignupDetailDto(
+        Long id,
+        String submittedFullName,
+        String submittedFullNameNepali,
+        String submittedFatherName,
+        String submittedGrandfatherName,
+        LocalDate submittedDobAd,
+        Integer submittedDobBsYear,
+        Integer submittedDobBsMonth,
+        Integer submittedDobBsDay,
+        String motherName,
+        String placeOfBirth,
+        String ancestralVillage,
+        String familyBranch,
+        String knownRelativeName,
+        String invitationCode,
+        String applicantNote,
+        MatchConfidence matchConfidence,
+        VerificationStatus status,
+        String reviewedByUsername,
+        LocalDateTime reviewedAt,
+        String decisionNote,
+        LocalDateTime createdAt,
+        List<PersonSummaryDto> candidates
+) {
+}

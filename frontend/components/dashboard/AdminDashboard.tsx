@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollReveal } from "@/components/motion/ScrollReveal";
 import type { AdminSummaryDto, PublicStatsDto } from "@/lib/api";
@@ -24,11 +25,13 @@ export async function AdminDashboard({ summary, stats }: AdminDashboardProps) {
     id: s.id,
     label: s.submittedFullName,
     meta: formatDate(s.submittedAt),
+    href: `/admin/signups/${s.id}`,
   }));
   const correctionItems = summary.recentPendingCorrections.map((c) => ({
     id: c.id,
     label: `${c.personName} — ${c.field}`,
     meta: formatDate(c.submittedAt),
+    href: "/admin/corrections",
   }));
 
   return (
@@ -103,8 +106,8 @@ function QueueCard({
   emptyLabel,
 }: {
   title: string;
-  items: { id: number; label: string; meta: string }[];
-  reviewHref: string;
+  items: { id: number; label: string; meta: string; href: string }[];
+  reviewHref: "/admin/signups" | "/admin/corrections";
   reviewLabel: string;
   emptyLabel: string;
 }) {
@@ -112,9 +115,9 @@ function QueueCard({
     <div className={styles.queueCard}>
       <div className={styles.queueHeader}>
         <h3>{title}</h3>
-        <a href={reviewHref} className={styles.reviewLink}>
+        <Link href={reviewHref} className={styles.reviewLink}>
           {reviewLabel}
-        </a>
+        </Link>
       </div>
       {items.length === 0 ? (
         <p className={styles.empty}>{emptyLabel}</p>
@@ -122,7 +125,7 @@ function QueueCard({
         <ul className={styles.queueList}>
           {items.map((item) => (
             <li key={item.id}>
-              <span>{item.label}</span>
+              <Link href={item.href}>{item.label}</Link>
               <span className={styles.meta}>{item.meta}</span>
             </li>
           ))}

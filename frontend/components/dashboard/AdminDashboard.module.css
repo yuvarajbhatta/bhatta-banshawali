@@ -120,6 +120,16 @@
   padding-bottom: 0;
 }
 
+.queueList li a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.queueList li a:hover {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+}
+
 .meta {
   color: var(--color-text-muted);
   white-space: nowrap;
