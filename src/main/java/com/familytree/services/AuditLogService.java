@@ -44,6 +44,7 @@ public class AuditLogService {
     public static final String ACTION_ADMIN_ACCESS_REQUESTED = "ADMIN_ACCESS_REQUESTED";
     public static final String ACTION_ADMIN_ACCESS_APPROVED = "ADMIN_ACCESS_APPROVED";
     public static final String ACTION_ADMIN_ACCESS_DENIED = "ADMIN_ACCESS_DENIED";
+    public static final String ACTION_ADMIN_ACCESS_REVOKED = "ADMIN_ACCESS_REVOKED";
 
     public static final String ENTITY_PERSON = "PERSON";
     public static final String ENTITY_RELATIONSHIP = "RELATIONSHIP";

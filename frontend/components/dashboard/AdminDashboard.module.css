@@ -51,7 +51,7 @@
 .statValue {
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
 }
 
 .statLabel {
@@ -87,7 +87,7 @@
 
 .reviewLink {
   font-size: var(--text-sm);
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
   font-weight: var(--font-weight-medium);
 }
 
@@ -126,7 +126,7 @@
 }
 
 .queueList li a:hover {
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
   text-decoration: underline;
 }
 

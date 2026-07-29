@@ -19,6 +19,8 @@ public class AdminAccountSignupInfoUpdateDto {
     @NotBlank(message = "Father's name is required.")
     private String fatherName;
 
+    private String motherName;
+
     @NotBlank(message = "Grandfather's name is required.")
     private String grandfatherName;
 
@@ -38,6 +40,14 @@ public class AdminAccountSignupInfoUpdateDto {
 
     public void setFatherName(String fatherName) {
         this.fatherName = fatherName;
+    }
+
+    public String getMotherName() {
+        return motherName;
+    }
+
+    public void setMotherName(String motherName) {
+        this.motherName = motherName;
     }
 
     public String getGrandfatherName() {

@@ -18,7 +18,7 @@
 }
 
 .backLink:hover {
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
 }
 
 .title {

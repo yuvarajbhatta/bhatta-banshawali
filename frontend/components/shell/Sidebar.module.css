@@ -61,7 +61,7 @@
 .countBadge {
   margin-left: auto;
   background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  color: var(--color-primary-700-text);
   border-radius: var(--radius-full);
   padding: 1px var(--space-2);
   font-size: var(--text-xs);
@@ -83,13 +83,13 @@
 
 .navLink:hover {
   background: var(--color-primary-50);
-  color: var(--color-primary-700);
+  color: var(--color-primary-700-text);
 }
 
 .navLinkActive,
 .navLinkActive:hover {
   background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  color: var(--color-primary-700-text);
 }
 
 .navIcon {

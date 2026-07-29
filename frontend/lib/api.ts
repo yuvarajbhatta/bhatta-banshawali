@@ -251,6 +251,25 @@ export function readXsrfTokenCookie(): string | null {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
+// Every authenticated page's data (member profile, admin summary, etc.)
+// is fetched server-to-server from Next.js's own Node process, forwarding
+// the browser's Cookie header -- but any Set-Cookie the backend sends
+// back on *those* requests is only ever seen by that internal fetch call
+// and never reaches the actual browser. So the browser's XSRF-TOKEN
+// cookie can go stale (e.g. right after login) with nothing to refresh
+// it until the user's first real mutating click, which then fails once
+// before self-healing on retry. Call this once on mount in a client
+// component (AppShell) to force one genuine browser->backend round trip
+// -- CsrfCookieFilter runs on every request through the security filter
+// chain, so even hitting a permitAll, no-op endpoint like this refreshes
+// the cookie before the user has a chance to click anything.
+export function warmCsrfCookie(): void {
+  fetch("/actuator/health", { cache: "no-store" }).catch(() => {
+    // Best-effort -- a failure here just means the old self-healing
+    // (fail once, retry) behavior on the first real mutation still applies.
+  });
+}
+
 // Spring Security's default logout endpoint (SecurityConfig: logoutSuccessUrl
 // "/login?logout"). A plain POST with the CSRF header, same pattern as
 // submitCorrection -- the browser's own session cookie rides along
@@ -712,10 +731,12 @@ export interface AdminUserAccountDto {
   preferredLanguage: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  isAdmin: boolean;
   linkedPersonId: number | null;
   linkedPersonName: string | null;
   submittedFullName: string | null;
   submittedFatherName: string | null;
+  submittedMotherName: string | null;
   submittedGrandfatherName: string | null;
   submittedDobAd: string | null;
 }
@@ -743,12 +764,26 @@ export function unlinkAdminAccount(id: number): Promise<void> {
 export interface AdminAccountSignupInfoUpdateRequest {
   fullName: string;
   fatherName: string;
+  motherName?: string;
   grandfatherName: string;
   dobAd?: string;
 }
 
 export function updateAdminAccountSignupInfo(id: number, body: AdminAccountSignupInfoUpdateRequest): Promise<void> {
   return adminApiRequest(`/api/v1/admin/accounts/${id}/signup-info`, "PUT", body);
+}
+
+// Copies the account's submitted signup name/DOB onto its linked
+// Person record. Father's/mother's/grandfather's names aren't included
+// -- Person has no fields for them (parentage is Relationship edges,
+// not strings), so those stay informational-only; wiring up the actual
+// family graph is a manual step via the Relationships tool.
+export function applyAdminAccountSignupInfoToPerson(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/apply-signup-info-to-person`, "POST");
+}
+
+export function revokeAdminAccessForAccount(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/revoke-admin`, "POST");
 }
 
 export function disableAdminAccount(id: number): Promise<void> {

@@ -125,6 +125,6 @@
 }
 
 .notice[data-variant="success"] {
-  background: color-mix(in srgb, var(--color-success) 12%, transparent);
-  color: var(--color-success);
+  background: var(--color-success-subtle);
+  color: var(--color-success-text);
 }

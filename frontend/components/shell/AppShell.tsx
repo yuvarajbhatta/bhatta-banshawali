@@ -10,6 +10,7 @@ import { Sidebar, type AdminNavCounts } from "./Sidebar";
 import { SidebarFooterActions } from "./SidebarFooterActions";
 import { TopHeader } from "./TopHeader";
 import { DURATION, EASE_OUT } from "@/lib/motion";
+import { warmCsrfCookie } from "@/lib/api";
 import styles from "./AppShell.module.css";
 
 interface AppShellProps {
@@ -38,6 +39,10 @@ export function AppShell({ displayName, roleLabel, email, adminAccessRequestStat
     setLastPathname(pathname);
     setMobileNavOpen(false);
   }
+
+  useEffect(() => {
+    warmCsrfCookie();
+  }, []);
 
   useEffect(() => {
     if (!mobileNavOpen) {

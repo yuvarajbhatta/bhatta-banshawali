@@ -3,6 +3,7 @@ package com.familytree.services;
 import com.familytree.dto.AdminAccountSignupInfoUpdateDto;
 import com.familytree.dto.AdminUserAccountDto;
 import com.familytree.entity.Person;
+import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.UserPersonLink;
@@ -20,9 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Admin management of every UserAccount, combining what used to be
@@ -34,6 +37,8 @@ import java.util.Optional;
  */
 @Service
 public class UserAccountAdminService {
+
+    private static final Set<String> ADMIN_ROLE_NAMES = Set.of("ADMINISTRATOR", "SUPER_ADMINISTRATOR");
 
     private final UserAccountRepository userAccountRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
@@ -145,12 +150,83 @@ public class UserAccountAdminService {
 
         mostRecent.setSubmittedFullName(request.getFullName());
         mostRecent.setSubmittedFatherName(request.getFatherName());
+        mostRecent.setMotherName(request.getMotherName());
         mostRecent.setSubmittedGrandfatherName(request.getGrandfatherName());
         mostRecent.setSubmittedDobAd(request.getDobAd());
         verificationRequestRepository.save(mostRecent);
 
         auditLogService.record(AuditLogService.ACTION_ACCOUNT_SIGNUP_INFO_EDITED, AuditLogService.ENTITY_USER_ACCOUNT,
                 userAccountId, "Edited submitted signup info for " + account.getEmail(), actorUsername);
+    }
+
+    /**
+     * Copies the applicant's submitted name and date of birth onto their
+     * linked Person record -- e.g. the signup form has a corrected DOB or
+     * spelling the existing Person record doesn't. Deliberately limited to
+     * fields Person actually stores directly: father's/mother's/
+     * grandfather's names have no equivalent Person field (parentage is
+     * represented as Relationship edges, not strings) and are never
+     * auto-wired into the family graph from free text -- that stays a
+     * manual, admin-confirmed step via the Relationships tool, the same
+     * as every other edge in the tree.
+     *
+     * @throws IllegalArgumentException if the account isn't linked to a person, or has
+     *          no signup record to apply
+     */
+    @Transactional
+    public void applySignupInfoToPerson(Long userAccountId, String actorUsername) {
+        UserAccount account = getOrThrow(userAccountId);
+        Person person = userPersonLinkRepository.findByUserAccountId(userAccountId).stream()
+                .filter(link -> link.getLinkStatus() == UserPersonLinkStatus.VERIFIED)
+                .map(UserPersonLink::getPerson)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("This account isn't linked to a person."));
+        VerificationRequest mostRecent = mostRecentVerificationRequest(userAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("This account has no signup info to apply."));
+
+        applyNameParts(person, mostRecent.getSubmittedFullName());
+        if (mostRecent.getSubmittedDobAd() != null) {
+            person.setBirthDate(mostRecent.getSubmittedDobAd());
+        }
+        personRepository.save(person);
+
+        auditLogService.record(AuditLogService.ACTION_PERSON_UPDATED, AuditLogService.ENTITY_PERSON, person.getId(),
+                "Applied submitted signup info from " + account.getEmail() + " to "
+                        + personDisplay.englishFullName(person), actorUsername);
+    }
+
+    private void applyNameParts(Person person, String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return;
+        }
+        String[] parts = fullName.trim().split("\\s+");
+        person.setFirstName(parts[0]);
+        if (parts.length == 1) {
+            person.setMiddleName(null);
+            return;
+        }
+        person.setLastName(parts[parts.length - 1]);
+        person.setMiddleName(parts.length > 2 ? String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1)) : null);
+    }
+
+    /**
+     * @throws IllegalArgumentException if the account has no admin role to revoke, or
+     *          the acting admin tries to revoke their own access
+     */
+    @Transactional
+    public void revokeAdminAccess(Long userAccountId, String actorUsername) {
+        UserAccount account = getOrThrow(userAccountId);
+        if (account.getEmail().equalsIgnoreCase(actorUsername)) {
+            throw new IllegalArgumentException("You cannot revoke your own admin access.");
+        }
+        boolean removed = account.getRoles().removeIf(role -> ADMIN_ROLE_NAMES.contains(role.getName()));
+        if (!removed) {
+            throw new IllegalArgumentException("This account doesn't have admin access.");
+        }
+        userAccountRepository.save(account);
+
+        auditLogService.record(AuditLogService.ACTION_ADMIN_ACCESS_REVOKED, AuditLogService.ENTITY_USER_ACCOUNT,
+                userAccountId, "Revoked admin access for " + account.getEmail(), actorUsername);
     }
 
     /**
@@ -205,10 +281,12 @@ public class UserAccountAdminService {
                 account.getPreferredLanguage(),
                 account.getCreatedAt(),
                 account.getLastLoginAt(),
+                account.getRoles().stream().map(Role::getName).anyMatch(ADMIN_ROLE_NAMES::contains),
                 linkedPerson != null ? linkedPerson.getId() : null,
                 linkedPerson != null ? personDisplay.englishFullName(linkedPerson) : null,
                 mostRecent != null ? mostRecent.getSubmittedFullName() : null,
                 mostRecent != null ? mostRecent.getSubmittedFatherName() : null,
+                mostRecent != null ? mostRecent.getMotherName() : null,
                 mostRecent != null ? mostRecent.getSubmittedGrandfatherName() : null,
                 mostRecent != null ? mostRecent.getSubmittedDobAd() : null
         );

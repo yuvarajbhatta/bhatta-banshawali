@@ -20,10 +20,12 @@ public record AdminUserAccountDto(
         String preferredLanguage,
         LocalDateTime createdAt,
         LocalDateTime lastLoginAt,
+        boolean isAdmin,
         Long linkedPersonId,
         String linkedPersonName,
         String submittedFullName,
         String submittedFatherName,
+        String submittedMotherName,
         String submittedGrandfatherName,
         LocalDate submittedDobAd
 ) {

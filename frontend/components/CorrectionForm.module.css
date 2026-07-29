@@ -1,7 +1,7 @@
 .toggle {
   background: none;
   border: none;
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
   font-size: var(--text-sm);
   cursor: pointer;
   padding: 0;

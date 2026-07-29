@@ -3,6 +3,7 @@ package com.familytree.services;
 import com.familytree.dto.AdminAccountSignupInfoUpdateDto;
 import com.familytree.dto.AdminUserAccountDto;
 import com.familytree.entity.Person;
+import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.UserPersonLink;
@@ -69,6 +70,12 @@ class UserAccountAdminServiceTest {
         account.setStatus(status);
         account.setCreatedAt(LocalDateTime.now());
         return account;
+    }
+
+    private Role role(String name) {
+        Role role = new Role();
+        role.setName(name);
+        return role;
     }
 
     @Test
@@ -238,6 +245,7 @@ class UserAccountAdminServiceTest {
         AdminAccountSignupInfoUpdateDto request = new AdminAccountSignupInfoUpdateDto();
         request.setFullName("Yuva Raj Bhatta");
         request.setFatherName("Bhoj Raj Bhatta");
+        request.setMotherName("Sita Bhatta");
         request.setGrandfatherName("Jhanka Nath Bhatta");
         request.setDobAd(LocalDate.of(1995, 6, 15));
 
@@ -245,6 +253,7 @@ class UserAccountAdminServiceTest {
 
         assertThat(mostRecent.getSubmittedFullName()).isEqualTo("Yuva Raj Bhatta");
         assertThat(mostRecent.getSubmittedFatherName()).isEqualTo("Bhoj Raj Bhatta");
+        assertThat(mostRecent.getMotherName()).isEqualTo("Sita Bhatta");
         assertThat(mostRecent.getSubmittedGrandfatherName()).isEqualTo("Jhanka Nath Bhatta");
         assertThat(mostRecent.getSubmittedDobAd()).isEqualTo(LocalDate.of(1995, 6, 15));
         verify(verificationRequestRepository).save(mostRecent);
@@ -305,5 +314,121 @@ class UserAccountAdminServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(userAccountRepository, never()).delete(any());
+    }
+
+    @Test
+    void listAllReportsIsAdminWhenAccountHasAdministratorRole() {
+        UserAccount account = account(9L, "admin2@example.com", UserAccountStatus.ACTIVE);
+        account.setRoles(new java.util.HashSet<>(List.of(role("ADMINISTRATOR"))));
+        when(userAccountRepository.findAll()).thenReturn(List.of(account));
+        when(userPersonLinkRepository.findByUserAccountId(9L)).thenReturn(List.of());
+
+        assertThat(service.listAll().get(0).isAdmin()).isTrue();
+    }
+
+    @Test
+    void listAllReportsNotAdminWhenAccountHasNoAdminRole() {
+        UserAccount account = account(10L, "member@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findAll()).thenReturn(List.of(account));
+        when(userPersonLinkRepository.findByUserAccountId(10L)).thenReturn(List.of());
+
+        assertThat(service.listAll().get(0).isAdmin()).isFalse();
+    }
+
+    @Test
+    void applySignupInfoToPersonSplitsFullNameAndAppliesDob() {
+        UserAccount account = account(6L, "yuva@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+
+        Person person = new Person();
+        person.setId(416L);
+        UserPersonLink verifiedLink = new UserPersonLink();
+        verifiedLink.setLinkStatus(UserPersonLinkStatus.VERIFIED);
+        verifiedLink.setPerson(person);
+        when(userPersonLinkRepository.findByUserAccountId(6L)).thenReturn(List.of(verifiedLink));
+
+        VerificationRequest mostRecent = new VerificationRequest();
+        mostRecent.setSubmittedFullName("Yuva Raj Bhatta");
+        mostRecent.setSubmittedDobAd(LocalDate.of(1995, 6, 15));
+        mostRecent.setCreatedAt(LocalDateTime.now());
+        when(verificationRequestRepository.findByUserAccountId(6L)).thenReturn(List.of(mostRecent));
+        when(personDisplay.englishFullName(person)).thenReturn("Yuva Raj Bhatta");
+
+        service.applySignupInfoToPerson(6L, "admin");
+
+        assertThat(person.getFirstName()).isEqualTo("Yuva");
+        assertThat(person.getMiddleName()).isEqualTo("Raj");
+        assertThat(person.getLastName()).isEqualTo("Bhatta");
+        assertThat(person.getBirthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
+        verify(personRepository).save(person);
+        verify(auditLogService).record(
+                org.mockito.ArgumentMatchers.eq(AuditLogService.ACTION_PERSON_UPDATED),
+                org.mockito.ArgumentMatchers.eq(AuditLogService.ENTITY_PERSON),
+                org.mockito.ArgumentMatchers.eq(416L),
+                org.mockito.ArgumentMatchers.contains("yuva@example.com"),
+                org.mockito.ArgumentMatchers.eq("admin"));
+    }
+
+    @Test
+    void applySignupInfoToPersonThrowsWhenNotLinked() {
+        UserAccount account = account(6L, "yuva@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        when(userPersonLinkRepository.findByUserAccountId(6L)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.applySignupInfoToPerson(6L, "admin"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void applySignupInfoToPersonThrowsWhenNoSignupRecord() {
+        UserAccount account = account(6L, "yuva@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+
+        Person person = new Person();
+        UserPersonLink verifiedLink = new UserPersonLink();
+        verifiedLink.setLinkStatus(UserPersonLinkStatus.VERIFIED);
+        verifiedLink.setPerson(person);
+        when(userPersonLinkRepository.findByUserAccountId(6L)).thenReturn(List.of(verifiedLink));
+        when(verificationRequestRepository.findByUserAccountId(6L)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.applySignupInfoToPerson(6L, "admin"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void revokeAdminAccessRemovesAdminRolesAndLogsIt() {
+        UserAccount account = account(6L, "member@example.com", UserAccountStatus.ACTIVE);
+        account.setRoles(new java.util.HashSet<>(List.of(role("ADMINISTRATOR"), role("VERIFIED_MEMBER"))));
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+
+        service.revokeAdminAccess(6L, "admin");
+
+        assertThat(account.getRoles()).extracting(Role::getName).containsExactly("VERIFIED_MEMBER");
+        verify(userAccountRepository).save(account);
+        verify(auditLogService).record(AuditLogService.ACTION_ADMIN_ACCESS_REVOKED, AuditLogService.ENTITY_USER_ACCOUNT,
+                6L, "Revoked admin access for member@example.com", "admin");
+    }
+
+    @Test
+    void revokeAdminAccessThrowsWhenAccountHasNoAdminRole() {
+        UserAccount account = account(6L, "member@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> service.revokeAdminAccess(6L, "admin"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userAccountRepository, never()).save(any());
+    }
+
+    @Test
+    void revokeAdminAccessRejectsSelfRevoke() {
+        UserAccount account = account(5L, "admin@example.com", UserAccountStatus.ACTIVE);
+        account.setRoles(new java.util.HashSet<>(List.of(role("ADMINISTRATOR"))));
+        when(userAccountRepository.findById(5L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> service.revokeAdminAccess(5L, "admin@example.com"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userAccountRepository, never()).save(any());
     }
 }

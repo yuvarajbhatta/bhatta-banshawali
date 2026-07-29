@@ -34,8 +34,8 @@ class AdminUserAccountApiControllerTest {
     @Test
     void listDelegatesToService() {
         AdminUserAccountDto dto = new AdminUserAccountDto(
-                1L, "yuva@example.com", UserAccountStatus.ACTIVE, "en", LocalDateTime.now(), null,
-                null, null, null, null, null, null);
+                1L, "yuva@example.com", UserAccountStatus.ACTIVE, "en", LocalDateTime.now(), null, false,
+                null, null, null, null, null, null, null);
         when(userAccountAdminService.listAll()).thenReturn(List.of(dto));
 
         List<AdminUserAccountDto> result = controller().list();
@@ -71,6 +71,24 @@ class AdminUserAccountApiControllerTest {
         controller().updateSignupInfo(6L, request, authentication);
 
         verify(userAccountAdminService).updateSignupInfo(6L, request, "admin@example.com");
+    }
+
+    @Test
+    void applySignupInfoToPersonDelegatesToServiceWithActorName() {
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        controller().applySignupInfoToPerson(6L, authentication);
+
+        verify(userAccountAdminService).applySignupInfoToPerson(6L, "admin@example.com");
+    }
+
+    @Test
+    void revokeAdminAccessDelegatesToServiceWithActorName() {
+        when(authentication.getName()).thenReturn("admin@example.com");
+
+        controller().revokeAdminAccess(6L, authentication);
+
+        verify(userAccountAdminService).revokeAdminAccess(6L, "admin@example.com");
     }
 
     @Test

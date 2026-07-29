@@ -38,7 +38,7 @@
 }
 
 .treeLink {
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
@@ -72,7 +72,7 @@
 }
 
 .grid dd a {
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
 }
 
 .notes {
@@ -81,6 +81,6 @@
 }
 
 .backLink {
-  color: var(--color-primary-600);
+  color: var(--color-primary-600-text);
   font-size: var(--text-sm);
 }

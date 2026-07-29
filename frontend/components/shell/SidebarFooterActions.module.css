@@ -23,7 +23,7 @@
 
 .actionButton:hover:not(:disabled) {
   background: var(--color-primary-50);
-  color: var(--color-primary-700);
+  color: var(--color-primary-700-text);
 }
 
 .actionButton:disabled {

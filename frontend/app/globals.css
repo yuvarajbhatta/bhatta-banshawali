@@ -41,6 +41,7 @@
   --color-neutral-950: #0e1512;
 
   --color-success: #15803d;
+  --color-success-subtle: color-mix(in srgb, var(--color-success) 12%, transparent);
   --color-warning: #d97706;
   --color-warning-bg: #fef3e2;
   --color-error: #dc2626;
@@ -56,6 +57,17 @@
   --color-border: var(--color-neutral-200);
   --color-divider: var(--color-neutral-100);
   --color-focus-ring: var(--color-primary-600);
+
+  /* "-text" variants: the same brand/success greens, but reserved for
+     text/links sitting directly on --color-surface or --color-background
+     (as opposed to --color-primary-600/700 used as a colored button/pill
+     *background* with light text on top, which stays legible as-is in
+     dark mode and must NOT shift). Identical to their base color here;
+     only the dark-mode blocks below diverge -- dark, saturated green
+     text is unreadable against the dark surface these tokens paint. */
+  --color-primary-600-text: var(--color-primary-600);
+  --color-primary-700-text: var(--color-primary-700);
+  --color-success-text: var(--color-success);
 
   /* A near-black stage for 3D scenes and hero sections -- distinct from
      the light app background, used deliberately (see .stage utility),
@@ -150,6 +162,14 @@
   --color-text: var(--color-neutral-50);
   --color-text-muted: var(--color-neutral-300);
   --color-border: var(--color-neutral-700);
+  /* The light-mode greens (#166534/#14532d/#15803d) are all dark,
+     saturated shades meant for a white surface -- unreadable against
+     this dark surface/background. Lightened here; --color-primary-600/700
+     themselves are untouched since they're also used as button/pill
+     backgrounds with light text on top, which is already legible. */
+  --color-primary-600-text: var(--color-primary-300);
+  --color-primary-700-text: var(--color-primary-300);
+  --color-success-text: #4ade80;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -160,6 +180,9 @@
     --color-text: var(--color-neutral-50);
     --color-text-muted: var(--color-neutral-300);
     --color-border: var(--color-neutral-700);
+    --color-primary-600-text: var(--color-primary-300);
+    --color-primary-700-text: var(--color-primary-300);
+    --color-success-text: #4ade80;
   }
 }
 

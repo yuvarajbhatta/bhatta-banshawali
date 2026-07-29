@@ -60,6 +60,18 @@ public class AdminUserAccountApiController {
         userAccountAdminService.updateSignupInfo(id, request, authentication.getName());
     }
 
+    @PostMapping("/{id}/apply-signup-info-to-person")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void applySignupInfoToPerson(@PathVariable Long id, Authentication authentication) {
+        userAccountAdminService.applySignupInfoToPerson(id, authentication.getName());
+    }
+
+    @PostMapping("/{id}/revoke-admin")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeAdminAccess(@PathVariable Long id, Authentication authentication) {
+        userAccountAdminService.revokeAdminAccess(id, authentication.getName());
+    }
+
     @PostMapping("/{id}/disable")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void disable(@PathVariable Long id, Authentication authentication) {
