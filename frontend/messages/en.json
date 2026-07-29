@@ -82,25 +82,12 @@
       "focusPerson": "Center on this person"
     }
   },
-  "landing": {
-    "heroTitle": "Bhatta Banshawali",
-    "heroSubtitle": "A living record of our family's history, preserved and verified.",
-    "requestMembership": "Request Membership",
-    "learnAboutBanshawali": "Learn About the Banshawali",
-    "login": "Login"
-  },
   "historyPage": {
     "title": "Family History",
     "pending": "Verified family history content is being prepared and reviewed by administrators. Check back soon."
   },
   "membershipPage": {
     "linkLabel": "Membership"
-  },
-  "stats": {
-    "title": "Public Statistics",
-    "familyMembers": "Documented Family Members",
-    "generations": "Documented Generations",
-    "oldestGeneration": "Oldest Documented Generation"
   },
   "privacyPage": {
     "title": "Privacy",
@@ -547,7 +534,9 @@
     "submitting": "Signing in…",
     "preparing": "Preparing secure connection…",
     "brandTitle": "Bhatta Banshawali",
-    "brandTagline": "A living record of our family's history, preserved and verified."
+    "brandTagline": "A living record of our family's history, preserved and verified.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "nav": {
     "addNewPerson": "Add New Person",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
@@ -20,6 +21,7 @@ export function LoginForm() {
   // initial HTML, and `document` doesn't exist during that SSR pass.
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +83,24 @@ export function LoginForm() {
 
       <div className={styles.field}>
         <label htmlFor="password">{t("password")}</label>
-        <input id="password" name="password" type="password" autoComplete="current-password" required />
+        <div className={styles.passwordWrapper}>
+          <input
+            id="password"
+            name="password"
+            type={passwordVisible ? "text" : "password"}
+            autoComplete="current-password"
+            required
+          />
+          <button
+            type="button"
+            className={styles.passwordToggle}
+            onClick={() => setPasswordVisible((current) => !current)}
+            aria-label={passwordVisible ? t("hidePassword") : t("showPassword")}
+            aria-pressed={passwordVisible}
+          >
+            {passwordVisible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          </button>
+        </div>
       </div>
 
       <Button type="submit" variant="primary" className={styles.submit} disabled={!csrfToken || submitting}>

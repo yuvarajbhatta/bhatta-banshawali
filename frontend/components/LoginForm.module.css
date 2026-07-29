@@ -32,6 +32,34 @@
   box-shadow: 0 0 0 3px var(--color-primary-100);
 }
 
+.passwordWrapper {
+  position: relative;
+}
+
+.passwordWrapper input {
+  width: 100%;
+  padding-right: calc(var(--space-4) + 26px);
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.passwordToggle:hover {
+  color: var(--color-text);
+}
+
 .submit {
   margin-top: var(--space-2);
   width: 100%;

@@ -11,6 +11,8 @@
 }
 
 .branding {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,12 +27,43 @@
 @media (max-width: 900px) {
   .branding {
     padding: var(--space-12) var(--space-6);
+    min-height: 320px;
   }
 }
 
+/* Sits between the HeroScene canvas (z-canvas, absolute/inset:0) and
+   the text content -- keeps the tagline readable over the 3D scene
+   without hiding it entirely. */
+.brandingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-canvas-overlay);
+  background: linear-gradient(180deg, rgba(14, 21, 18, 0.72) 0%, rgba(14, 21, 18, 0.5) 45%, rgba(14, 21, 18, 0.85) 100%);
+  pointer-events: none;
+}
+
+.brandingContent {
+  position: relative;
+  z-index: var(--z-canvas-overlay);
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: rgba(240, 253, 244, 0.12);
+  border: 1px solid rgba(240, 253, 244, 0.25);
+  color: var(--color-stage-text);
+  margin-bottom: var(--space-6);
+}
+
 .brandTitle {
+  font-family: var(--font-serif);
   font-size: var(--text-4xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
   margin: 0 0 var(--space-4);
 }

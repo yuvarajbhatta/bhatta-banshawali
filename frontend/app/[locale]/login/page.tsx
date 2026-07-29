@@ -1,7 +1,12 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { GitFork } from "lucide-react";
 import { LoginForm } from "@/components/LoginForm";
+import { HeroScene } from "@/components/landing/HeroScene";
 import { Reveal } from "@/components/motion/Reveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { getMemberProfile } from "@/lib/api";
 import styles from "./page.module.css";
 
 export default async function LoginPage({
@@ -12,13 +17,35 @@ export default async function LoginPage({
   const t = await getTranslations("login");
   const params = await searchParams;
 
+  // A signed-in visitor landing here (a stale bookmark, browser back
+  // button after logging in elsewhere, etc.) should see their
+  // dashboard, not a login form for a session they already have --
+  // params.logout is the one deliberate exception, since that's the
+  // moment right after a real logout, when the session is (correctly)
+  // already gone.
+  if (params.logout === undefined) {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+    const profile = await getMemberProfile(cookieHeader);
+    if (profile.kind !== "unauthenticated") {
+      redirect("/dashboard");
+    }
+  }
+
   return (
     <main className={styles.page}>
       <section className={`${styles.branding} stage`}>
-        <Reveal>
-          <h1 className={styles.brandTitle}>{t("brandTitle")}</h1>
-          <p className={styles.brandTagline}>{t("brandTagline")}</p>
-        </Reveal>
+        <HeroScene />
+        <div className={styles.brandingOverlay} />
+        <div className={styles.brandingContent}>
+          <Reveal>
+            <span className={styles.brandMark} aria-hidden="true">
+              <GitFork size={22} />
+            </span>
+            <h1 className={styles.brandTitle}>{t("brandTitle")}</h1>
+            <p className={styles.brandTagline}>{t("brandTagline")}</p>
+          </Reveal>
+        </div>
       </section>
 
       <section className={styles.formPanel}>
