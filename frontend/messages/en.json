@@ -16,6 +16,7 @@
       "auditLog": "Audit Log",
       "manageUserAccounts": "Manage User Accounts",
       "adminAccessRequests": "Admin Access Requests",
+      "content": "Content",
       "lineageBuilder": "Lineage Builder",
       "generationsView": "Generations"
     },
@@ -88,10 +89,6 @@
       "viewFullProfile": "View full profile",
       "focusPerson": "Center on this person"
     }
-  },
-  "historyPage": {
-    "title": "Family History",
-    "pending": "Verified family history content is being prepared and reviewed by administrators. Check back soon."
   },
   "membershipPage": {
     "linkLabel": "Membership"
@@ -434,6 +431,39 @@
     "approve": "Approve",
     "deny": "Deny",
     "actionError": "Could not update this request. Please try again."
+  },
+  "adminContentPage": {
+    "title": "Content",
+    "subtitle": "Edit the content behind the public About, History, and Membership pages -- create a new article, write it, then publish it when it's ready.",
+    "empty": "No content yet.",
+    "forbidden": "You don't have permission to view this.",
+    "newArticle": "New Article",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Permanently delete \"{slug}\"? This cannot be undone.",
+    "submitForReview": "Submit for Review",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "revertToDraft": "Revert to Draft",
+    "updated": "Updated {date}",
+    "actionError": "Could not update this content. Please try again.",
+    "bodyHint": "Separate paragraphs with a blank line. Nepali is optional -- pages fall back to English when it's missing.",
+    "fields": {
+      "slug": "Slug (used in the page's URL/lookup, e.g. \"about-banshawali\")",
+      "titleEn": "Title (English)",
+      "titleNe": "Title (Nepali)",
+      "bodyEn": "Body (English)",
+      "bodyNe": "Body (Nepali)"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "IN_REVIEW": "In Review",
+      "PUBLISHED": "Published",
+      "UNPUBLISHED": "Unpublished"
+    }
   },
   "adminGenerationsPage": {
     "title": "Generations",

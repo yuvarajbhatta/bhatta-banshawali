@@ -827,6 +827,72 @@ export function denyAdminAccessRequest(id: number): Promise<void> {
   return adminApiRequest(`/api/v1/admin/admin-access-requests/${id}/deny`, "POST");
 }
 
+// Mirrors com.familytree.dto.AdminArticleDto / AdminArticleRequestDto --
+// admin CRUD + draft/review/publish workflow for HistoricalArticle. The
+// public, published-only read path stays on getPublishedArticle above.
+export type ArticleStatus = "DRAFT" | "IN_REVIEW" | "PUBLISHED" | "UNPUBLISHED";
+
+export interface AdminArticleDto {
+  id: number;
+  slug: string;
+  titleEn: string;
+  titleNe: string | null;
+  bodyEn: string;
+  bodyNe: string | null;
+  status: ArticleStatus;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminArticleRequest {
+  slug: string;
+  titleEn: string;
+  titleNe?: string;
+  bodyEn: string;
+  bodyNe?: string;
+}
+
+export async function getAdminContent(cookieHeader: string): Promise<AdminListResult<AdminArticleDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/content`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load content: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function createAdminArticle(body: AdminArticleRequest): Promise<AdminArticleDto> {
+  return adminApiRequest("/api/v1/admin/content", "POST", body);
+}
+
+export function updateAdminArticle(id: number, body: AdminArticleRequest): Promise<AdminArticleDto> {
+  return adminApiRequest(`/api/v1/admin/content/${id}`, "PUT", body);
+}
+
+export function submitArticleForReview(id: number): Promise<AdminArticleDto> {
+  return adminApiRequest(`/api/v1/admin/content/${id}/submit-for-review`, "POST");
+}
+
+export function publishArticle(id: number): Promise<AdminArticleDto> {
+  return adminApiRequest(`/api/v1/admin/content/${id}/publish`, "POST");
+}
+
+export function unpublishArticle(id: number): Promise<AdminArticleDto> {
+  return adminApiRequest(`/api/v1/admin/content/${id}/unpublish`, "POST");
+}
+
+export function revertArticleToDraft(id: number): Promise<AdminArticleDto> {
+  return adminApiRequest(`/api/v1/admin/content/${id}/revert-to-draft`, "POST");
+}
+
+export function deleteAdminArticle(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/content/${id}`, "DELETE");
+}
+
 // Mirrors the JSON shape RelationshipService#buildLineageTree already
 // produces for the legacy /lineage page -- reused as-is (not under
 // /api/v1/admin, a pre-existing endpoint) rather than building a new

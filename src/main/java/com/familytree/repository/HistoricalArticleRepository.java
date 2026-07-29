@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface HistoricalArticleRepository extends JpaRepository<HistoricalArticle, Long> {
     Optional<HistoricalArticle> findBySlugAndStatus(String slug, ArticleStatus status);
     List<HistoricalArticle> findAllByStatusOrderByPublishedAtDesc(ArticleStatus status);
+    boolean existsBySlug(String slug);
+    boolean existsBySlugAndIdNot(String slug, Long id);
 }

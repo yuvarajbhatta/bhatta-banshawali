@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   FileCheck,
+  FileText,
   GitFork,
   History,
   Layers,
@@ -39,6 +40,7 @@ export interface AdminNavItem {
     | "/admin/relationships"
     | "/admin/accounts"
     | "/admin/admin-access-requests"
+    | "/admin/content"
     | "/admin/lineage"
     | "/admin/generations"
     | "/admin/audit-log";
@@ -49,6 +51,7 @@ export interface AdminNavItem {
     | "relationships"
     | "manageUserAccounts"
     | "adminAccessRequests"
+    | "content"
     | "lineageBuilder"
     | "generationsView"
     | "auditLog";
@@ -70,6 +73,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/accounts", labelKey: "manageUserAccounts", icon: UserPlus },
   { href: "/admin/persons", labelKey: "people", icon: UserCog },
   { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
+  { href: "/admin/content", labelKey: "content", icon: FileText },
   { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },
   { href: "/admin/generations", labelKey: "generationsView", icon: Layers },
   { href: "/admin/audit-log", labelKey: "auditLog", icon: History },

@@ -45,12 +45,17 @@ public class AuditLogService {
     public static final String ACTION_ADMIN_ACCESS_APPROVED = "ADMIN_ACCESS_APPROVED";
     public static final String ACTION_ADMIN_ACCESS_DENIED = "ADMIN_ACCESS_DENIED";
     public static final String ACTION_ADMIN_ACCESS_REVOKED = "ADMIN_ACCESS_REVOKED";
+    public static final String ACTION_CONTENT_CREATED = "CONTENT_CREATED";
+    public static final String ACTION_CONTENT_UPDATED = "CONTENT_UPDATED";
+    public static final String ACTION_CONTENT_STATUS_CHANGED = "CONTENT_STATUS_CHANGED";
+    public static final String ACTION_CONTENT_DELETED = "CONTENT_DELETED";
 
     public static final String ENTITY_PERSON = "PERSON";
     public static final String ENTITY_RELATIONSHIP = "RELATIONSHIP";
     public static final String ENTITY_VERIFICATION_REQUEST = "VERIFICATION_REQUEST";
     public static final String ENTITY_CORRECTION_REQUEST = "CORRECTION_REQUEST";
     public static final String ENTITY_USER_ACCOUNT = "USER_ACCOUNT";
+    public static final String ENTITY_CONTENT = "CONTENT";
 
     private final AuditLogRepository auditLogRepository;
 
