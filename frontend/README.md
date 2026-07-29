@@ -7,11 +7,14 @@ this replaces the Thymeleaf UI while the Spring Boot API is kept.
 
 ## Status
 
-Phase 1 foundation only: project scaffold, design system tokens
-(`app/globals.css`), a starting component library (`components/`), and
-bilingual routing (English/Nepali) via `next-intl`. No pages beyond a
-landing-page skeleton exist yet -- see `docs/08-implementation-roadmap.md`
-for what's planned in later phases.
+Through Phase 5 of `docs/08-implementation-roadmap.md`: design system tokens
+(`app/globals.css`), public content pages, signup/verification, member
+dashboard and profiles, and the interactive family tree (`/tree`,
+`@xyflow/react` + Dagre). Administration (Phase 6) is still the legacy
+Thymeleaf UI (`/persons`, `/relationships`, `/lineage`, `/admin/*`), linked
+from the admin dashboard rather than rebuilt here. See
+`docs/frontend-redesign-plan.md` for the reasoning behind that scope and
+`docs/08-implementation-roadmap.md` for what's still ahead.
 
 ## Development
 
@@ -19,8 +22,18 @@ for what's planned in later phases.
 npm install
 npm run dev      # http://localhost:3000, redirects to /en
 npm run lint
+npm run test     # vitest -- currently covers the family-tree layout logic
 npm run build
 ```
+
+This app expects to run **behind the same reverse proxy as the Spring Boot
+API**, same as production (`docs/03-target-architecture.md`) -- client-side
+code calls same-origin relative paths like `/api/v1/...` and `/logout`, which
+only resolve correctly when both are served from one origin. Running
+`npm run dev` standalone against a bare `localhost:8080` backend will 404 on
+every client-side API call (login, search, sign-out, etc.); put a local
+reverse proxy (nginx, Caddy, or similar) in front of both dev servers to test
+those flows locally.
 
 ## Internationalization
 

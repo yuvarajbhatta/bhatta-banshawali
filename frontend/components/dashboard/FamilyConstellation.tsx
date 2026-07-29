@@ -55,7 +55,7 @@ function buildFamilyGraph(
   quality: "low" | "high",
 ): { nodes: ConstellationNode[]; edges: ConstellationEdge[] } {
   const nodes: ConstellationNode[] = [
-    { id: String(self.id), label: self.englishFullName, position: [0, 0, 0], color: "#cf9f4d", emphasis: true },
+    { id: String(self.id), label: self.englishFullName, position: [0, 0, 0], color: "#c9a227", emphasis: true },
   ];
   const edges: ConstellationEdge[] = [];
 
@@ -65,7 +65,7 @@ function buildFamilyGraph(
       label: family.father.englishFullName,
       sublabel: fatherLabel,
       position: [-2.4, 1.9, -1],
-      color: "#7d3a26",
+      color: "#14532d",
     });
     edges.push({ from: String(self.id), to: String(family.father.id) });
   }
@@ -76,7 +76,7 @@ function buildFamilyGraph(
       label: family.mother.englishFullName,
       sublabel: motherLabel,
       position: [2.4, 1.9, -1],
-      color: "#7d3a26",
+      color: "#14532d",
     });
     edges.push({ from: String(self.id), to: String(family.mother.id) });
   }
@@ -94,7 +94,7 @@ function buildFamilyGraph(
       id: String(spouse.id),
       label: spouse.englishFullName,
       position: [side * distance, 0, 1.4],
-      color: "#b85c3e",
+      color: "#15803d",
     });
     edges.push({ from: String(self.id), to: String(spouse.id) });
   });
@@ -109,7 +109,7 @@ function buildFamilyGraph(
       id: String(child.id),
       label: child.englishFullName,
       position: [x, -2.1, 0.6],
-      color: "#9c4930",
+      color: "#166534",
     });
     edges.push({ from: String(self.id), to: String(child.id) });
   });

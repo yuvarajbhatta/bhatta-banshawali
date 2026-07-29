@@ -236,9 +236,26 @@ export class CorrectionError extends Error {}
 // specifically so client-side JS can read it here and echo it back in
 // the "X-XSRF-TOKEN" header -- without this, every submission would be
 // rejected with 403 regardless of how valid the session is.
-function readXsrfTokenCookie(): string | null {
+export function readXsrfTokenCookie(): string | null {
   const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+// Spring Security's default logout endpoint (SecurityConfig: logoutSuccessUrl
+// "/login?logout"). A plain POST with the CSRF header, same pattern as
+// submitCorrection -- the browser's own session cookie rides along
+// same-origin. Caller is responsible for navigating to /login afterwards
+// (see UserMenu), since this only performs the server-side logout.
+export async function signOut(): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
+  const response = await fetch("/logout", {
+    method: "POST",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+  });
+
+  if (!response.ok && response.status !== 302) {
+    throw new Error(`Sign out failed: ${response.status}`);
+  }
 }
 
 // Called directly from the browser -- same-origin relative path, same
@@ -285,4 +302,48 @@ export async function getAdminSummary(cookieHeader: string): Promise<AdminSummar
     throw new Error(`Failed to load admin summary: ${response.status}`);
   }
   return response.json();
+}
+
+// Mirrors com.familytree.dto.PersonTreeNodeDto / FamilyTreeDto
+// (GET /api/v1/family-tree, docs/08 Phase 5). birthDate follows the same
+// per-viewer redaction rule as PersonSummaryDto -- null unless the
+// viewer is an admin or this is the viewer's own linked person.
+export interface PersonTreeNodeDto {
+  id: number;
+  englishFullName: string;
+  nepaliFullName: string;
+  gender: string | null;
+  generationNumber: number | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  fatherId: number | null;
+  motherId: number | null;
+  spouseIds: number[];
+  childIds: number[];
+}
+
+export interface FamilyTreeDto {
+  nodes: PersonTreeNodeDto[];
+  rootPersonId: number | null;
+}
+
+export type FamilyTreeResult =
+  | { kind: "ok"; tree: FamilyTreeDto }
+  | { kind: "unauthenticated" };
+
+// Server-to-server with the browser's session cookie forwarded, same
+// pattern as getMemberProfile/getPersonDetail.
+export async function getFamilyTree(cookieHeader: string): Promise<FamilyTreeResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/family-tree`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return { kind: "unauthenticated" };
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load family tree: ${response.status}`);
+  }
+  return { kind: "ok", tree: await response.json() };
 }

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { PageShell } from "@/components/PageShell";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { MemberDashboard } from "@/components/dashboard/MemberDashboard";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { getAdminSummary, getMemberProfile, getPublicStats } from "@/lib/api";
@@ -29,15 +29,17 @@ export default async function DashboardPage() {
       getPublicStats().catch(() => null),
     ]);
     return (
-      <PageShell title={t("title")}>
+      <>
+        <PageHeader title={t("title")} />
         <AdminDashboard summary={summary} stats={stats} />
-      </PageShell>
+      </>
     );
   }
 
   return (
-    <PageShell title={t("title")}>
+    <>
+      <PageHeader title={t("title")} />
       <MemberDashboard profile={result.profile} />
-    </PageShell>
+    </>
   );
 }

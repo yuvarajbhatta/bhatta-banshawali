@@ -6,13 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@xyflow/react": "^12.11.2",
     "framer-motion": "^12.43.0",
     "gsap": "^3.15.0",
+    "lucide-react": "^1.27.0",
     "next": "^16.2.12",
     "next-intl": "^4.13.4",
     "react": "^19.2.8",
@@ -24,8 +28,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.1",
+    "@vitejs/plugin-react": "^6.0.4",
     "eslint": "^9",
     "eslint-config-next": "^16.2.12",
-    "typescript": "^5.7"
+    "jsdom": "^30.0.0",
+    "typescript": "^5.7",
+    "vitest": "^4.1.10"
   }
 }

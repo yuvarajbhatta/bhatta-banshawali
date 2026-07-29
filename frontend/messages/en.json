@@ -2,6 +2,76 @@
   "app": {
     "name": "Family Tree App"
   },
+  "appShell": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "familyTree": "Family Tree",
+      "members": "Members"
+    },
+    "header": {
+      "searchPlaceholder": "Search family members...",
+      "searchLabel": "Search",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "userMenu": "Account menu",
+      "signOut": "Sign out"
+    },
+    "role": {
+      "member": "Family member",
+      "pending": "Pending member",
+      "admin": "Administrator"
+    }
+  },
+  "treePage": {
+    "title": "Family Tree",
+    "subtitle": "Explore the whole Bhatta family, generation by generation.",
+    "viewFullTreeCta": "View Full Tree",
+    "loading": "Loading the family tree…",
+    "error": "Could not load the family tree. Please try again.",
+    "retry": "Retry",
+    "empty": "No family members have been recorded yet.",
+    "controls": {
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitView": "Fit to screen",
+      "resetView": "Reset view"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Find a person in the tree...",
+      "generation": "Generation",
+      "allGenerations": "All generations",
+      "living": "Living",
+      "deceased": "Deceased",
+      "allPeople": "Living & deceased",
+      "reset": "Reset filters",
+      "resultCount": "{count} of {total} people shown"
+    },
+    "legend": {
+      "title": "Legend",
+      "parentChild": "Parent / child",
+      "spouse": "Spouse"
+    },
+    "node": {
+      "unknownName": "Unnamed",
+      "birthYearUnknown": "Birth year unknown"
+    },
+    "quickView": {
+      "title": "Profile",
+      "close": "Close",
+      "generation": "Generation {number}",
+      "born": "Born {year}",
+      "died": "Died {year}",
+      "living": "Living",
+      "father": "Father",
+      "mother": "Mother",
+      "spouses": "Spouse(s)",
+      "children": "Children",
+      "none": "Not recorded",
+      "viewFullProfile": "View full profile",
+      "focusPerson": "Center on this person"
+    }
+  },
   "landing": {
     "heroTitle": "Bhatta Banshawali",
     "heroSubtitle": "A living record of our family's history, preserved and verified.",
@@ -54,6 +124,7 @@
     "notAdded": "Not added",
     "family": {
       "title": "Immediate Family",
+      "viewInTree": "View in Family Tree",
       "father": "Father",
       "mother": "Mother",
       "spouses": "Spouse(s)",
@@ -102,6 +173,7 @@
       "familyHint": "Drag to rotate the view -- click a name to open their profile.",
       "father": "Father",
       "mother": "Mother",
+      "viewFullTree": "View Full Tree",
       "browseDirectory": "Browse the Directory"
     },
     "admin": {

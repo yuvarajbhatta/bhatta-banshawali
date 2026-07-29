@@ -50,8 +50,8 @@ export function Constellation({ nodes, edges, autoRotate = true, interactive = t
   return (
     <>
       <ambientLight intensity={0.6} />
-      <pointLight position={[10, 10, 10]} intensity={1.2} color="#e8c688" />
-      <pointLight position={[-10, -6, -10]} intensity={0.5} color="#b85c3e" />
+      <pointLight position={[10, 10, 10]} intensity={1.2} color="#e8ddc6" />
+      <pointLight position={[-10, -6, -10]} intensity={0.5} color="#15803d" />
 
       <group ref={groupRef} onPointerOver={() => setPaused(true)} onPointerOut={() => setPaused(false)}>
         {edges.map((edge) => {
@@ -64,7 +64,7 @@ export function Constellation({ nodes, edges, autoRotate = true, interactive = t
             <Line
               key={`${edge.from}-${edge.to}`}
               points={[from.position, to.position]}
-              color="#cf9f4d"
+              color="#c9a227"
               transparent
               opacity={0.35}
               lineWidth={1}
@@ -93,7 +93,7 @@ export function Constellation({ nodes, edges, autoRotate = true, interactive = t
 function ConstellationNodeMesh({ node }: { node: ConstellationNode }) {
   const [hovered, setHovered] = useState(false);
   const baseScale = node.emphasis ? 1.4 : 1;
-  const color = node.color ?? "#b85c3e";
+  const color = node.color ?? "#15803d";
 
   return (
     <group position={node.position}>

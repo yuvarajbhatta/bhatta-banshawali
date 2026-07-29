@@ -1,0 +1,75 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 216px;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+
+.card:hover {
+  border-color: var(--color-primary-500);
+  box-shadow: var(--shadow-md);
+}
+
+.cardSelected {
+  border-color: var(--color-primary-600);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+.cardDeceased {
+  background: var(--color-neutral-50);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.avatarFemale {
+  background: var(--color-gold-300);
+  color: var(--color-gold-700);
+}
+
+.info {
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.years {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.deceasedMark {
+  margin-left: var(--space-1);
+  color: var(--color-text-subtle);
+}
+
+.handle {
+  visibility: hidden;
+}

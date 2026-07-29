@@ -25,6 +25,25 @@
   margin: 0 0 var(--space-4);
 }
 
+.familyHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.familyHeader h3 {
+  margin: 0;
+}
+
+.treeLink {
+  color: var(--color-primary-600);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
 .nepaliName {
   color: var(--color-text-muted);
   margin: 0 0 var(--space-2);

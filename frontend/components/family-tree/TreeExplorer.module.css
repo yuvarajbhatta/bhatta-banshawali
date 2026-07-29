@@ -1,0 +1,22 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 68px - var(--space-8) * 2 - 72px);
+  min-height: 480px;
+}
+
+.canvasArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}

@@ -27,7 +27,7 @@ export function HeroScene() {
 
 function buildHeroGraph(quality: "low" | "high"): { nodes: ConstellationNode[]; edges: ConstellationEdge[] } {
   const nodes: ConstellationNode[] = [
-    { id: "root", label: "", position: [0, 2.4, -1], color: "#cf9f4d", emphasis: true },
+    { id: "root", label: "", position: [0, 2.4, -1], color: "#c9a227", emphasis: true },
   ];
   const edges: ConstellationEdge[] = [];
 
@@ -38,7 +38,7 @@ function buildHeroGraph(quality: "low" | "high"): { nodes: ConstellationNode[]; 
     const by = 0.2;
     const bz = Math.cos(angle) * -1.5;
     const branchId = `branch-${i}`;
-    nodes.push({ id: branchId, label: "", position: [bx, by, bz], color: "#b85c3e" });
+    nodes.push({ id: branchId, label: "", position: [bx, by, bz], color: "#15803d" });
     edges.push({ from: "root", to: branchId });
 
     const leafCount = quality === "low" ? 1 : 1 + (i % 2);
@@ -47,7 +47,7 @@ function buildHeroGraph(quality: "low" | "high"): { nodes: ConstellationNode[]; 
       const lx = bx + (j - (leafCount - 1) / 2) * 1.5;
       const ly = by - 2.4;
       const lz = bz + 1;
-      nodes.push({ id: leafId, label: "", position: [lx, ly, lz], color: "#7d3a26" });
+      nodes.push({ id: leafId, label: "", position: [lx, ly, lz], color: "#14532d" });
       edges.push({ from: branchId, to: leafId });
     }
   }

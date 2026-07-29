@@ -55,6 +55,12 @@
   padding: var(--space-6);
 }
 
+.viewTreeAction {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
 .familyHeader {
   margin-bottom: var(--space-4);
 }

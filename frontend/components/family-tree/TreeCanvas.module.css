@@ -1,0 +1,23 @@
+.canvasWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-background);
+}
+
+/* React Flow ships its own base styles (imported once in TreeCanvas.tsx);
+   these overrides bring its chrome onto the design system's tokens
+   instead of its default blue/gray. */
+.canvasWrapper :global(.react-flow__attribution) {
+  background: transparent;
+  color: var(--color-text-subtle);
+}
+
+.canvasWrapper :global(.react-flow__minimap) {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}

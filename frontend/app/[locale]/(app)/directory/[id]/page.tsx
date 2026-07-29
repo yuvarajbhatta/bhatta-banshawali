@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { PageShell } from "@/components/PageShell";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { CorrectionForm } from "@/components/CorrectionForm";
 import { getPersonDetail, type PersonSummaryDto } from "@/lib/api";
 import styles from "./page.module.css";
@@ -20,7 +20,8 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <PageShell title={result.kind === "ok" ? result.person.englishFullName : t("notFound")}>
+    <>
+      <PageHeader title={result.kind === "ok" ? result.person.englishFullName : t("notFound")} />
       {result.kind === "not-found" ? <p className={styles.notice}>{t("notFound")}</p> : null}
 
       {result.kind === "ok" ? (
@@ -45,7 +46,12 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
           </div>
 
           <div className={styles.card}>
-            <h3>{t("family.title")}</h3>
+            <div className={styles.familyHeader}>
+              <h3>{t("family.title")}</h3>
+              <Link href={`/tree?focus=${result.person.id}`} className={styles.treeLink}>
+                {t("family.viewInTree")}
+              </Link>
+            </div>
             <dl className={styles.grid}>
               <dt>{t("family.father")}</dt>
               <dd>{personLink(result.person.family.father, t("family.none"))}</dd>
@@ -75,7 +81,7 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
       <Link href="/directory" className={styles.backLink}>
         {t("backToDirectory")}
       </Link>
-    </PageShell>
+    </>
   );
 }
 

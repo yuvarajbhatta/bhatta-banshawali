@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { PageShell } from "@/components/PageShell";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { PersonSearch } from "@/components/PersonSearch";
 import { getMemberProfile } from "@/lib/api";
 
@@ -23,8 +23,9 @@ export default async function DirectoryPage() {
   }
 
   return (
-    <PageShell title={t("title")}>
+    <>
+      <PageHeader title={t("title")} />
       <PersonSearch />
-    </PageShell>
+    </>
   );
 }
