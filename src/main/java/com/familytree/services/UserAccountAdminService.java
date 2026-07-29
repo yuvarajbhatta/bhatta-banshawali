@@ -9,6 +9,7 @@ import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.entity.VerificationRequest;
+import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
@@ -44,6 +45,7 @@ public class UserAccountAdminService {
     private final UserPersonLinkRepository userPersonLinkRepository;
     private final VerificationRequestRepository verificationRequestRepository;
     private final PersonCorrectionRequestRepository personCorrectionRequestRepository;
+    private final AdminAccessRequestRepository adminAccessRequestRepository;
     private final PersonRepository personRepository;
     private final AuditLogService auditLogService;
     private final PersonDisplayHelper personDisplay;
@@ -52,6 +54,7 @@ public class UserAccountAdminService {
                                    UserPersonLinkRepository userPersonLinkRepository,
                                    VerificationRequestRepository verificationRequestRepository,
                                    PersonCorrectionRequestRepository personCorrectionRequestRepository,
+                                   AdminAccessRequestRepository adminAccessRequestRepository,
                                    PersonRepository personRepository,
                                    AuditLogService auditLogService,
                                    PersonDisplayHelper personDisplay) {
@@ -59,6 +62,7 @@ public class UserAccountAdminService {
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.verificationRequestRepository = verificationRequestRepository;
         this.personCorrectionRequestRepository = personCorrectionRequestRepository;
+        this.adminAccessRequestRepository = adminAccessRequestRepository;
         this.personRepository = personRepository;
         this.auditLogService = auditLogService;
         this.personDisplay = personDisplay;
@@ -231,20 +235,25 @@ public class UserAccountAdminService {
 
     /**
      * Permanently wipes the account -- their own signup submissions,
-     * person link, and correction submissions -- so the email address is
-     * free for a fresh signup. Backward references where this account
-     * acted as a reviewer/verifier of someone else's request are nulled
-     * out (those columns are nullable and the reviewer's username is
-     * already preserved separately as a string), not deleted, so other
-     * people's review history survives.
+     * person link, correction submissions, and admin-access requests --
+     * so the email address is free for a fresh signup. Backward
+     * references where this account acted as a reviewer/verifier of
+     * someone else's request are nulled out (those columns are nullable
+     * and the reviewer's username is already preserved separately as a
+     * string), not deleted, so other people's review history survives.
      *
-     * @throws IllegalArgumentException if the acting admin tries to delete their own account
+     * @throws IllegalArgumentException if the acting admin tries to delete their own
+     *          account, or the target account currently has admin access (revoke it
+     *          first via {@link #revokeAdminAccess}, then delete)
      */
     @Transactional
     public void delete(Long userAccountId, String actorUsername) {
         UserAccount account = getOrThrow(userAccountId);
         if (account.getEmail().equalsIgnoreCase(actorUsername)) {
             throw new IllegalArgumentException("You cannot delete your own account.");
+        }
+        if (isAdmin(account)) {
+            throw new IllegalArgumentException("This account has admin access. Revoke admin access before deleting it.");
         }
         String email = account.getEmail();
 
@@ -253,11 +262,16 @@ public class UserAccountAdminService {
 
         userPersonLinkRepository.deleteAll(userPersonLinkRepository.findByUserAccountId(userAccountId));
         personCorrectionRequestRepository.deleteAll(personCorrectionRequestRepository.findBySubmittedById(userAccountId));
+        adminAccessRequestRepository.deleteAll(adminAccessRequestRepository.findByUserAccountId(userAccountId));
         verificationRequestRepository.deleteAll(verificationRequestRepository.findByUserAccountId(userAccountId));
         userAccountRepository.delete(account);
 
         auditLogService.record(AuditLogService.ACTION_ACCOUNT_DELETED, AuditLogService.ENTITY_USER_ACCOUNT,
                 userAccountId, "Deleted account " + email, actorUsername);
+    }
+
+    private boolean isAdmin(UserAccount account) {
+        return account.getRoles().stream().map(Role::getName).anyMatch(ADMIN_ROLE_NAMES::contains);
     }
 
     private Optional<VerificationRequest> mostRecentVerificationRequest(Long userAccountId) {
@@ -281,7 +295,7 @@ public class UserAccountAdminService {
                 account.getPreferredLanguage(),
                 account.getCreatedAt(),
                 account.getLastLoginAt(),
-                account.getRoles().stream().map(Role::getName).anyMatch(ADMIN_ROLE_NAMES::contains),
+                isAdmin(account),
                 linkedPerson != null ? linkedPerson.getId() : null,
                 linkedPerson != null ? personDisplay.englishFullName(linkedPerson) : null,
                 mostRecent != null ? mostRecent.getSubmittedFullName() : null,

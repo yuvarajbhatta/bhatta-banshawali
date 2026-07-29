@@ -415,6 +415,7 @@
     "enable": "Re-enable",
     "delete": "Delete",
     "deleteConfirm": "Permanently delete the account for {email}? This cannot be undone and frees the email address for a new signup.",
+    "deleteBlockedForAdmin": "This account has admin access. Revoke admin access before deleting it.",
     "actionError": "Could not update this account. Please try again.",
     "status": {
       "PENDING_EMAIL_VERIFICATION": "Pending Verification",

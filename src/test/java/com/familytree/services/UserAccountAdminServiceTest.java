@@ -9,6 +9,7 @@ import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.entity.VerificationRequest;
+import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
@@ -50,6 +51,9 @@ class UserAccountAdminServiceTest {
 
     @Mock
     private PersonCorrectionRequestRepository personCorrectionRequestRepository;
+
+    @Mock
+    private AdminAccessRequestRepository adminAccessRequestRepository;
 
     @Mock
     private PersonRepository personRepository;
@@ -294,12 +298,16 @@ class UserAccountAdminServiceTest {
 
         when(personCorrectionRequestRepository.findBySubmittedById(6L)).thenReturn(List.of());
 
+        com.familytree.entity.AdminAccessRequest ownAccessRequest = new com.familytree.entity.AdminAccessRequest();
+        when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of(ownAccessRequest));
+
         service.delete(6L, "admin");
 
         assertThat(reviewedByThisAccount.getReviewedBy()).isNull();
         assertThat(verifiedByThisAccount.getVerifiedBy()).isNull();
         verify(userPersonLinkRepository).deleteAll(List.of(ownLink));
         verify(verificationRequestRepository).deleteAll(List.of(ownSignup));
+        verify(adminAccessRequestRepository).deleteAll(List.of(ownAccessRequest));
         verify(userAccountRepository).delete(account);
         verify(auditLogService).record(AuditLogService.ACTION_ACCOUNT_DELETED, AuditLogService.ENTITY_USER_ACCOUNT,
                 6L, "Deleted account fake@example.com", "admin");
@@ -311,6 +319,18 @@ class UserAccountAdminServiceTest {
         when(userAccountRepository.findById(5L)).thenReturn(Optional.of(account));
 
         assertThatThrownBy(() -> service.delete(5L, "admin@example.com"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userAccountRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteRejectsWhenTargetAccountHasAdminAccess() {
+        UserAccount account = account(6L, "otheradmin@example.com", UserAccountStatus.ACTIVE);
+        account.setRoles(new java.util.HashSet<>(List.of(role("ADMINISTRATOR"))));
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> service.delete(6L, "admin@example.com"))
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(userAccountRepository, never()).delete(any());

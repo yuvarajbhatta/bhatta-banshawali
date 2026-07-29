@@ -318,7 +318,12 @@ export function AccountsManager({ initialItems }: { initialItems: AdminUserAccou
                 <Button variant={isDisabled ? "secondary" : "destructive"} onClick={() => handleToggleStatus(account)} disabled={saving}>
                   {isDisabled ? t("enable") : t("disable")}
                 </Button>
-                <Button variant="destructive" onClick={() => handleDelete(account)} disabled={saving}>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDelete(account)}
+                  disabled={saving || account.isAdmin}
+                  title={account.isAdmin ? t("deleteBlockedForAdmin") : undefined}
+                >
                   {t("delete")}
                 </Button>
               </div>
