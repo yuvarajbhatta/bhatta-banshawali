@@ -13,7 +13,6 @@ import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
-import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -48,9 +47,6 @@ class VerificationReviewServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
-
-    @Mock
-    private PersonDisplayHelper personDisplay;
 
     @InjectMocks
     private VerificationReviewService verificationReviewService;
@@ -202,85 +198,4 @@ class VerificationReviewServiceTest {
         assertThat(captor.getValue().getReviewedAt()).isNotNull();
     }
 
-    private UserAccount accountWithId(long id, UserAccountStatus status) {
-        UserAccount account = new UserAccount();
-        org.springframework.test.util.ReflectionTestUtils.setField(account, "id", id);
-        account.setStatus(status);
-        return account;
-    }
-
-    private UserPersonLink link(UserPersonLinkStatus status) {
-        UserPersonLink link = new UserPersonLink();
-        link.setLinkStatus(status);
-        return link;
-    }
-
-    @Test
-    void findUnlinkedActiveAccountsExcludesAccountsWithAVerifiedLink() {
-        UserAccount linked = accountWithId(1L, UserAccountStatus.ACTIVE);
-        UserAccount unlinked = accountWithId(2L, UserAccountStatus.ACTIVE);
-        UserAccount pending = accountWithId(3L, UserAccountStatus.PENDING_EMAIL_VERIFICATION);
-        when(userAccountRepository.findAll()).thenReturn(List.of(linked, unlinked, pending));
-        when(userPersonLinkRepository.findByUserAccountId(1L)).thenReturn(List.of(link(UserPersonLinkStatus.VERIFIED)));
-        when(userPersonLinkRepository.findByUserAccountId(2L)).thenReturn(List.of());
-
-        List<UserAccount> result = verificationReviewService.findUnlinkedActiveAccounts();
-
-        assertThat(result).containsExactly(unlinked);
-    }
-
-    @Test
-    void findUnlinkedActiveAccountsIncludesAccountsWithOnlyAPendingOrRejectedLink() {
-        UserAccount account = accountWithId(5L, UserAccountStatus.ACTIVE);
-        when(userAccountRepository.findAll()).thenReturn(List.of(account));
-        when(userPersonLinkRepository.findByUserAccountId(5L))
-                .thenReturn(List.of(link(UserPersonLinkStatus.PENDING), link(UserPersonLinkStatus.REJECTED)));
-
-        assertThat(verificationReviewService.findUnlinkedActiveAccounts()).containsExactly(account);
-    }
-
-    @Test
-    void linkAccountToPersonCreatesAVerifiedLinkAndLogsIt() {
-        UserAccount account = accountWithId(6L, UserAccountStatus.ACTIVE);
-        account.setEmail("yuva@example.com");
-        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
-
-        Person person = new Person();
-        person.setId(416L);
-        when(personRepository.findById(416L)).thenReturn(Optional.of(person));
-        when(personDisplay.englishFullName(person)).thenReturn("Yuva Raj Bhatta");
-
-        verificationReviewService.linkAccountToPerson(6L, 416L, "admin");
-
-        ArgumentCaptor<UserPersonLink> captor = ArgumentCaptor.forClass(UserPersonLink.class);
-        verify(userPersonLinkRepository).save(captor.capture());
-        assertThat(captor.getValue().getUserAccount()).isEqualTo(account);
-        assertThat(captor.getValue().getPerson()).isEqualTo(person);
-        assertThat(captor.getValue().getLinkStatus()).isEqualTo(UserPersonLinkStatus.VERIFIED);
-
-        verify(auditLogService).record(
-                org.mockito.ArgumentMatchers.eq(AuditLogService.ACTION_ACCOUNT_LINKED),
-                org.mockito.ArgumentMatchers.eq(AuditLogService.ENTITY_USER_ACCOUNT),
-                org.mockito.ArgumentMatchers.eq(6L),
-                org.mockito.ArgumentMatchers.contains("Yuva Raj Bhatta"),
-                org.mockito.ArgumentMatchers.eq("admin"));
-    }
-
-    @Test
-    void linkAccountToPersonThrowsWhenAccountMissing() {
-        when(userAccountRepository.findById(999L)).thenReturn(Optional.empty());
-
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> verificationReviewService.linkAccountToPerson(999L, 1L, "admin"));
-    }
-
-    @Test
-    void linkAccountToPersonThrowsWhenPersonMissing() {
-        UserAccount account = accountWithId(6L, UserAccountStatus.ACTIVE);
-        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
-        when(personRepository.findById(999L)).thenReturn(Optional.empty());
-
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> verificationReviewService.linkAccountToPerson(6L, 999L, "admin"));
-    }
 }

@@ -10,6 +10,7 @@ import styles from "./Sidebar.module.css";
 export interface AdminNavCounts {
   pendingSignupCount: number;
   pendingCorrectionCount: number;
+  pendingAdminAccessRequestCount: number;
 }
 
 interface SidebarProps {

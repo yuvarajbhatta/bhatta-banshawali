@@ -31,9 +31,9 @@ public class SignupController {
             throw new IllegalArgumentException("Passwords do not match.");
         }
 
-        // Always the same response whether this created a new account, was
-        // a silent no-op (email already registered), or matched with any
-        // confidence level -- see SignupResponseDto.
+        // Throws EmailAlreadyRegisteredException (mapped to 409 by
+        // ApiExceptionHandler) if the email is already registered -- see
+        // that exception's javadoc for why this used to be a silent no-op.
         signupService.submitSignup(request);
         return SignupResponseDto.pendingReview();
     }

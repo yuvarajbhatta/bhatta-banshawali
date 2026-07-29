@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -90,11 +91,12 @@ class SignupServiceTest {
     }
 
     @Test
-    void silentlyDoesNothingWhenEmailAlreadyRegistered() {
+    void throwsEmailAlreadyRegisteredExceptionWhenEmailExists() {
         SignupRequestDto request = validRequest();
         when(userAccountRepository.existsByEmail("yuva@example.com")).thenReturn(true);
 
-        signupService.submitSignup(request);
+        assertThatThrownBy(() -> signupService.submitSignup(request))
+                .isInstanceOf(EmailAlreadyRegisteredException.class);
 
         verify(userAccountRepository, never()).save(any());
         verify(verificationRequestRepository, never()).save(any());

@@ -8,4 +8,7 @@ import java.util.List;
 
 public interface PersonCorrectionRequestRepository extends JpaRepository<PersonCorrectionRequest, Long> {
     List<PersonCorrectionRequest> findAllByStatusOrderBySubmittedAtAsc(CorrectionRequestStatus status);
+
+    /** Corrections this account submitted -- see UserAccountAdminService#delete. */
+    List<PersonCorrectionRequest> findBySubmittedById(Long userAccountId);
 }

@@ -2,22 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronUp, LogOut } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
-import { signOut } from "@/lib/api";
+import { ChevronUp } from "lucide-react";
 import styles from "./UserMenu.module.css";
 
 interface UserMenuProps {
   displayName: string;
   roleLabel: string;
+  email: string | null;
   placement?: "above" | "below";
 }
 
-export function UserMenu({ displayName, roleLabel, placement = "above" }: UserMenuProps) {
+export function UserMenu({ displayName, roleLabel, email, placement = "above" }: UserMenuProps) {
   const t = useTranslations("appShell.header");
-  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,18 +49,6 @@ export function UserMenu({ displayName, roleLabel, placement = "above" }: UserMe
     .map((part) => part[0]?.toUpperCase())
     .join("") || "?";
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      await signOut();
-    } catch {
-      // Fall through to redirect regardless -- worst case the user lands
-      // on /login and the session was already invalid anyway.
-    }
-    router.push("/login?logout");
-    router.refresh();
-  }
-
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <button
@@ -86,10 +71,10 @@ export function UserMenu({ displayName, roleLabel, placement = "above" }: UserMe
 
       {open ? (
         <div role="menu" className={placement === "below" ? `${styles.menu} ${styles.menuBelow}` : styles.menu}>
-          <button type="button" role="menuitem" className={styles.menuItem} onClick={handleSignOut} disabled={signingOut}>
-            <LogOut size={16} aria-hidden="true" />
-            {t("signOut")}
-          </button>
+          <div className={styles.profileCard}>
+            <span className={styles.profileName}>{displayName}</span>
+            {email ? <span className={styles.profileEmail}>{email}</span> : null}
+          </div>
         </div>
       ) : null}
     </div>

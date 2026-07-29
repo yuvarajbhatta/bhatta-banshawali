@@ -7,6 +7,7 @@ import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.AdminAccessRequestService;
 import com.familytree.web.PersonDisplayHelper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,13 +31,16 @@ public class AdminSummaryController {
 
     private final VerificationRequestRepository verificationRequestRepository;
     private final PersonCorrectionRequestRepository correctionRequestRepository;
+    private final AdminAccessRequestService adminAccessRequestService;
     private final PersonDisplayHelper personDisplay;
 
     public AdminSummaryController(VerificationRequestRepository verificationRequestRepository,
                                   PersonCorrectionRequestRepository correctionRequestRepository,
+                                  AdminAccessRequestService adminAccessRequestService,
                                   PersonDisplayHelper personDisplay) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.correctionRequestRepository = correctionRequestRepository;
+        this.adminAccessRequestService = adminAccessRequestService;
         this.personDisplay = personDisplay;
     }
 
@@ -62,6 +66,7 @@ public class AdminSummaryController {
                         request.getSubmittedAt()))
                 .toList();
 
-        return new AdminSummaryDto(pendingSignups.size(), pendingCorrections.size(), recentSignups, recentCorrections);
+        return new AdminSummaryDto(pendingSignups.size(), pendingCorrections.size(),
+                adminAccessRequestService.pendingCount(), recentSignups, recentCorrections);
     }
 }

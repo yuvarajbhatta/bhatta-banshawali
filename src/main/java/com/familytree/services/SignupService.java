@@ -44,17 +44,15 @@ public class SignupService {
     }
 
     /**
-     * Always completes without throwing for well-formed input, even if
-     * the email is already registered -- callers must return the same
-     * response either way (see SignupController). If the email already
-     * exists, this is a deliberate, silent no-op: no duplicate account or
-     * verification request is created.
+     * @throws EmailAlreadyRegisteredException if the email already has an
+     *          account -- see the class javadoc for why this is no longer
+     *          a silent no-op.
      */
     @Transactional
     public void submitSignup(SignupRequestDto request) {
         String normalizedEmail = normalizeEmail(request.getEmail());
         if (userAccountRepository.existsByEmail(normalizedEmail)) {
-            return;
+            throw new EmailAlreadyRegisteredException("An account with this email already exists.");
         }
 
         UserAccount account = new UserAccount();

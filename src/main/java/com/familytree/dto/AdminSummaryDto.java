@@ -13,6 +13,7 @@ import java.util.List;
 public record AdminSummaryDto(
         int pendingSignupCount,
         int pendingCorrectionCount,
+        int pendingAdminAccessRequestCount,
         List<PendingSignupSummary> recentPendingSignups,
         List<PendingCorrectionSummary> recentPendingCorrections
 ) {

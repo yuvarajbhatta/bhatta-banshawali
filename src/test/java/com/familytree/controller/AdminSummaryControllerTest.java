@@ -9,6 +9,7 @@ import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.AdminAccessRequestService;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,8 +31,12 @@ class AdminSummaryControllerTest {
     @Mock
     private PersonCorrectionRequestRepository correctionRequestRepository;
 
+    @Mock
+    private AdminAccessRequestService adminAccessRequestService;
+
     private AdminSummaryController controller() {
-        return new AdminSummaryController(verificationRequestRepository, correctionRequestRepository, new PersonDisplayHelper());
+        return new AdminSummaryController(verificationRequestRepository, correctionRequestRepository,
+                adminAccessRequestService, new PersonDisplayHelper());
     }
 
     @Test

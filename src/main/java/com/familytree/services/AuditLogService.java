@@ -36,6 +36,14 @@ public class AuditLogService {
     public static final String ACTION_CORRECTION_APPROVED = "CORRECTION_APPROVED";
     public static final String ACTION_CORRECTION_REJECTED = "CORRECTION_REJECTED";
     public static final String ACTION_ACCOUNT_LINKED = "ACCOUNT_LINKED";
+    public static final String ACTION_ACCOUNT_UNLINKED = "ACCOUNT_UNLINKED";
+    public static final String ACTION_ACCOUNT_DISABLED = "ACCOUNT_DISABLED";
+    public static final String ACTION_ACCOUNT_ENABLED = "ACCOUNT_ENABLED";
+    public static final String ACTION_ACCOUNT_DELETED = "ACCOUNT_DELETED";
+    public static final String ACTION_ACCOUNT_SIGNUP_INFO_EDITED = "ACCOUNT_SIGNUP_INFO_EDITED";
+    public static final String ACTION_ADMIN_ACCESS_REQUESTED = "ADMIN_ACCESS_REQUESTED";
+    public static final String ACTION_ADMIN_ACCESS_APPROVED = "ADMIN_ACCESS_APPROVED";
+    public static final String ACTION_ADMIN_ACCESS_DENIED = "ADMIN_ACCESS_DENIED";
 
     public static final String ENTITY_PERSON = "PERSON";
     public static final String ENTITY_RELATIONSHIP = "RELATIONSHIP";

@@ -1,5 +1,6 @@
 package com.familytree.controller;
 
+import com.familytree.services.EmailAlreadyRegisteredException;
 import com.familytree.services.SignupService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,10 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,11 +19,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Full Spring context (real SecurityConfig) so this proves POST
- * /api/v1/signup is genuinely reachable without authentication, and --
- * the most important property here -- that the response is identical
- * regardless of what happens internally (new account vs. already
- * registered vs. any match confidence), since SignupService communicates
- * nothing back to the controller by design.
+ * /api/v1/signup is genuinely reachable without authentication. Signup
+ * deliberately reports a duplicate email back to the caller (see
+ * EmailAlreadyRegisteredException's javadoc) -- unlike login and
+ * password-reset, which still return constant-shape responses.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = {
         "spring.datasource.url=jdbc:h2:mem:signup-controller;DB_CLOSE_DELAY=-1",
@@ -66,23 +65,14 @@ class SignupControllerTest {
     }
 
     @Test
-    void responseIsIdenticalWhetherSignupIsNewOrTheServiceSilentlyNoOps() throws Exception {
-        // The service returns void either way (new account vs. already
-        // registered vs. any match confidence) -- nothing for the
-        // controller to leak. This asserts the actual response bytes are
-        // identical across both cases, not just "some 200".
-        MvcResult first = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
-                        .header("X-Forwarded-For", "203.0.113.2"))
-                .andExpect(status().isOk())
-                .andReturn();
+    void returnsConflictWhenEmailAlreadyRegistered() throws Exception {
+        doThrow(new EmailAlreadyRegisteredException("An account with this email already exists."))
+                .when(signupService).submitSignup(any());
 
-        MvcResult second = mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
+        mockMvc.perform(post("/api/v1/signup").contentType(APPLICATION_JSON).content(VALID_BODY)
                         .header("X-Forwarded-For", "203.0.113.2"))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        assertThat(first.getResponse().getContentAsString())
-                .isEqualTo(second.getResponse().getContentAsString());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("An account with this email already exists."));
     }
 
     @Test

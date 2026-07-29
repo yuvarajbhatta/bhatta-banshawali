@@ -13,10 +13,10 @@ For each threat: attack scenario, risk, preventive control, detective control, r
 ## 2. Account Enumeration
 - **Scenario**: probing signup/login/reset endpoints to infer whether an email is registered.
 - **Risk**: reveals family membership indirectly.
-- **Preventive**: identical response shape/timing regardless of account existence, across login, signup, and password-reset.
+- **Preventive**: identical response shape/timing regardless of account existence, across login and password-reset. Signup is a deliberate, accepted exception — it returns an explicit "email already exists" (HTTP 409) error, because on this small, invitation-oriented family site the UX cost of a vague signup error (people re-submitting, assuming the form is broken, or emailing the admin) was judged to outweigh the enumeration risk. See `EmailAlreadyRegisteredException`'s javadoc and docs/05's "Anti-Enumeration Guarantees" section.
 - **Detective**: monitoring for high-volume distinct-email probing from a single source.
 - **Recovery**: N/A (informational leak, not account compromise) — rate-limit and block source.
-- **Test coverage**: explicit tests asserting identical response bodies/status codes for existing vs. non-existing emails.
+- **Test coverage**: explicit tests asserting identical response bodies/status codes for existing vs. non-existing emails on login/reset; explicit tests asserting a 409 with a clear message on signup with a duplicate email.
 
 ## 3. Family-Member Enumeration via Signup Matching
 - **Scenario**: an attacker submits guessed father/grandfather names during signup to learn whether specific people exist in the private tree.

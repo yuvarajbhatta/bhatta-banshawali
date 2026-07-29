@@ -29,7 +29,7 @@ Spring Session, JDBC-backed initially (reuses the existing MySQL instance — no
 | Audit trail | Every login success/failure, password reset, role change, and account lock/unlock recorded as an `AuditEvent` |
 | Secure cookies | httpOnly, `Secure` (once TLS is confirmed in the deployment), `SameSite` |
 | CSRF protection | Retained (already present) since cookie-based auth is used |
-| Generic error messages | Login, signup, and password-reset all return identical messaging regardless of whether the email/account exists |
+| Generic error messages | Login and password-reset return identical messaging regardless of whether the email/account exists. Signup is an accepted exception: it reports "email already exists" explicitly (see "Anti-Enumeration Guarantees" below) |
 | Bot protection | CAPTCHA (e.g., Cloudflare Turnstile — see the `turnstile-spin` tooling available in this environment) on signup and login |
 | Security headers | CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security` once TLS is in place, set via a servlet filter or the reverse proxy |
 | Safe redirect handling | Post-login/post-verification redirect targets validated against an allowlist, never taken raw from a query parameter |
@@ -70,8 +70,9 @@ Spring Session, JDBC-backed initially (reuses the existing MySQL instance — no
 - **LOW → admin review queue**, applicant sees only a neutral "additional review needed" message — the system never states that no match was found, since that would itself leak information (e.g., confirm that a father's name genuinely isn't in the tree).
 
 ### Anti-Enumeration Guarantees
-- Signup, login, and password-reset responses are identical in timing and wording regardless of whether an email/account/family-match exists (constant-response-shape, and rate-limited to reduce timing-based inference).
-- Match evidence (which specific `Person` records were considered, at what confidence) is visible only inside the admin review UI, never returned to the applicant in any API response, error message, or client-side bundle.
+- Login and password-reset responses are identical in timing and wording regardless of whether an email/account exists (constant-response-shape, and rate-limited to reduce timing-based inference).
+- **Signup is a deliberate exception**: signup's *email-uniqueness* check breaks from constant-response-shape — `POST /api/v1/signup` returns HTTP 409 with an explicit "email already exists" message when the email is already registered, rather than silently no-op'ing. The site owner made this call for a small, invitation-oriented family site where a vague "check your email" response after a duplicate signup caused real confusion (people assuming the form was broken or emailing to ask why nothing arrived), and judged that cost to outweigh the residual risk of an attacker learning which emails have accounts. Family-match confidence (whether the applicant's stated name/lineage matched anyone in the tree) is unaffected by this and remains fully neutral — see the next bullet.
+- Family-match responses remain identical in wording regardless of match confidence (HIGH/MEDIUM/LOW all show the same neutral "pending review" status to the applicant). Match evidence (which specific `Person` records were considered, at what confidence) is visible only inside the admin review UI, never returned to the applicant in any API response, error message, or client-side bundle.
 
 ## Optional Verification Fields
 

@@ -96,6 +96,16 @@ export async function convertAdToBs(dateAd: string): Promise<{ year: number; mon
   return response.json();
 }
 
+export async function convertBsToAd(year: number, month: number, day: number): Promise<{ date: string }> {
+  const response = await fetch(
+    `/api/v1/date-conversion/bs-to-ad?year=${year}&month=${month}&day=${day}`,
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to convert date: ${response.status}`);
+  }
+  return response.json();
+}
+
 export interface PersonSummaryDto {
   id: number;
   englishFullName: string;
@@ -277,9 +287,57 @@ export async function submitCorrection(personId: number, request: CorrectionRequ
   }
 }
 
+// Mirrors com.familytree.dto.MyAdminAccessRequestStatusDto.
+export type MyAdminAccessRequestStatus = "NONE" | "PENDING" | "ALREADY_ADMIN";
+
+export type MyAdminAccessRequestStatusResult =
+  | { kind: "ok"; status: MyAdminAccessRequestStatus }
+  | { kind: "unauthenticated" }
+  | { kind: "no-account" };
+
+// Server-to-server with the browser's session cookie forwarded, same
+// pattern as getMemberProfile -- "no-account" covers a legacy AppUser
+// (admin) login, which already has admin access another way and has
+// nothing to request.
+export async function getMyAdminAccessRequestStatus(cookieHeader: string): Promise<MyAdminAccessRequestStatusResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/me/admin-access-request`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    return { kind: "unauthenticated" };
+  }
+  if (response.status === 404) {
+    return { kind: "no-account" };
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load admin access request status: ${response.status}`);
+  }
+  const body: { status: MyAdminAccessRequestStatus } = await response.json();
+  return { kind: "ok", status: body.status };
+}
+
+export class AdminAccessRequestError extends Error {}
+
+// Called directly from the browser -- same CSRF pattern as submitCorrection.
+export async function requestAdminAccess(): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
+  const response = await fetch("/api/v1/me/admin-access-request", {
+    method: "POST",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new AdminAccessRequestError(body?.message ?? "Could not submit the request.");
+  }
+}
+
 export interface AdminSummaryDto {
   pendingSignupCount: number;
   pendingCorrectionCount: number;
+  pendingAdminAccessRequestCount: number;
   recentPendingSignups: { id: number; submittedFullName: string; submittedAt: string }[];
   recentPendingCorrections: { id: number; personName: string; field: string; submittedAt: string }[];
 }
@@ -640,31 +698,98 @@ export async function getAdminAuditLog(cookieHeader: string, limit?: number): Pr
   return { kind: "ok", items: await response.json() };
 }
 
-// Mirrors com.familytree.dto.UnlinkedAccountDto -- an approved account
-// with no Person link yet (docs/frontend-redesign-plan.md "link account" tool).
-export interface UnlinkedAccountDto {
-  userAccountId: number;
+// Mirrors com.familytree.dto.AdminUserAccountDto -- every UserAccount
+// regardless of status or link state, combining what used to be split
+// across a separate "unlinked accounts" tool and this one -- "Manage
+// User Accounts" is the one place to link/unlink, correct the
+// applicant's submitted signup info, disable/enable, or delete.
+export type UserAccountStatus = "PENDING_EMAIL_VERIFICATION" | "ACTIVE" | "LOCKED" | "DISABLED";
+
+export interface AdminUserAccountDto {
+  id: number;
   email: string;
+  status: UserAccountStatus;
+  preferredLanguage: string | null;
   createdAt: string;
+  lastLoginAt: string | null;
+  linkedPersonId: number | null;
+  linkedPersonName: string | null;
   submittedFullName: string | null;
   submittedFatherName: string | null;
   submittedGrandfatherName: string | null;
+  submittedDobAd: string | null;
 }
 
-export async function getUnlinkedAccounts(cookieHeader: string): Promise<AdminListResult<UnlinkedAccountDto>> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/unlinked-accounts`, {
+export async function getAdminAccounts(cookieHeader: string): Promise<AdminListResult<AdminUserAccountDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/accounts`, {
     headers: { Cookie: cookieHeader },
     cache: "no-store",
   });
 
   if (response.status === 401) return { kind: "unauthenticated" };
   if (response.status === 403) return { kind: "forbidden" };
-  if (!response.ok) throw new Error(`Failed to load unlinked accounts: ${response.status}`);
+  if (!response.ok) throw new Error(`Failed to load accounts: ${response.status}`);
   return { kind: "ok", items: await response.json() };
 }
 
-export function linkAccountToPerson(userAccountId: number, personId: number): Promise<void> {
-  return adminApiRequest(`/api/v1/admin/unlinked-accounts/${userAccountId}/link`, "POST", { personId });
+export function linkAdminAccount(id: number, personId: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/link`, "POST", { personId });
+}
+
+export function unlinkAdminAccount(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/unlink`, "POST");
+}
+
+export interface AdminAccountSignupInfoUpdateRequest {
+  fullName: string;
+  fatherName: string;
+  grandfatherName: string;
+  dobAd?: string;
+}
+
+export function updateAdminAccountSignupInfo(id: number, body: AdminAccountSignupInfoUpdateRequest): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/signup-info`, "PUT", body);
+}
+
+export function disableAdminAccount(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/disable`, "POST");
+}
+
+export function enableAdminAccount(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}/enable`, "POST");
+}
+
+export function deleteAdminAccount(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/accounts/${id}`, "DELETE");
+}
+
+// Mirrors com.familytree.dto.AdminAccessRequestDto.
+export interface AdminAccessRequestDto {
+  id: number;
+  userAccountId: number;
+  email: string;
+  linkedPersonName: string | null;
+  requestedAt: string;
+}
+
+export async function getAdminAccessRequests(cookieHeader: string): Promise<AdminListResult<AdminAccessRequestDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/admin-access-requests`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load admin access requests: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function approveAdminAccessRequest(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/admin-access-requests/${id}/approve`, "POST");
+}
+
+export function denyAdminAccessRequest(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/admin-access-requests/${id}/deny`, "POST");
 }
 
 // Mirrors the JSON shape RelationshipService#buildLineageTree already

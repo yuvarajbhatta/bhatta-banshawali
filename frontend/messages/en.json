@@ -14,7 +14,8 @@
       "people": "People",
       "relationships": "Relationships",
       "auditLog": "Audit Log",
-      "unlinkedAccounts": "Unlinked Accounts",
+      "manageUserAccounts": "Manage User Accounts",
+      "adminAccessRequests": "Admin Access Requests",
       "lineageBuilder": "Lineage Builder",
       "generationsView": "Generations"
     },
@@ -25,6 +26,12 @@
       "closeMenu": "Close menu",
       "userMenu": "Account menu",
       "signOut": "Sign out"
+    },
+    "footer": {
+      "requestAdminAccess": "Request Admin Access",
+      "requestPending": "Admin Access Requested",
+      "requestError": "Could not submit the request. Please try again.",
+      "logOut": "Log Out"
     },
     "role": {
       "member": "Family member",
@@ -371,20 +378,54 @@
     "empty": "No admin actions recorded yet.",
     "forbidden": "You don't have permission to view this."
   },
-  "adminUnlinkedAccountsPage": {
-    "title": "Unlinked Accounts",
-    "subtitle": "Approved accounts that were never matched to a family record -- link them to the right person.",
-    "empty": "Every approved account is linked to a family record.",
+  "adminAccountsPage": {
+    "title": "Manage User Accounts",
+    "subtitle": "Every member account -- link or unlink a family record, correct their submitted signup info, disable/enable access, or delete the account entirely.",
+    "empty": "No accounts yet.",
     "forbidden": "You don't have permission to view this.",
+    "noLinkedPerson": "Not linked to a family record",
+    "linkedTo": "Linked to {name}",
+    "joined": "Joined {date}",
     "submittedAs": "Signed up as {name}",
     "father": "Father",
     "grandfather": "Grandfather",
-    "noSignupRecord": "No signup record on file.",
+    "fields": {
+      "fullName": "Full Name",
+      "fatherName": "Father's Full Name",
+      "grandfatherName": "Grandfather's Full Name",
+      "dobAd": "Date of Birth (AD)"
+    },
+    "editInfo": "Edit Info",
+    "save": "Save",
+    "cancel": "Cancel",
     "selectPerson": "Person to link",
     "selectPersonPlaceholder": "Search and select the correct person...",
     "clear": "Change",
-    "link": "Link Account",
-    "linkError": "Could not link this account. Please try again."
+    "link": "Link",
+    "unlink": "Unlink",
+    "unlinkConfirm": "Unlink {email} from their family record?",
+    "disable": "Disable",
+    "enable": "Re-enable",
+    "delete": "Delete",
+    "deleteConfirm": "Permanently delete the account for {email}? This cannot be undone and frees the email address for a new signup.",
+    "actionError": "Could not update this account. Please try again.",
+    "status": {
+      "PENDING_EMAIL_VERIFICATION": "Pending Verification",
+      "ACTIVE": "Active",
+      "LOCKED": "Locked",
+      "DISABLED": "Disabled"
+    }
+  },
+  "adminAccessRequestsPage": {
+    "title": "Admin Access Requests",
+    "subtitle": "Members who have asked to be given admin access -- approve to grant it, or deny.",
+    "empty": "No pending requests.",
+    "forbidden": "You don't have permission to view this.",
+    "noLinkedPerson": "Not linked to a family record",
+    "requested": "Requested {date}",
+    "approve": "Approve",
+    "deny": "Deny",
+    "actionError": "Could not update this request. Please try again."
   },
   "adminGenerationsPage": {
     "title": "Generations",
@@ -713,8 +754,11 @@
     "fields": {
       "fullName": "Full Name",
       "email": "Email",
-      "dobAd": "Date of Birth (AD)",
-      "dobBsPreview": "Bikram Sambat: {date}",
+      "dobAd": "AD",
+      "dobBs": "BS",
+      "dobBsYear": "Year",
+      "dobBsMonth": "Month",
+      "dobBsDay": "Day",
       "placeOfBirth": "Place of Birth",
       "fatherName": "Father's Full Name",
       "grandfatherName": "Grandfather's Full Name",
@@ -743,6 +787,7 @@
       "emailInvalid": "Enter a valid email address.",
       "dobRequired": "Date of birth is required.",
       "dobFuture": "Date of birth must be in the past.",
+      "dobBsInvalid": "Enter a valid Bikram Sambat date.",
       "fatherNameRequired": "Father's full name is required.",
       "grandfatherNameRequired": "Grandfather's full name is required.",
       "passwordRequired": "Password is required.",

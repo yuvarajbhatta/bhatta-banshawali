@@ -7,19 +7,21 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Sidebar, type AdminNavCounts } from "./Sidebar";
+import { SidebarFooterActions } from "./SidebarFooterActions";
 import { TopHeader } from "./TopHeader";
-import { UserMenu } from "./UserMenu";
 import { DURATION, EASE_OUT } from "@/lib/motion";
 import styles from "./AppShell.module.css";
 
 interface AppShellProps {
   displayName: string;
   roleLabel: string;
+  email: string | null;
+  adminAccessRequestStatus: "NONE" | "PENDING" | null;
   adminCounts?: AdminNavCounts | null;
   children: ReactNode;
 }
 
-export function AppShell({ displayName, roleLabel, adminCounts, children }: AppShellProps) {
+export function AppShell({ displayName, roleLabel, email, adminAccessRequestStatus, adminCounts, children }: AppShellProps) {
   const t = useTranslations("appShell.header");
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -83,7 +85,7 @@ export function AppShell({ displayName, roleLabel, adminCounts, children }: AppS
       <aside className={styles.desktopSidebar}>
         <Sidebar
           adminCounts={adminCounts}
-          footer={<UserMenu displayName={displayName} roleLabel={roleLabel} placement="above" />}
+          footer={<SidebarFooterActions adminAccessRequestStatus={adminAccessRequestStatus} />}
         />
       </aside>
 
@@ -91,6 +93,7 @@ export function AppShell({ displayName, roleLabel, adminCounts, children }: AppS
         <TopHeader
           displayName={displayName}
           roleLabel={roleLabel}
+          email={email}
           onOpenMobileNav={() => setMobileNavOpen(true)}
         />
         <div className={styles.content}>{children}</div>
@@ -133,7 +136,7 @@ export function AppShell({ displayName, roleLabel, adminCounts, children }: AppS
                 <Sidebar
                   onNavigate={() => setMobileNavOpen(false)}
                   adminCounts={adminCounts}
-                  footer={<UserMenu displayName={displayName} roleLabel={roleLabel} placement="above" />}
+                  footer={<SidebarFooterActions adminAccessRequestStatus={adminAccessRequestStatus} />}
                 />
               </div>
             </motion.div>

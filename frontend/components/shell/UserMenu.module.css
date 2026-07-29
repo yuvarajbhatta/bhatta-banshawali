@@ -89,22 +89,23 @@
   min-width: 200px;
 }
 
-.menuItem {
+.profileCard {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
+  flex-direction: column;
+  gap: 2px;
   padding: var(--space-2) var(--space-3);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
 }
 
-.menuItem:hover {
-  background: var(--color-primary-50);
-  color: var(--color-primary-700);
+.profileName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.profileEmail {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

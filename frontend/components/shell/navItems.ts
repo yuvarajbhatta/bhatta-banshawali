@@ -8,6 +8,7 @@ import {
   Link2,
   Sprout,
   ShieldCheck,
+  ShieldPlus,
   UserCog,
   UserPlus,
   Users,
@@ -36,7 +37,8 @@ export interface AdminNavItem {
     | "/admin/corrections"
     | "/admin/persons"
     | "/admin/relationships"
-    | "/admin/unlinked-accounts"
+    | "/admin/accounts"
+    | "/admin/admin-access-requests"
     | "/admin/lineage"
     | "/admin/generations"
     | "/admin/audit-log";
@@ -45,12 +47,13 @@ export interface AdminNavItem {
     | "correctionReview"
     | "people"
     | "relationships"
-    | "unlinkedAccounts"
+    | "manageUserAccounts"
+    | "adminAccessRequests"
     | "lineageBuilder"
     | "generationsView"
     | "auditLog";
   icon: LucideIcon;
-  countKey?: "pendingSignupCount" | "pendingCorrectionCount";
+  countKey?: "pendingSignupCount" | "pendingCorrectionCount" | "pendingAdminAccessRequestCount";
 }
 
 // Only shown to admins (docs/08 Phase 6) -- Sidebar checks isAdmin before
@@ -58,7 +61,13 @@ export interface AdminNavItem {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/signups", labelKey: "signupReview", icon: ShieldCheck, countKey: "pendingSignupCount" },
   { href: "/admin/corrections", labelKey: "correctionReview", icon: FileCheck, countKey: "pendingCorrectionCount" },
-  { href: "/admin/unlinked-accounts", labelKey: "unlinkedAccounts", icon: UserPlus },
+  {
+    href: "/admin/admin-access-requests",
+    labelKey: "adminAccessRequests",
+    icon: ShieldPlus,
+    countKey: "pendingAdminAccessRequestCount",
+  },
+  { href: "/admin/accounts", labelKey: "manageUserAccounts", icon: UserPlus },
   { href: "/admin/persons", labelKey: "people", icon: UserCog },
   { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
   { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },

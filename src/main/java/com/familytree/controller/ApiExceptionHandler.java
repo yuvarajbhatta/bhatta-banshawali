@@ -2,6 +2,7 @@ package com.familytree.controller;
 
 import com.familytree.calendar.UnsupportedDateRangeException;
 import com.familytree.dto.ErrorResponseDto;
+import com.familytree.services.EmailAlreadyRegisteredException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,8 +12,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 /**
  * Maps expected client-input failures on /api/** endpoints to a
- * consistent 400 response shape, instead of letting them surface as a
- * raw 500 or a stack trace.
+ * consistent error response shape, instead of letting them surface as
+ * a raw 500 or a stack trace.
  */
 @RestControllerAdvice(basePackages = "com.familytree.controller")
 public class ApiExceptionHandler {
@@ -20,6 +21,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(UnsupportedDateRangeException.class)
     public ResponseEntity<ErrorResponseDto> handleUnsupportedDateRange(UnsupportedDateRangeException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponseDto(exception.getMessage()));
+    }
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    public ResponseEntity<ErrorResponseDto> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDto(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

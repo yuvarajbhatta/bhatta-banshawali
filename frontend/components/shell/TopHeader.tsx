@@ -10,10 +10,11 @@ import styles from "./TopHeader.module.css";
 interface TopHeaderProps {
   displayName: string;
   roleLabel: string;
+  email: string | null;
   onOpenMobileNav: () => void;
 }
 
-export function TopHeader({ displayName, roleLabel, onOpenMobileNav }: TopHeaderProps) {
+export function TopHeader({ displayName, roleLabel, email, onOpenMobileNav }: TopHeaderProps) {
   const t = useTranslations("appShell.header");
 
   return (
@@ -35,7 +36,7 @@ export function TopHeader({ displayName, roleLabel, onOpenMobileNav }: TopHeader
         <LanguageSwitcher />
       </div>
       <div className={`${styles.userMenuDesktop} ${styles.desktopOnly}`}>
-        <UserMenu displayName={displayName} roleLabel={roleLabel} placement="below" />
+        <UserMenu displayName={displayName} roleLabel={roleLabel} email={email} placement="below" />
       </div>
     </header>
   );
