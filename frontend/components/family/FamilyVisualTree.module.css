@@ -1,0 +1,19 @@
+.wrapper {
+  height: calc(100vh - 68px - var(--space-8) * 2 - 120px);
+  min-height: 420px;
+}
+
+.canvasArea {
+  position: relative;
+  height: 100%;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}

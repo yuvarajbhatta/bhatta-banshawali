@@ -45,6 +45,9 @@ export async function MemberDashboard({ profile }: { profile: MemberProfileDto }
           </div>
           <FamilyConstellation self={person} family={family} fatherLabel={t("father")} motherLabel={t("mother")} />
           <div className={styles.viewTreeAction}>
+            <Link href="/family">
+              <Button variant="primary">{t("viewYourFamily")}</Button>
+            </Link>
             <Link href={`/tree?focus=${person.id}`}>
               <Button variant="secondary">{t("viewFullTree")}</Button>
             </Link>

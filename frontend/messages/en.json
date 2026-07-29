@@ -5,6 +5,7 @@
   "appShell": {
     "nav": {
       "dashboard": "Dashboard",
+      "yourFamily": "Your Family",
       "familyTree": "Family Tree",
       "members": "Members"
     },
@@ -173,6 +174,7 @@
       "familyHint": "Drag to rotate the view -- click a name to open their profile.",
       "father": "Father",
       "mother": "Mother",
+      "viewYourFamily": "View Your Family",
       "viewFullTree": "View Full Tree",
       "browseDirectory": "Browse the Directory"
     },
@@ -192,6 +194,37 @@
       "manageRelationships": "Manage Relationships",
       "lineageBuilder": "Lineage Builder",
       "generationsView": "Generations View"
+    }
+  },
+  "familyPage": {
+    "title": "Your Family",
+    "subtitle": "Your own line -- ancestors, descendants, and how you connect to anyone else in the register.",
+    "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
+    "you": "You",
+    "tabs": {
+      "visualTree": "Visual Tree",
+      "ancestors": "Ancestors",
+      "descendants": "Descendants",
+      "relationshipPath": "Relationship Path"
+    },
+    "visualTree": {
+      "empty": "No ancestors or descendants have been recorded yet."
+    },
+    "ancestors": {
+      "empty": "No ancestors have been recorded yet.",
+      "distanceLabel": "{count} gen. up"
+    },
+    "descendants": {
+      "empty": "No descendants have been recorded yet.",
+      "distanceLabel": "{count} gen. down"
+    },
+    "relationshipPath": {
+      "searchLabel": "Find a person",
+      "searchPlaceholder": "Search by name...",
+      "prompt": "Search for a family member to see how you're related.",
+      "noResults": "No matching records found.",
+      "notConnected": "No relationship path could be found between you and this person.",
+      "viewFullProfile": "View full profile"
     }
   },
   "contactPage": {
