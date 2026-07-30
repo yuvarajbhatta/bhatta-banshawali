@@ -1,0 +1,28 @@
+x-json-logging: &json-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: familytree-mysql
+    environment:
+      MYSQL_DATABASE: familytree_dev
+      MYSQL_USER: familytree_dev
+      MYSQL_PASSWORD: familytree_dev
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *json-logging
+
+volumes:
+  mysql_data:
