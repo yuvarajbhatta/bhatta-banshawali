@@ -65,9 +65,10 @@ Spring Session, JDBC-backed initially (reuses the existing MySQL instance — no
   - **HIGH**: applicant-name match + father match + grandfather-lineage match all strong, with consistent (or absent, non-conflicting) DOB.
   - **MEDIUM**: plausible name matches but an ambiguous branch (multiple candidates), an incomplete lineage chain, or a DOB conflict that isn't clearly disqualifying.
   - **LOW**: no reliable match, or a direct conflict (e.g., stated father's name matches no recorded parent of any candidate with the applicant's name).
-- **HIGH → configurable auto-approve** (admin policy toggle; defaults to still requiring a lightweight admin confirmation until the matcher has a track record).
+- **HIGH → admin review queue**, surfaced with the strong match evidence for a quick confirm-and-approve.
 - **MEDIUM → admin review queue**, with match evidence visible only to administrators.
 - **LOW → admin review queue**, applicant sees only a neutral "additional review needed" message — the system never states that no match was found, since that would itself leak information (e.g., confirm that a father's name genuinely isn't in the tree).
+- **Decided (2026-07-30)**: no auto-approve, at any confidence level, ever. Every signup — HIGH, MEDIUM, or LOW — always lands in the manual admin review queue. This is a permanent policy, not a "for now" starting point.
 
 ### Anti-Enumeration Guarantees
 - Login and password-reset responses are identical in timing and wording regardless of whether an email/account exists (constant-response-shape, and rate-limited to reduce timing-based inference).
@@ -78,6 +79,6 @@ Spring Session, JDBC-backed initially (reuses the existing MySQL instance — no
 
 Modeled as nullable fields on `VerificationRequest` (see `04-data-model.md`), admin-configurable as to which are shown/required via a settings flag — never forced on the applicant by default.
 
-## Open Question for Admin Policy (flag for user decision in Phase 3)
+## Admin Policy Decision (resolved 2026-07-30)
 
-Whether HIGH-confidence matches should truly auto-approve without any human touch, or always land in a lightweight "confirm and approve" queue for the first operating period. Recommendation: start with the latter (safer), revisit once real match data accumulates.
+Whether HIGH-confidence matches should auto-approve without human touch, or always land in an admin review queue: **resolved as manual review, permanently, at every confidence level.** No auto-approve toggle exists in the codebase (`SignupService` always sets `VerificationStatus.PENDING`), and none will be added.

@@ -51,7 +51,7 @@ See `adr/001-frontend-and-backend-architecture.md` for the formal ADR. Summary: 
 ## Deployment
 
 - Retains the self-hosted-runner → `/srv` deployment model already in place, extended to build and deploy both the Spring Boot API and the Next.js app as separate processes/containers behind a shared reverse proxy (e.g., Nginx or Caddy), with the `SPRING_PROFILES_ACTIVE=prod` misconfiguration (see `01-current-system-assessment.md`) fixed as an immediate, independent action.
-- Environments: local, test, staging, production — staging is new (does not exist today) and is required before any migration cutover per `07-migration-plan.md`.
+- Environments: local, test, production. **Decided (2026-07-30)**: no persistent staging tier. This is a single shared home-server host running several unrelated personal apps side by side (nextcloud, meropasal-pos, trading-copilot, etc.) via systemd + one shared cloudflared tunnel + shared MySQL — provisioning a parallel always-on app environment here adds real risk (port/tunnel/systemd config shared with other live apps) for a benefit (a persistently reachable pre-prod copy) this project doesn't need. Pre-cutover migration verification is instead done via a disposable, on-demand database — see `07-migration-plan.md` and `scripts/migration-rehearsal.sh`.
 
 ## What This Explicitly Avoids
 
