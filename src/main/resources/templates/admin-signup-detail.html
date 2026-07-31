@@ -92,6 +92,30 @@
         <p class="empty-state" th:if="${#lists.isEmpty(candidatePersons)}" th:text="#{adminSignups.noCandidates}">
             No existing records matched the submitted name.
         </p>
+
+        <h3 th:if="${!#lists.isEmpty(fatherCandidatePersons)}" th:text="#{adminSignups.createAsChildTitle}">Create as a new person</h3>
+        <p th:if="${!#lists.isEmpty(fatherCandidatePersons)}" class="help-text" th:text="#{adminSignups.createAsChildHelp}">
+            These are possible fathers already in the tree. Selecting one creates a brand-new person for this
+            applicant as that father's child.
+        </p>
+        <table th:if="${!#lists.isEmpty(fatherCandidatePersons)}">
+            <tr>
+                <th th:if="${request.status.name() == 'PENDING'}" th:text="#{adminSignups.createThisChild}">Create</th>
+                <th th:text="#{persons.id}">ID</th>
+                <th th:text="#{adminSignups.fatherName}">Father</th>
+                <th th:text="#{persons.generation}">Generation</th>
+            </tr>
+            <tr th:each="candidate : ${fatherCandidatePersons}">
+                <td th:if="${request.status.name() == 'PENDING'}">
+                    <input type="radio" name="createAsChildOfFatherId" form="approve-form" th:value="${candidate.id}"/>
+                </td>
+                <td th:text="${candidate.id}"></td>
+                <td>
+                    <a th:href="@{'/persons/' + ${candidate.id}}" th:text="${@personDisplay.englishFullName(candidate)}"></a>
+                </td>
+                <td th:text="${candidate.generationNumber}"></td>
+            </tr>
+        </table>
     </div>
 
     <div class="card" th:if="${request.status.name() == 'PENDING'}">

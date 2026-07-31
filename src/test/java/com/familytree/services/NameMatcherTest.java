@@ -40,4 +40,42 @@ class NameMatcherTest {
     void normalizeStripsPunctuationAndCollapsesWhitespace() {
         assertThat(nameMatcher.normalize("  Yuva,  Bhatta.  ")).isEqualTo("yuva bhatta");
     }
+
+    @Test
+    void matchQualityReturnsExactForIdenticalNames() {
+        assertThat(nameMatcher.matchQuality("Yuva Bhatta", "yuva bhatta")).isEqualTo(NameMatchQuality.EXACT);
+    }
+
+    @Test
+    void matchQualityReturnsExactAcrossTransliteration() {
+        assertThat(nameMatcher.matchQuality("Bhatta", "भट्ट")).isEqualTo(NameMatchQuality.EXACT);
+    }
+
+    @Test
+    void matchQualityReturnsFuzzyForCloseSpellingVariant() {
+        assertThat(nameMatcher.matchQuality("Yuvraj Bhatta", "Yuvaraj Bhatta")).isEqualTo(NameMatchQuality.FUZZY);
+    }
+
+    @Test
+    void matchQualityReturnsFuzzyForSpacingVariant() {
+        assertThat(nameMatcher.matchQuality("Bhojraj Bhatta", "Bhoj Raj Bhatta")).isEqualTo(NameMatchQuality.FUZZY);
+    }
+
+    @Test
+    void matchQualityReturnsNoneForUnrelatedNames() {
+        assertThat(nameMatcher.matchQuality("Yuva Bhatta", "Someone Else Entirely")).isEqualTo(NameMatchQuality.NONE);
+    }
+
+    @Test
+    void matchQualityReturnsNoneForVeryShortStrings() {
+        // Two clearly different names ("Ram" vs "Sam") are only one edit
+        // apart -- too short for edit-distance fuzzing to be safe.
+        assertThat(nameMatcher.matchQuality("Ram", "Sam")).isEqualTo(NameMatchQuality.NONE);
+    }
+
+    @Test
+    void matchQualityReturnsNoneForBlankOrNullNames() {
+        assertThat(nameMatcher.matchQuality("", "")).isEqualTo(NameMatchQuality.NONE);
+        assertThat(nameMatcher.matchQuality(null, "Yuva Bhatta")).isEqualTo(NameMatchQuality.NONE);
+    }
 }

@@ -93,6 +93,52 @@ class PersonProfileAssemblerTest {
     }
 
     @Test
+    void summarizeForSearchIncludesFatherNameAsParentHint() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setFirstName("Yuva");
+        person.setLastName("Bhatta");
+
+        Person father = new Person();
+        father.setId(2L);
+        father.setFirstName("Bhoj");
+        father.setLastName("Bhatta");
+        Relationship fatherRel = new Relationship();
+        fatherRel.setRelatedPerson(father);
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
+                .thenReturn(List.of(fatherRel));
+
+        PersonSummaryDto summary = assembler().summarizeForSearch(person, ADMIN);
+
+        assertThat(summary.parentHint()).isEqualTo("Bhoj Bhatta");
+    }
+
+    @Test
+    void summarizeForSearchLeavesParentHintNullWhenNoFatherRecorded() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setFirstName("Yuva");
+
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
+                .thenReturn(List.of());
+
+        PersonSummaryDto summary = assembler().summarizeForSearch(person, ADMIN);
+
+        assertThat(summary.parentHint()).isNull();
+    }
+
+    @Test
+    void summarizeNeverPopulatesParentHint() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setFirstName("Yuva");
+
+        PersonSummaryDto summary = assembler().summarize(person, ADMIN);
+
+        assertThat(summary.parentHint()).isNull();
+    }
+
+    @Test
     void familySnapshotResolvesFatherMotherSpousesAndChildren() {
         Person person = new Person();
         person.setId(1L);

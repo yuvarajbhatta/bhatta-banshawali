@@ -52,7 +52,17 @@ function emptyRowState(account: AdminUserAccountDto): RowState {
   };
 }
 
-export function AccountsManager({ initialItems }: { initialItems: AdminUserAccountDto[] }) {
+interface AccountsManagerProps {
+  initialItems: AdminUserAccountDto[];
+  // The logged-in admin's own email -- null for a legacy AppUser login,
+  // which has no email and so can never match any account row. Used to
+  // disable actions the backend already self-blocks (revoke own admin
+  // access, disable own account) instead of letting them fail with an
+  // error only after the click.
+  currentUserEmail: string | null;
+}
+
+export function AccountsManager({ initialItems, currentUserEmail }: AccountsManagerProps) {
   const t = useTranslations("adminAccountsPage");
   const [items, setItems] = useState(initialItems);
   const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
@@ -183,6 +193,7 @@ export function AccountsManager({ initialItems }: { initialItems: AdminUserAccou
         const isLinked = account.linkedPersonId != null;
         const hasSignupRecord = account.submittedFullName != null;
         const saving = state.status === "saving";
+        const isSelf = currentUserEmail != null && account.email.toLowerCase() === currentUserEmail.toLowerCase();
 
         return (
           <div key={account.id} className={styles.card}>
@@ -311,11 +322,21 @@ export function AccountsManager({ initialItems }: { initialItems: AdminUserAccou
                   </Button>
                 ) : null}
                 {account.isAdmin ? (
-                  <Button variant="destructive" onClick={() => handleRevokeAdmin(account)} disabled={saving}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleRevokeAdmin(account)}
+                    disabled={saving || isSelf}
+                    title={isSelf ? t("cannotActOnOwnAccount") : undefined}
+                  >
                     {t("revokeAdmin")}
                   </Button>
                 ) : null}
-                <Button variant={isDisabled ? "secondary" : "destructive"} onClick={() => handleToggleStatus(account)} disabled={saving}>
+                <Button
+                  variant={isDisabled ? "secondary" : "destructive"}
+                  onClick={() => handleToggleStatus(account)}
+                  disabled={saving || (isSelf && !isDisabled)}
+                  title={isSelf && !isDisabled ? t("cannotActOnOwnAccount") : undefined}
+                >
                   {isDisabled ? t("enable") : t("disable")}
                 </Button>
                 <Button

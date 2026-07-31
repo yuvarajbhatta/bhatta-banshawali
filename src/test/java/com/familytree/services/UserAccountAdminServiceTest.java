@@ -64,6 +64,9 @@ class UserAccountAdminServiceTest {
     @Mock
     private PersonDisplayHelper personDisplay;
 
+    @Mock
+    private UserPersonLinkService userPersonLinkService;
+
     @InjectMocks
     private UserAccountAdminService service;
 
@@ -188,11 +191,7 @@ class UserAccountAdminServiceTest {
 
         service.link(6L, 416L, "admin");
 
-        ArgumentCaptor<UserPersonLink> captor = ArgumentCaptor.forClass(UserPersonLink.class);
-        verify(userPersonLinkRepository).save(captor.capture());
-        assertThat(captor.getValue().getUserAccount()).isEqualTo(account);
-        assertThat(captor.getValue().getPerson()).isEqualTo(person);
-        assertThat(captor.getValue().getLinkStatus()).isEqualTo(UserPersonLinkStatus.VERIFIED);
+        verify(userPersonLinkService).createVerifiedLink(account, person);
 
         verify(auditLogService).record(
                 org.mockito.ArgumentMatchers.eq(AuditLogService.ACTION_ACCOUNT_LINKED),
@@ -209,6 +208,39 @@ class UserAccountAdminServiceTest {
         when(personRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.link(6L, 999L, "admin")).isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void linkPropagatesIllegalArgumentExceptionWhenAccountAlreadyHasAVerifiedLink() {
+        UserAccount account = account(6L, "yuva@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        Person person = new Person();
+        person.setId(416L);
+        when(personRepository.findById(416L)).thenReturn(Optional.of(person));
+
+        when(userPersonLinkService.createVerifiedLink(account, person))
+                .thenThrow(new IllegalArgumentException("This account is already linked to a person. Unlink it first."));
+
+        assertThatThrownBy(() -> service.link(6L, 416L, "admin"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already linked to a person");
+    }
+
+    @Test
+    void linkPropagatesIllegalArgumentExceptionWhenPersonAlreadyVerifiedLinkedToAnotherAccount() {
+        UserAccount account = account(6L, "yuva@example.com", UserAccountStatus.ACTIVE);
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        Person person = new Person();
+        person.setId(416L);
+        when(personRepository.findById(416L)).thenReturn(Optional.of(person));
+
+        when(userPersonLinkService.createVerifiedLink(account, person))
+                .thenThrow(new IllegalArgumentException("Bhojraj Bhatta is already linked to another account."));
+
+        assertThatThrownBy(() -> service.link(6L, 416L, "admin"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Bhojraj Bhatta")
+                .hasMessageContaining("already linked to another account");
     }
 
     @Test

@@ -10,8 +10,12 @@ import java.util.List;
 /**
  * Full submitted profile + match evidence for one signup request
  * (docs/06 "Match Evidence panel"), mirrors admin-signup-detail.html.
- * candidates is never shown to the applicant themselves -- see
- * VerificationRequest.matchedCandidatePersonIds.
+ * Neither candidates nor fatherCandidates is ever shown to the applicant
+ * themselves -- see VerificationRequest.matchedCandidatePersonIds /
+ * matchedFatherCandidatePersonIds. candidates are existing Person records
+ * to link the account to directly; fatherCandidates are existing fathers
+ * to create a brand-new Person as a child of (each entry's parentHint is
+ * that father's own father -- the grandfather corroboration).
  */
 public record AdminSignupDetailDto(
         Long id,
@@ -36,6 +40,7 @@ public record AdminSignupDetailDto(
         LocalDateTime reviewedAt,
         String decisionNote,
         LocalDateTime createdAt,
-        List<PersonSummaryDto> candidates
+        List<PersonSummaryDto> candidates,
+        List<PersonSummaryDto> fatherCandidates
 ) {
 }

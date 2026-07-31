@@ -6,9 +6,14 @@ import java.util.List;
 
 public record FamilyMatchResult(
         MatchConfidence confidence,
-        List<CandidateEvaluation> candidateEvaluations
+        List<CandidateEvaluation> existingPersonCandidates,
+        List<NewPersonCandidateEvaluation> newPersonCandidates
 ) {
-    public List<Long> candidatePersonIds() {
-        return candidateEvaluations.stream().map(e -> e.person().getId()).toList();
+    public List<Long> existingPersonCandidateIds() {
+        return existingPersonCandidates.stream().map(e -> e.person().getId()).toList();
+    }
+
+    public List<Long> newPersonFatherCandidateIds() {
+        return newPersonCandidates.stream().map(e -> e.father().getId()).toList();
     }
 }

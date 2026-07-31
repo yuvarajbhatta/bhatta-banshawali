@@ -130,6 +130,31 @@ class AdminVerificationApiControllerTest {
     }
 
     @Test
+    void detailResolvesFatherCandidatesFromTheNewColumnSeparatelyFromExistingCandidates() {
+        VerificationRequest request = request(6L);
+        request.setMatchedCandidatePersonIds("1");
+        request.setMatchedFatherCandidatePersonIds("2");
+        when(verificationRequestRepository.findById(6L)).thenReturn(Optional.of(request));
+
+        Person existingCandidate = new Person();
+        existingCandidate.setId(1L);
+        existingCandidate.setFirstName("Yuva");
+        existingCandidate.setLastName("Bhatta");
+        when(personRepository.findAllById(List.of(1L))).thenReturn(List.of(existingCandidate));
+
+        Person fatherCandidate = new Person();
+        fatherCandidate.setId(2L);
+        fatherCandidate.setFirstName("Bhoj");
+        fatherCandidate.setLastName("Bhatta");
+        when(personRepository.findAllById(List.of(2L))).thenReturn(List.of(fatherCandidate));
+
+        AdminSignupDetailDto detail = controller().detail(6L, asAdmin());
+
+        assertThat(detail.candidates()).extracting(p -> p.id()).containsExactly(1L);
+        assertThat(detail.fatherCandidates()).extracting(p -> p.id()).containsExactly(2L);
+    }
+
+    @Test
     void detailThrows404WhenRequestDoesNotExist() {
         when(verificationRequestRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -149,7 +174,7 @@ class AdminVerificationApiControllerTest {
 
         controller().approve(7L, body, asAdmin());
 
-        verify(verificationReviewService).approve(7L, "admin@example.com", "Looks right", 42L);
+        verify(verificationReviewService).approve(7L, "admin@example.com", "Looks right", 42L, null);
     }
 
     @Test
@@ -159,7 +184,21 @@ class AdminVerificationApiControllerTest {
 
         controller().approve(7L, null, asAdmin());
 
-        verify(verificationReviewService).approve(7L, "admin@example.com", null, null);
+        verify(verificationReviewService).approve(7L, "admin@example.com", null, null, null);
+    }
+
+    @Test
+    void approveDelegatesToServiceWithCreateAsChildOfFatherId() {
+        VerificationRequest request = request(7L);
+        when(verificationRequestRepository.findById(7L)).thenReturn(Optional.of(request));
+
+        AdminSignupDecisionRequestDto body = new AdminSignupDecisionRequestDto();
+        body.setDecisionNote("Confirmed via grandfather match");
+        body.setCreateAsChildOfFatherId(99L);
+
+        controller().approve(7L, body, asAdmin());
+
+        verify(verificationReviewService).approve(7L, "admin@example.com", "Confirmed via grandfather match", null, 99L);
     }
 
     @Test

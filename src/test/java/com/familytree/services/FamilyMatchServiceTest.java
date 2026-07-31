@@ -31,6 +31,8 @@ class FamilyMatchServiceTest {
         return new FamilyMatchService(personRepository, relationshipService, nameMatcher, personDisplayHelper);
     }
 
+    // --- Strategy A: existing-person (applicant's own name already in the tree) ---
+
     @Test
     void highConfidenceWhenNameFatherAndGrandfatherAllMatchUniquely() {
         Person grandfather = person(1L, "Jhanka", "Bhatta");
@@ -45,7 +47,8 @@ class FamilyMatchServiceTest {
                 new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
 
         assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
-        assertThat(result.candidatePersonIds()).containsExactly(3L);
+        assertThat(result.existingPersonCandidateIds()).containsExactly(3L);
+        assertThat(result.newPersonFatherCandidateIds()).isEmpty();
     }
 
     @Test
@@ -56,7 +59,8 @@ class FamilyMatchServiceTest {
                 new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
 
         assertThat(result.confidence()).isEqualTo(MatchConfidence.LOW);
-        assertThat(result.candidateEvaluations()).isEmpty();
+        assertThat(result.existingPersonCandidates()).isEmpty();
+        assertThat(result.newPersonCandidates()).isEmpty();
     }
 
     @Test
@@ -137,6 +141,161 @@ class FamilyMatchServiceTest {
 
         FamilyMatchResult result = familyMatchService().evaluateMatch(
                 new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", LocalDate.of(1995, 6, 15)));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
+    }
+
+    @Test
+    void doesNotOfferARedundantCreateCandidateWhenTheApplicantAlreadyExistsUnderThatFather() {
+        // Strategy A already finds and fully confirms the real applicant --
+        // Strategy B must not ALSO independently suggest creating a
+        // duplicate new person under the same father, which would otherwise
+        // double the fullLineageMatches count and wrongly downgrade this
+        // clean, unambiguous case from HIGH to MEDIUM.
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhoj", "Bhatta");
+        Person applicantMatch = person(3L, "Yuva", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father, applicantMatch));
+        when(relationshipService.getParentsForPerson(applicantMatch)).thenReturn(List.of(father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
+        assertThat(result.existingPersonCandidateIds()).containsExactly(3L);
+        assertThat(result.newPersonCandidates()).isEmpty();
+    }
+
+    // --- Strategy B: new-person (applicant doesn't exist yet, but father does) ---
+
+    @Test
+    void highConfidenceViaFatherNameStrategyWhenApplicantDoesNotExistYet() {
+        // No Person matches "Yuva Bhatta" at all -- only the father and
+        // grandfather are already in the tree. This is the exact gap that
+        // motivated adding this strategy: a brand-new applicant whose
+        // lineage already exists should still resolve to HIGH.
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhoj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
+        assertThat(result.existingPersonCandidates()).isEmpty();
+        assertThat(result.newPersonFatherCandidateIds()).containsExactly(2L);
+    }
+
+    @Test
+    void mediumConfidenceWhenMultipleFatherCandidatesAreAmbiguous() {
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person firstFather = person(2L, "Bhoj", "Bhatta");
+        Person secondFather = person(3L, "Bhoj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, firstFather, secondFather));
+        when(relationshipService.getParentsForPerson(firstFather)).thenReturn(List.of(grandfather));
+        when(relationshipService.getParentsForPerson(secondFather)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.MEDIUM);
+        assertThat(result.newPersonFatherCandidateIds()).containsExactlyInAnyOrder(2L, 3L);
+    }
+
+    @Test
+    void mediumConfidenceWhenFatherMatchesButGrandfatherDoesNotForNewPersonStrategy() {
+        Person unrelatedGrandfather = person(1L, "Someone", "Else");
+        Person father = person(2L, "Bhoj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(unrelatedGrandfather, father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(unrelatedGrandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.MEDIUM);
+        assertThat(result.newPersonFatherCandidateIds()).containsExactly(2L);
+    }
+
+    @Test
+    void fatherWithManyExistingChildrenIsNotExcludedOrPenalized() {
+        // A father candidate with several other children already linked
+        // into the tree is normal family structure -- this must not affect
+        // whether he's offered as a candidate, nor the confidence level.
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhoj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
+        assertThat(result.newPersonFatherCandidateIds()).containsExactly(2L);
+        // The matcher never even asks how many children this father already
+        // has -- proving there's no exclusion/penalty check to bypass.
+        org.mockito.Mockito.verify(relationshipService, org.mockito.Mockito.never()).getChildrenForPerson(org.mockito.ArgumentMatchers.any());
+    }
+
+    // --- Fuzzy matching caps at MEDIUM, never HIGH ---
+
+    @Test
+    void fuzzyOnlyMatchCapsAtMediumForExistingPersonStrategy() {
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhojraj", "Bhatta");
+        Person applicantMatch = person(3L, "Yuva", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father, applicantMatch));
+        when(relationshipService.getParentsForPerson(applicantMatch)).thenReturn(List.of(father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        // "Bhojaraj Bhatta" is a fuzzy (single-character-insertion) variant of
+        // the recorded "Bhojraj Bhatta" -- exact on applicant/grandfather,
+        // fuzzy on father.
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhojraj Bhatta", "Jhanka Bhatta", null));
+        // (sanity baseline -- exact match everywhere still produces HIGH; see next test)
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
+
+        FamilyMatchResult fuzzyResult = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhojaraj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(fuzzyResult.confidence()).isEqualTo(MatchConfidence.MEDIUM);
+    }
+
+    @Test
+    void fuzzyOnlyMatchCapsAtMediumForNewPersonStrategy() {
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhojraj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhojaraj Bhatta", "Jhanka Bhatta", null));
+
+        assertThat(result.confidence()).isEqualTo(MatchConfidence.MEDIUM);
+        assertThat(result.newPersonFatherCandidateIds()).containsExactly(2L);
+    }
+
+    @Test
+    void exactMatchOnEveryHopStillProducesHighConfidence() {
+        // Regression guard: adding fuzzy support must not accidentally
+        // downgrade a case that was already fully exact.
+        Person grandfather = person(1L, "Jhanka", "Bhatta");
+        Person father = person(2L, "Bhoj", "Bhatta");
+
+        when(personRepository.findAll()).thenReturn(List.of(grandfather, father));
+        when(relationshipService.getParentsForPerson(father)).thenReturn(List.of(grandfather));
+
+        FamilyMatchResult result = familyMatchService().evaluateMatch(
+                new FamilyMatchRequest("Yuva Bhatta", "Bhoj Bhatta", "Jhanka Bhatta", null));
 
         assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
     }

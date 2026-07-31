@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +48,7 @@ public class UserAccountAdminService {
     private final PersonRepository personRepository;
     private final AuditLogService auditLogService;
     private final PersonDisplayHelper personDisplay;
+    private final UserPersonLinkService userPersonLinkService;
 
     public UserAccountAdminService(UserAccountRepository userAccountRepository,
                                    UserPersonLinkRepository userPersonLinkRepository,
@@ -57,7 +57,8 @@ public class UserAccountAdminService {
                                    AdminAccessRequestRepository adminAccessRequestRepository,
                                    PersonRepository personRepository,
                                    AuditLogService auditLogService,
-                                   PersonDisplayHelper personDisplay) {
+                                   PersonDisplayHelper personDisplay,
+                                   UserPersonLinkService userPersonLinkService) {
         this.userAccountRepository = userAccountRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.verificationRequestRepository = verificationRequestRepository;
@@ -66,6 +67,7 @@ public class UserAccountAdminService {
         this.personRepository = personRepository;
         this.auditLogService = auditLogService;
         this.personDisplay = personDisplay;
+        this.userPersonLinkService = userPersonLinkService;
     }
 
     public List<AdminUserAccountDto> listAll() {
@@ -104,18 +106,19 @@ public class UserAccountAdminService {
                 userAccountId, "Re-enabled account " + account.getEmail(), actorUsername);
     }
 
+    /**
+     * @throws IllegalArgumentException if the account already has a VERIFIED link (unlink
+     *          it first), or the target Person is already VERIFIED-linked to a different
+     *          account -- otherwise picking the wrong same-named candidate (e.g. one of
+     *          several "Bhojraj Bhatta" records) succeeds silently with no way to notice.
+     */
     @Transactional
     public void link(Long userAccountId, Long personId, String actorUsername) {
         UserAccount account = getOrThrow(userAccountId);
         Person person = personRepository.findById(personId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found with id: " + personId));
 
-        UserPersonLink link = new UserPersonLink();
-        link.setUserAccount(account);
-        link.setPerson(person);
-        link.setLinkStatus(UserPersonLinkStatus.VERIFIED);
-        link.setVerifiedAt(LocalDateTime.now());
-        userPersonLinkRepository.save(link);
+        userPersonLinkService.createVerifiedLink(account, person);
 
         auditLogService.record(AuditLogService.ACTION_ACCOUNT_LINKED, AuditLogService.ENTITY_USER_ACCOUNT, userAccountId,
                 "Linked account " + account.getEmail() + " to person " + personDisplay.englishFullName(person), actorUsername);
@@ -188,7 +191,7 @@ public class UserAccountAdminService {
         VerificationRequest mostRecent = mostRecentVerificationRequest(userAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("This account has no signup info to apply."));
 
-        applyNameParts(person, mostRecent.getSubmittedFullName());
+        FullNameParser.applyTo(person, mostRecent.getSubmittedFullName());
         if (mostRecent.getSubmittedDobAd() != null) {
             person.setBirthDate(mostRecent.getSubmittedDobAd());
         }
@@ -197,20 +200,6 @@ public class UserAccountAdminService {
         auditLogService.record(AuditLogService.ACTION_PERSON_UPDATED, AuditLogService.ENTITY_PERSON, person.getId(),
                 "Applied submitted signup info from " + account.getEmail() + " to "
                         + personDisplay.englishFullName(person), actorUsername);
-    }
-
-    private void applyNameParts(Person person, String fullName) {
-        if (fullName == null || fullName.isBlank()) {
-            return;
-        }
-        String[] parts = fullName.trim().split("\\s+");
-        person.setFirstName(parts[0]);
-        if (parts.length == 1) {
-            person.setMiddleName(null);
-            return;
-        }
-        person.setLastName(parts[parts.length - 1]);
-        person.setMiddleName(parts.length > 2 ? String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1)) : null);
     }
 
     /**

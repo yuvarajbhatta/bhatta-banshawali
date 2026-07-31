@@ -19,10 +19,16 @@ interface SignupDetailProps {
 
 type Action = "approve" | "reject" | "request-more-info" | null;
 
+// A single shared selection instead of two independently-managed IDs --
+// structurally guarantees "at most one of linkedPersonId /
+// createAsChildOfFatherId" rather than trusting two pieces of state to
+// stay mutually exclusive.
+type SelectedMatch = { type: "link"; personId: number } | { type: "createChild"; fatherId: number } | null;
+
 export function SignupDetail({ initialDetail }: SignupDetailProps) {
   const t = useTranslations("adminSignupsPage");
   const [detail, setDetail] = useState(initialDetail);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<SelectedMatch>(null);
   const [decisionNote, setDecisionNote] = useState("");
   const [pendingAction, setPendingAction] = useState<Action>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +37,11 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
     setPendingAction(action);
     setError(null);
     try {
-      const body = { decisionNote: decisionNote.trim() || undefined, linkedPersonId: selectedCandidateId ?? undefined };
+      const body = {
+        decisionNote: decisionNote.trim() || undefined,
+        linkedPersonId: selectedMatch?.type === "link" ? selectedMatch.personId : undefined,
+        createAsChildOfFatherId: selectedMatch?.type === "createChild" ? selectedMatch.fatherId : undefined,
+      };
       const updated =
         action === "approve"
           ? await approveSignup(detail.id, body)
@@ -120,9 +130,11 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
         </p>
         <p className={styles.helpText}>{t("matchEvidenceHelp")}</p>
 
-        {detail.candidates.length === 0 ? (
+        {detail.candidates.length === 0 && detail.fatherCandidates.length === 0 ? (
           <p className={styles.helpText}>{t("noCandidates")}</p>
-        ) : (
+        ) : null}
+
+        {detail.candidates.length > 0 ? (
           <table className={styles.candidateTable}>
             <thead>
               <tr>
@@ -139,9 +151,9 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
                     <td>
                       <input
                         type="radio"
-                        name="linkedPersonId"
-                        checked={selectedCandidateId === candidate.id}
-                        onChange={() => setSelectedCandidateId(candidate.id)}
+                        name="matchSelection"
+                        checked={selectedMatch?.type === "link" && selectedMatch.personId === candidate.id}
+                        onChange={() => setSelectedMatch({ type: "link", personId: candidate.id })}
                         aria-label={candidate.englishFullName}
                       />
                     </td>
@@ -157,7 +169,50 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
               ))}
             </tbody>
           </table>
-        )}
+        ) : null}
+
+        {detail.fatherCandidates.length > 0 ? (
+          <>
+            <h3>{t("createAsChildTitle")}</h3>
+            <p className={styles.helpText}>{t("createAsChildHelp")}</p>
+            <table className={styles.candidateTable}>
+              <thead>
+                <tr>
+                  {detail.status === "PENDING" ? <th>{t("createThisChild")}</th> : null}
+                  <th>ID</th>
+                  <th>{t("fatherName")}</th>
+                  <th>Generation</th>
+                  <th>{t("grandfatherName")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.fatherCandidates.map((candidate) => (
+                  <tr key={candidate.id}>
+                    {detail.status === "PENDING" ? (
+                      <td>
+                        <input
+                          type="radio"
+                          name="matchSelection"
+                          checked={selectedMatch?.type === "createChild" && selectedMatch.fatherId === candidate.id}
+                          onChange={() => setSelectedMatch({ type: "createChild", fatherId: candidate.id })}
+                          aria-label={candidate.englishFullName}
+                        />
+                      </td>
+                    ) : null}
+                    <td>{candidate.id}</td>
+                    <td>
+                      <Link href={`/directory/${candidate.id}`} className={styles.candidateLink}>
+                        {candidate.englishFullName}
+                      </Link>
+                    </td>
+                    <td>{candidate.generationNumber ?? "—"}</td>
+                    <td>{candidate.parentHint ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : null}
       </div>
 
       <div className={styles.card}>

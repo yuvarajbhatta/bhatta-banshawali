@@ -46,7 +46,7 @@ public class PersonApiController {
     public List<PersonSummaryDto> search(@RequestParam(required = false) String keyword, Authentication authentication) {
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
         return personService.searchPersons(keyword).stream()
-                .map(person -> personProfileAssembler.summarize(person, viewer))
+                .map(person -> personProfileAssembler.summarizeForSearch(person, viewer))
                 .toList();
     }
 

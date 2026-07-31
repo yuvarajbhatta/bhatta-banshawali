@@ -9,6 +9,7 @@ import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.CommaSeparatedIds;
 import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.VerificationReviewService;
 import com.familytree.services.ViewerContext;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -73,14 +73,22 @@ public class AdminVerificationApiController {
         List<PersonSummaryDto> candidates = resolveCandidatePersons(request.getMatchedCandidatePersonIds()).stream()
                 .map(person -> personProfileAssembler.summarize(person, viewer))
                 .toList();
-        return toDetail(request, candidates);
+        // summarizeForSearch() (not summarize()) resolves each father
+        // candidate's OWN father into parentHint -- the grandfather
+        // corroboration -- reusing the disambiguation pattern already
+        // added to PersonPicker.tsx's search results.
+        List<PersonSummaryDto> fatherCandidates = resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()).stream()
+                .map(person -> personProfileAssembler.summarizeForSearch(person, viewer))
+                .toList();
+        return toDetail(request, candidates, fatherCandidates);
     }
 
     @PostMapping("/{id}/approve")
     public AdminSignupDetailDto approve(@PathVariable Long id, @RequestBody(required = false) AdminSignupDecisionRequestDto body,
                                         Authentication authentication) {
         AdminSignupDecisionRequestDto decision = body != null ? body : new AdminSignupDecisionRequestDto();
-        verificationReviewService.approve(id, authentication.getName(), decision.getDecisionNote(), decision.getLinkedPersonId());
+        verificationReviewService.approve(id, authentication.getName(), decision.getDecisionNote(),
+                decision.getLinkedPersonId(), decision.getCreateAsChildOfFatherId());
         return detail(id, authentication);
     }
 
@@ -112,7 +120,8 @@ public class AdminVerificationApiController {
         );
     }
 
-    private AdminSignupDetailDto toDetail(VerificationRequest request, List<PersonSummaryDto> candidates) {
+    private AdminSignupDetailDto toDetail(VerificationRequest request, List<PersonSummaryDto> candidates,
+                                          List<PersonSummaryDto> fatherCandidates) {
         return new AdminSignupDetailDto(
                 request.getId(),
                 request.getSubmittedFullName(),
@@ -136,20 +145,13 @@ public class AdminVerificationApiController {
                 request.getReviewedAt(),
                 request.getDecisionNote(),
                 request.getCreatedAt(),
-                candidates
+                candidates,
+                fatherCandidates
         );
     }
 
     private List<Person> resolveCandidatePersons(String matchedCandidatePersonIds) {
-        if (matchedCandidatePersonIds == null || matchedCandidatePersonIds.isBlank()) {
-            return List.of();
-        }
-        List<Long> ids = Arrays.stream(matchedCandidatePersonIds.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .map(Long::valueOf)
-                .toList();
-        return personRepository.findAllById(ids);
+        return personRepository.findAllById(CommaSeparatedIds.parse(matchedCandidatePersonIds));
     }
 
     private VerificationRequest getOrThrow(Long id) {

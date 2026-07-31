@@ -82,12 +82,7 @@ export function LoginForm() {
       </div>
 
       <div className={styles.field}>
-        <div className={styles.passwordLabelRow}>
-          <label htmlFor="password">{t("password")}</label>
-          <Link href="/forgot-password" className={styles.forgotPasswordLink}>
-            {t("forgotPassword")}
-          </Link>
-        </div>
+        <label htmlFor="password">{t("password")}</label>
         <div className={styles.passwordWrapper}>
           <input
             id="password"
@@ -106,6 +101,9 @@ export function LoginForm() {
             {passwordVisible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
           </button>
         </div>
+        <Link href="/forgot-password" className={styles.forgotPasswordLink}>
+          {t("forgotPassword")}
+        </Link>
       </div>
 
       <Button type="submit" variant="primary" className={styles.submit} disabled={!csrfToken || submitting}>

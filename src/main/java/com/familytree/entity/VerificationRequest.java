@@ -81,8 +81,17 @@ public class VerificationRequest {
     private MatchConfidence matchConfidence;
 
     /** Comma-separated Person IDs the matcher considered -- admin-only, never returned to the applicant. */
-    @Column(length = 500)
+    @Column(length = 4000)
     private String matchedCandidatePersonIds;
+
+    /**
+     * Comma-separated Person IDs of candidate FATHERS found by searching on
+     * the applicant's stated father's name (distinct from
+     * matchedCandidatePersonIds, which searches on the applicant's OWN
+     * name) -- admin-only, never returned to the applicant.
+     */
+    @Column(length = 4000)
+    private String matchedFatherCandidatePersonIds;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -256,6 +265,14 @@ public class VerificationRequest {
 
     public void setMatchedCandidatePersonIds(String matchedCandidatePersonIds) {
         this.matchedCandidatePersonIds = matchedCandidatePersonIds;
+    }
+
+    public String getMatchedFatherCandidatePersonIds() {
+        return matchedFatherCandidatePersonIds;
+    }
+
+    public void setMatchedFatherCandidatePersonIds(String matchedFatherCandidatePersonIds) {
+        this.matchedFatherCandidatePersonIds = matchedFatherCandidatePersonIds;
     }
 
     public VerificationStatus getStatus() {

@@ -16,8 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.Collectors;
-
 /**
  * Orchestrates a new signup: creates the UserAccount, runs the family
  * matcher, records a VerificationRequest, and sends a verification email
@@ -114,8 +112,8 @@ public class SignupService {
         verificationRequest.setInvitationCode(request.getInvitationCode());
         verificationRequest.setApplicantNote(request.getApplicantNote());
         verificationRequest.setMatchConfidence(matchResult.confidence());
-        verificationRequest.setMatchedCandidatePersonIds(
-                matchResult.candidatePersonIds().stream().map(String::valueOf).collect(Collectors.joining(",")));
+        verificationRequest.setMatchedCandidatePersonIds(CommaSeparatedIds.join(matchResult.existingPersonCandidateIds()));
+        verificationRequest.setMatchedFatherCandidatePersonIds(CommaSeparatedIds.join(matchResult.newPersonFatherCandidateIds()));
         verificationRequest.setStatus(VerificationStatus.PENDING);
 
         return verificationRequest;

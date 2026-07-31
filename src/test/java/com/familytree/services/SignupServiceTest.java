@@ -67,7 +67,8 @@ class SignupServiceTest {
         Person candidate = new Person();
         candidate.setId(42L);
         when(familyMatchService.evaluateMatch(any())).thenReturn(
-                new FamilyMatchResult(MatchConfidence.HIGH, List.of(new CandidateEvaluation(candidate, true, true, false))));
+                new FamilyMatchResult(MatchConfidence.HIGH,
+                        List.of(new CandidateEvaluation(candidate, true, true, false, false)), List.of()));
 
         signupService.submitSignup(request);
 
@@ -81,7 +82,27 @@ class SignupServiceTest {
         VerificationRequest saved = verificationCaptor.getValue();
         assertThat(saved.getMatchConfidence()).isEqualTo(MatchConfidence.HIGH);
         assertThat(saved.getMatchedCandidatePersonIds()).isEqualTo("42");
+        assertThat(saved.getMatchedFatherCandidatePersonIds()).isEmpty();
         assertThat(saved.getStatus()).isEqualTo(VerificationStatus.PENDING);
+    }
+
+    @Test
+    void savesFatherCandidateIdsWhenTheNewPersonStrategyFindsMatches() {
+        SignupRequestDto request = validRequest();
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
+        when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        Person father = new Person();
+        father.setId(99L);
+        when(familyMatchService.evaluateMatch(any())).thenReturn(
+                new FamilyMatchResult(MatchConfidence.HIGH, List.of(),
+                        List.of(new NewPersonCandidateEvaluation(father, true, false))));
+
+        signupService.submitSignup(request);
+
+        ArgumentCaptor<VerificationRequest> verificationCaptor = ArgumentCaptor.forClass(VerificationRequest.class);
+        verify(verificationRequestRepository).save(verificationCaptor.capture());
+        assertThat(verificationCaptor.getValue().getMatchedFatherCandidatePersonIds()).isEqualTo("99");
+        assertThat(verificationCaptor.getValue().getMatchedCandidatePersonIds()).isEmpty();
     }
 
     @Test
@@ -90,7 +111,7 @@ class SignupServiceTest {
         request.setEmail("  Yuva@Example.com  ");
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
 
         signupService.submitSignup(request);
 
@@ -117,7 +138,7 @@ class SignupServiceTest {
         SignupRequestDto request = validRequest();
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
         when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
 
         signupService.submitSignup(request);
@@ -131,7 +152,7 @@ class SignupServiceTest {
         SignupRequestDto request = validRequest();
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
         when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
         doThrow(new RuntimeException("SMTP down")).when(emailService)
                 .sendVerificationEmail(any(), any(), any());
@@ -148,7 +169,7 @@ class SignupServiceTest {
         request.setDobAd(LocalDate.of(2000, 1, 1));
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
 
         signupService.submitSignup(request);
 
@@ -163,7 +184,7 @@ class SignupServiceTest {
         request.setDobAd(LocalDate.of(1800, 1, 1));
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
 
         signupService.submitSignup(request);
 

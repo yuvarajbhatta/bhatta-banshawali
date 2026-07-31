@@ -271,6 +271,9 @@
     "noCandidates": "No existing records matched the submitted name.",
     "linkThisPerson": "Link",
     "linkHelp": "Select which candidate above this applicant actually is before approving, if any -- this links their new account to that existing record. Leave unselected if none of the candidates are a match.",
+    "createAsChildTitle": "Create as a new person",
+    "createAsChildHelp": "These are possible fathers already in the tree, found by matching the submitted father's name. Selecting one creates a brand-new person for this applicant as that father's child -- use this when the applicant doesn't exist in the tree yet, but their father does.",
+    "createThisChild": "Create",
     "decision": "Decision",
     "decisionNote": "Decision Note (optional)",
     "approve": "Approve",
@@ -476,6 +479,7 @@
     "delete": "Delete",
     "deleteConfirm": "Permanently delete the account for {email}? This cannot be undone and frees the email address for a new signup.",
     "deleteBlockedForAdmin": "This account has admin access. Revoke admin access before deleting it.",
+    "cannotActOnOwnAccount": "You can't do this to your own account.",
     "actionError": "Could not update this account. Please try again.",
     "status": {
       "PENDING_EMAIL_VERIFICATION": "Pending Verification",
@@ -733,6 +737,12 @@
     "logout": "Logout",
     "signUp": "Sign Up",
     "viewAllPersons": "View All Persons"
+  },
+  "personPicker": {
+    "generation": "Gen {number}",
+    "bornOn": "b. {date}",
+    "fatherName": "Father: {name}",
+    "moreResults": "+{count} more -- keep typing to narrow it down"
   },
   "person": {
     "birthDate": "Birth Date",

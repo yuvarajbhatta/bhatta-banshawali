@@ -167,6 +167,10 @@ export interface PersonSummaryDto {
   generationNumber: number | null;
   gender: string | null;
   birthDate: string | null;
+  // Only populated in search results (see PersonProfileAssembler.summarizeForSearch
+  // on the backend) -- father's name, so a picker choosing between several
+  // same-named people can tell them apart.
+  parentHint: string | null;
 }
 
 export interface FamilySnapshotDto {
@@ -534,6 +538,12 @@ export interface AdminSignupDetailDto {
   decisionNote: string | null;
   createdAt: string;
   candidates: PersonSummaryDto[];
+  // Existing Persons found by matching the submitted father's name --
+  // selecting one creates a brand-new Person for this applicant as that
+  // father's child, rather than linking to an existing record. Each
+  // entry's parentHint is that father's own father (the grandfather
+  // corroboration).
+  fatherCandidates: PersonSummaryDto[];
 }
 
 // Mirrors com.familytree.dto.AdminCorrectionSummaryDto.
@@ -610,6 +620,7 @@ export async function getAdminCorrections(cookieHeader: string, status?: Correct
 export interface AdminSignupDecisionRequest {
   decisionNote?: string;
   linkedPersonId?: number;
+  createAsChildOfFatherId?: number;
 }
 
 export interface AdminDecisionRequest {

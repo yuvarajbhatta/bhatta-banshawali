@@ -5,6 +5,7 @@ import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.CommaSeparatedIds;
 import com.familytree.services.VerificationReviewService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,14 +56,16 @@ public class AdminVerificationController {
 
         model.addAttribute("request", request);
         model.addAttribute("candidatePersons", resolveCandidatePersons(request.getMatchedCandidatePersonIds()));
+        model.addAttribute("fatherCandidatePersons", resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()));
         return "admin-signup-detail";
     }
 
     @PostMapping("/admin/signups/{id}/approve")
     public String approve(@PathVariable Long id, @RequestParam(required = false) String decisionNote,
                           @RequestParam(required = false) Long linkedPersonId,
+                          @RequestParam(required = false) Long createAsChildOfFatherId,
                           Authentication authentication) {
-        verificationReviewService.approve(id, authentication.getName(), decisionNote, linkedPersonId);
+        verificationReviewService.approve(id, authentication.getName(), decisionNote, linkedPersonId, createAsChildOfFatherId);
         return "redirect:/admin/signups";
     }
 
@@ -82,18 +84,6 @@ public class AdminVerificationController {
     }
 
     private List<Person> resolveCandidatePersons(String matchedCandidatePersonIds) {
-        if (matchedCandidatePersonIds == null || matchedCandidatePersonIds.isBlank()) {
-            return List.of();
-        }
-
-        return personRepository.findAllById(parseIds(matchedCandidatePersonIds));
-    }
-
-    private List<Long> parseIds(String commaSeparated) {
-        return Arrays.stream(commaSeparated.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::valueOf)
-                .toList();
+        return personRepository.findAllById(CommaSeparatedIds.parse(matchedCandidatePersonIds));
     }
 }

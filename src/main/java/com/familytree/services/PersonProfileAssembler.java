@@ -4,6 +4,7 @@ import com.familytree.dto.FamilySnapshotDto;
 import com.familytree.dto.PersonDetailDto;
 import com.familytree.dto.PersonSummaryDto;
 import com.familytree.entity.Person;
+import com.familytree.entity.Relationship;
 import com.familytree.entity.RelationshipType;
 import com.familytree.web.PersonDisplayHelper;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,25 @@ public class PersonProfileAssembler {
     }
 
     public PersonSummaryDto summarize(Person person, ViewerContext viewer) {
+        return summarize(person, viewer, null);
+    }
+
+    /**
+     * Same as summarize(), but also resolves the person's father's name into
+     * parentHint -- for search-result pickers (e.g. admin "link account to
+     * person") where several same-named people need telling apart. Not used
+     * for familySnapshot()'s father/mother/spouses/children entries, since
+     * those would each need their own father resolved recursively for no
+     * benefit (those rows already show whose father/mother they are).
+     */
+    public PersonSummaryDto summarizeForSearch(Person person, ViewerContext viewer) {
+        Person father = relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)
+                .stream().findFirst().map(Relationship::getRelatedPerson).orElse(null);
+        String parentHint = father == null ? null : personDisplay.englishFullName(father);
+        return summarize(person, viewer, parentHint);
+    }
+
+    private PersonSummaryDto summarize(Person person, ViewerContext viewer, String parentHint) {
         boolean canSeeSensitive = viewer.canSeeSensitiveFieldsFor(person.getId());
         return new PersonSummaryDto(
                 person.getId(),
@@ -43,7 +63,8 @@ public class PersonProfileAssembler {
                 personDisplay.nepaliFullName(person),
                 person.getGenerationNumber(),
                 person.getGender(),
-                canSeeSensitive ? person.getBirthDate() : null
+                canSeeSensitive ? person.getBirthDate() : null,
+                parentHint
         );
     }
 

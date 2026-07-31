@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { searchPersons, type PersonSummaryDto } from "@/lib/api";
 import styles from "./PersonPicker.module.css";
+
+const RESULTS_LIMIT = 20;
 
 interface PersonPickerProps {
   label: string;
@@ -17,8 +20,10 @@ interface PersonPickerProps {
 // hundreds of options -- the Thymeleaf original loaded every Person
 // into one dropdown, which doesn't scale past a few hundred people.
 export function PersonPicker({ label, placeholder, clearLabel, selected, onChange }: PersonPickerProps) {
+  const t = useTranslations("personPicker");
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<PersonSummaryDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -32,10 +37,16 @@ export function PersonPicker({ label, placeholder, clearLabel, selected, onChang
     const timeout = setTimeout(() => {
       searchPersons(keyword.trim())
         .then((people) => {
-          if (!cancelled) setResults(people.slice(0, 8));
+          if (!cancelled) {
+            setResults(people.slice(0, RESULTS_LIMIT));
+            setTotalCount(people.length);
+          }
         })
         .catch(() => {
-          if (!cancelled) setResults([]);
+          if (!cancelled) {
+            setResults([]);
+            setTotalCount(0);
+          }
         });
     }, 250);
     return () => {
@@ -92,12 +103,31 @@ export function PersonPicker({ label, placeholder, clearLabel, selected, onChang
                   setOpen(false);
                 }}
               >
-                {person.englishFullName}
+                <span className={styles.resultName}>
+                  {person.englishFullName}
+                  {person.nepaliFullName ? <span className={styles.resultNepaliName}> {person.nepaliFullName}</span> : null}
+                </span>
+                <span className={styles.resultMeta}>
+                  {[
+                    person.generationNumber != null ? t("generation", { number: person.generationNumber }) : null,
+                    person.birthDate ? t("bornOn", { date: formatDate(person.birthDate) }) : null,
+                    person.parentHint ? t("fatherName", { name: person.parentHint }) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
               </button>
             </li>
           ))}
+          {totalCount > results.length ? (
+            <li className={styles.moreResults}>{t("moreResults", { count: totalCount - results.length })}</li>
+          ) : null}
         </ul>
       ) : null}
     </div>
   );
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }

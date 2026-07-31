@@ -1,18 +1,17 @@
 package com.familytree.services;
 
 import com.familytree.entity.Person;
+import com.familytree.entity.RelationshipType;
 import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
-import com.familytree.entity.UserPersonLink;
-import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
-import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.web.PersonDisplayHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,20 +30,26 @@ public class VerificationReviewService {
     private final UserAccountRepository userAccountRepository;
     private final RoleRepository roleRepository;
     private final PersonRepository personRepository;
-    private final UserPersonLinkRepository userPersonLinkRepository;
+    private final RelationshipService relationshipService;
+    private final UserPersonLinkService userPersonLinkService;
+    private final PersonDisplayHelper personDisplay;
     private final AuditLogService auditLogService;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
                                      RoleRepository roleRepository,
                                      PersonRepository personRepository,
-                                     UserPersonLinkRepository userPersonLinkRepository,
+                                     RelationshipService relationshipService,
+                                     UserPersonLinkService userPersonLinkService,
+                                     PersonDisplayHelper personDisplay,
                                      AuditLogService auditLogService) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
         this.personRepository = personRepository;
-        this.userPersonLinkRepository = userPersonLinkRepository;
+        this.relationshipService = relationshipService;
+        this.userPersonLinkService = userPersonLinkService;
+        this.personDisplay = personDisplay;
         this.auditLogService = auditLogService;
     }
 
@@ -55,9 +60,21 @@ public class VerificationReviewService {
      *                        candidate matched (the applicant is a genuinely new person,
      *                        or the admin couldn't confirm one). Approval still proceeds
      *                        either way; only the link is skipped.
+     * @param createAsChildOfFatherId the existing Person (the father) to create a brand-new
+     *                        Person for this applicant under, as a FATHER relationship --
+     *                        for applicants who don't yet exist in the tree but whose father
+     *                        does. Mutually exclusive with linkedPersonId.
+     * @throws IllegalArgumentException if both linkedPersonId and createAsChildOfFatherId are
+     *          provided, or if UserPersonLinkService's guard rejects the resulting link (see
+     *          its javadoc)
      */
     @Transactional
-    public void approve(Long verificationRequestId, String reviewerUsername, String decisionNote, Long linkedPersonId) {
+    public void approve(Long verificationRequestId, String reviewerUsername, String decisionNote,
+                        Long linkedPersonId, Long createAsChildOfFatherId) {
+        if (linkedPersonId != null && createAsChildOfFatherId != null) {
+            throw new IllegalArgumentException("linkedPersonId and createAsChildOfFatherId cannot both be provided.");
+        }
+
         VerificationRequest request = getOrThrow(verificationRequestId);
         markReviewed(request, VerificationStatus.APPROVED, reviewerUsername, decisionNote);
 
@@ -66,19 +83,47 @@ public class VerificationReviewService {
         roleRepository.findByName(VERIFIED_MEMBER_ROLE).ifPresent(role -> account.getRoles().add(role));
         userAccountRepository.save(account);
 
-        if (linkedPersonId != null) {
-            Person person = personRepository.findById(linkedPersonId)
+        Person personToLink = null;
+        if (createAsChildOfFatherId != null) {
+            Person father = personRepository.findById(createAsChildOfFatherId)
+                    .orElseThrow(() -> new RuntimeException("Person not found with id: " + createAsChildOfFatherId));
+            personToLink = createNewPersonAsChildOf(father, request, reviewerUsername);
+        } else if (linkedPersonId != null) {
+            personToLink = personRepository.findById(linkedPersonId)
                     .orElseThrow(() -> new RuntimeException("Person not found with id: " + linkedPersonId));
-            UserPersonLink link = new UserPersonLink();
-            link.setUserAccount(account);
-            link.setPerson(person);
-            link.setLinkStatus(UserPersonLinkStatus.VERIFIED);
-            link.setVerifiedAt(LocalDateTime.now());
-            userPersonLinkRepository.save(link);
+        }
+
+        if (personToLink != null) {
+            userPersonLinkService.createVerifiedLink(account, personToLink);
         }
 
         auditLogService.record(AuditLogService.ACTION_SIGNUP_APPROVED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
                 verificationRequestId, "Approved signup for " + request.getSubmittedFullName(), reviewerUsername);
+    }
+
+    /**
+     * Creates a brand-new Person from the applicant's submitted signup info, links it as a
+     * FATHER relationship to the given father (auto-creating the reciprocal CHILD edge and
+     * any spouse auto-link -- see RelationshipService.saveRelationshipWithAutoLinks), and
+     * derives generationNumber from the father's own (null-safe: left null if the father has
+     * none recorded -- generationNumber is a plain nullable field everywhere else, and this
+     * is the first place in the codebase deriving it from a relationship rather than an
+     * explicit admin value).
+     */
+    private Person createNewPersonAsChildOf(Person father, VerificationRequest request, String reviewerUsername) {
+        Person newPerson = new Person();
+        FullNameParser.applyTo(newPerson, request.getSubmittedFullName());
+        newPerson.setBirthDate(request.getSubmittedDobAd());
+        newPerson.setGenerationNumber(father.getGenerationNumber() != null ? father.getGenerationNumber() + 1 : null);
+        newPerson = personRepository.save(newPerson);
+
+        relationshipService.saveRelationshipWithAutoLinks(newPerson, father, RelationshipType.FATHER);
+
+        auditLogService.record(AuditLogService.ACTION_PERSON_CREATED, AuditLogService.ENTITY_PERSON, newPerson.getId(),
+                "Created new person for signup \"" + request.getSubmittedFullName() + "\" as child of "
+                        + personDisplay.englishFullName(father), reviewerUsername);
+
+        return newPerson;
     }
 
     @Transactional

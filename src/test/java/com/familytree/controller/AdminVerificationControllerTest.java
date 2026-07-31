@@ -80,6 +80,27 @@ class AdminVerificationControllerTest {
     }
 
     @Test
+    void detailResolvesFatherCandidatePersonsFromTheSeparateColumn() {
+        VerificationRequest request = new VerificationRequest();
+        request.setMatchedCandidatePersonIds("1");
+        request.setMatchedFatherCandidatePersonIds("2");
+        when(verificationRequestRepository.findById(7L)).thenReturn(Optional.of(request));
+
+        Person existingCandidate = new Person();
+        existingCandidate.setId(1L);
+        when(personRepository.findAllById(List.of(1L))).thenReturn(List.of(existingCandidate));
+        Person fatherCandidate = new Person();
+        fatherCandidate.setId(2L);
+        when(personRepository.findAllById(List.of(2L))).thenReturn(List.of(fatherCandidate));
+
+        Model model = new ExtendedModelMap();
+        controller.detail(7L, model);
+
+        assertThat(model.getAttribute("candidatePersons")).isEqualTo(List.of(existingCandidate));
+        assertThat(model.getAttribute("fatherCandidatePersons")).isEqualTo(List.of(fatherCandidate));
+    }
+
+    @Test
     void detailHandlesNoCandidatesWithoutParsingAnything() {
         VerificationRequest request = new VerificationRequest();
         request.setMatchedCandidatePersonIds("");
@@ -95,19 +116,28 @@ class AdminVerificationControllerTest {
     void approveDelegatesToServiceWithReviewerNameAndRedirects() {
         when(authentication.getName()).thenReturn("admin");
 
-        String viewName = controller.approve(7L, "note", null, authentication);
+        String viewName = controller.approve(7L, "note", null, null, authentication);
 
         assertThat(viewName).isEqualTo("redirect:/admin/signups");
-        verify(verificationReviewService).approve(7L, "admin", "note", null);
+        verify(verificationReviewService).approve(7L, "admin", "note", null, null);
     }
 
     @Test
     void approvePassesThroughTheSelectedLinkedPersonId() {
         when(authentication.getName()).thenReturn("admin");
 
-        controller.approve(7L, "note", 42L, authentication);
+        controller.approve(7L, "note", 42L, null, authentication);
 
-        verify(verificationReviewService).approve(7L, "admin", "note", 42L);
+        verify(verificationReviewService).approve(7L, "admin", "note", 42L, null);
+    }
+
+    @Test
+    void approvePassesThroughTheSelectedCreateAsChildOfFatherId() {
+        when(authentication.getName()).thenReturn("admin");
+
+        controller.approve(7L, "note", null, 99L, authentication);
+
+        verify(verificationReviewService).approve(7L, "admin", "note", null, 99L);
     }
 
     @Test
