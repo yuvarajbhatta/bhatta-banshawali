@@ -965,3 +965,102 @@ export async function saveLineagePerson(params: SaveLineagePersonParams): Promis
   }
   return response.json();
 }
+
+// Mirrors com.familytree.dto.ParentGapDto / RelationshipCycleDto /
+// DateIssueDto / DataQualityReportDto (docs/08 Phase 6). Read-only --
+// every fix happens through the existing tools this report links out to.
+export interface ParentGapDto {
+  personId: number;
+  personName: string;
+  generationNumber: number | null;
+  knownParentCount: number;
+}
+
+export interface RelationshipCycleDto {
+  personIds: number[];
+  personNames: string[];
+}
+
+export type DateIssueType =
+  | "MISSING_BIRTH_DATE"
+  | "DEATH_BEFORE_BIRTH"
+  | "FUTURE_BIRTH_DATE"
+  | "IMPLAUSIBLE_PARENT_AGE_GAP";
+
+export interface DateIssueDto {
+  personId: number;
+  personName: string;
+  issueType: DateIssueType;
+  detail: string;
+}
+
+export interface DataQualityReportDto {
+  parentGaps: ParentGapDto[];
+  cycles: RelationshipCycleDto[];
+  unlinkedAccounts: AdminUserAccountDto[];
+  dateIssues: DateIssueDto[];
+}
+
+export type DataQualityReportResult =
+  | { kind: "ok"; report: DataQualityReportDto }
+  | { kind: "unauthenticated" }
+  | { kind: "forbidden" };
+
+export async function getAdminDataQuality(cookieHeader: string): Promise<DataQualityReportResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/data-quality`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load data quality report: ${response.status}`);
+  return { kind: "ok", report: await response.json() };
+}
+
+// Mirrors com.familytree.dto.DuplicatePersonSnapshotDto /
+// DuplicateCandidateDto / MergeResultDto (docs/08 Phase 6). Merge is never
+// automatic -- an admin reviews each candidate pair and explicitly picks
+// which record survives.
+export interface DuplicatePersonSnapshotDto {
+  id: number;
+  englishFullName: string;
+  nepaliFullName: string;
+  gender: string | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  generationNumber: number | null;
+  populatedFieldCount: number;
+}
+
+export interface DuplicateCandidateDto {
+  personA: DuplicatePersonSnapshotDto;
+  personB: DuplicatePersonSnapshotDto;
+  confidence: MatchConfidence;
+  reasons: string[];
+  hasConflict: boolean;
+}
+
+export interface MergeResultDto {
+  survivorId: number;
+  relationshipsRepointed: number;
+  relationshipsDroppedAsDuplicate: number;
+  userLinksRepointed: number;
+  correctionRequestsRepointed: number;
+}
+
+export async function getAdminDuplicates(cookieHeader: string): Promise<AdminListResult<DuplicateCandidateDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/duplicates`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load duplicate candidates: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function mergeAdminDuplicate(survivorId: number, loserId: number): Promise<MergeResultDto> {
+  return adminApiRequest("/api/v1/admin/duplicates/merge", "POST", { survivorId, loserId });
+}

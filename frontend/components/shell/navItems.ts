@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
+  Copy,
   FileCheck,
   FileText,
   GitFork,
@@ -43,7 +45,9 @@ export interface AdminNavItem {
     | "/admin/content"
     | "/admin/lineage"
     | "/admin/generations"
-    | "/admin/audit-log";
+    | "/admin/audit-log"
+    | "/admin/duplicates"
+    | "/admin/data-quality";
   labelKey:
     | "signupReview"
     | "correctionReview"
@@ -54,7 +58,9 @@ export interface AdminNavItem {
     | "content"
     | "lineageBuilder"
     | "generationsView"
-    | "auditLog";
+    | "auditLog"
+    | "duplicatePeople"
+    | "dataQualityReports";
   icon: LucideIcon;
   countKey?: "pendingSignupCount" | "pendingCorrectionCount" | "pendingAdminAccessRequestCount";
 }
@@ -73,6 +79,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/accounts", labelKey: "manageUserAccounts", icon: UserPlus },
   { href: "/admin/persons", labelKey: "people", icon: UserCog },
   { href: "/admin/relationships", labelKey: "relationships", icon: Link2 },
+  // No countKey on either -- AdminSummaryDto is computed on every admin
+  // page load for the sidebar, and both of these reports scan the full
+  // person/relationship tables (O(n^2) for duplicates, full-graph DFS for
+  // data quality). Wiring a live count would mean running that on every
+  // page view instead of only when the report is actually opened.
+  { href: "/admin/duplicates", labelKey: "duplicatePeople", icon: Copy },
+  { href: "/admin/data-quality", labelKey: "dataQualityReports", icon: AlertTriangle },
   { href: "/admin/content", labelKey: "content", icon: FileText },
   { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },
   { href: "/admin/generations", labelKey: "generationsView", icon: Layers },

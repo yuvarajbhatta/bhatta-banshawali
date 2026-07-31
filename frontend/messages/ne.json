@@ -18,7 +18,9 @@
       "adminAccessRequests": "प्रशासक पहुँच अनुरोधहरू",
       "content": "सामग्री",
       "lineageBuilder": "वंशावली निर्माता",
-      "generationsView": "पुस्ताहरू"
+      "generationsView": "पुस्ताहरू",
+      "duplicatePeople": "नक्कल व्यक्तिहरू",
+      "dataQualityReports": "डेटा गुणस्तर"
     },
     "header": {
       "searchPlaceholder": "परिवारका सदस्य खोज्नुहोस्...",
@@ -368,6 +370,61 @@
       "generic": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।"
     },
     "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।"
+  },
+  "adminDataQualityPage": {
+    "title": "डेटा गुणस्तर",
+    "subtitle": "पढ्नमात्र प्रतिवेदनहरू: छुटेका आमाबुबा, सम्बन्ध चक्रहरू, नलिंक गरिएका खाताहरू, र मिति समस्याहरू।",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।",
+    "sections": {
+      "parentGaps": "छुटेका आमाबुबा",
+      "cycles": "सम्बन्ध चक्रहरू",
+      "unlinkedAccounts": "नलिंक गरिएका खाताहरू",
+      "dateIssues": "मिति समस्याहरू"
+    },
+    "columns": {
+      "person": "व्यक्ति",
+      "generation": "पुस्ता",
+      "knownParents": "थाहा भएका आमाबुबा",
+      "email": "इमेल",
+      "status": "स्थिति",
+      "issue": "समस्या",
+      "detail": "विवरण"
+    },
+    "empty": {
+      "parentGaps": "छुटेका आमाबुबा भएका कोही व्यक्ति छैनन्।",
+      "cycles": "कुनै सम्बन्ध चक्र फेला परेन।",
+      "unlinkedAccounts": "कुनै नलिंक गरिएको खाता छैन।",
+      "dateIssues": "कुनै मिति समस्या फेला परेन।"
+    },
+    "issueTypes": {
+      "MISSING_BIRTH_DATE": "जन्ममिति छुटेको",
+      "DEATH_BEFORE_BIRTH": "जन्म अघि मृत्यु",
+      "FUTURE_BIRTH_DATE": "भविष्यको जन्ममिति",
+      "IMPLAUSIBLE_PARENT_AGE_GAP": "अस्वाभाविक आमाबुबा उमेर अन्तर"
+    }
+  },
+  "adminDuplicatesPage": {
+    "title": "नक्कल व्यक्तिहरू",
+    "subtitle": "सम्भावित नक्कल अभिलेखहरू समीक्षा गरी मर्ज गर्नुहोस् -- मर्ज कहिल्यै स्वचालित हुँदैन।",
+    "forbidden": "तपाईंसँग यो हेर्ने अनुमति छैन।",
+    "empty": "कुनै सम्भावित नक्कल फेला परेन।",
+    "compareAndMerge": "तुलना गर्नुहोस् र मर्ज गर्नुहोस्",
+    "hideDetails": "विवरण लुकाउनुहोस्",
+    "dismiss": "हटाउनुहोस्",
+    "keepThisOne": "यो राख्नुहोस्",
+    "confirmMerge": "हो, {loserName} मेटेर {survivorName} राख्नुहोस्",
+    "fields": {
+      "survivor": "बाँकी रहने",
+      "nepaliName": "नेपाली नाम",
+      "gender": "लिङ्ग",
+      "birthDate": "जन्ममिति",
+      "deathDate": "मृत्युमिति",
+      "generation": "पुस्ता",
+      "populatedFields": "भरिएका क्षेत्रहरू"
+    },
+    "errors": {
+      "generic": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।"
+    }
   },
   "adminAuditLogPage": {
     "title": "अडिट लग",

@@ -40,10 +40,10 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
 - ✅ Whole Banshawali tree (`/tree`) with the forest-green redesign.
 - ⬜ **Performance benchmarks not done**: no benchmark scripts/tests found for 500/2,000/10,000-person synthetic datasets. This was a sign-off gate for the phase and should be treated as outstanding.
 
-## Phase 6 — Administration and Data Quality 🟡
+## Phase 6 — Administration and Data Quality ✅
 - ✅ People/relationship admin CRUD, audit log viewer, role/account management, unlinked-account fixer, signup and correction review queues, content management.
-- ⬜ **Duplicate detection + guided merge for people — not built.** Only the relationship-level DB uniqueness constraint exists (Phase 1); there's no person-duplicate-candidate UI or merge tool.
-- ⬜ **Data-quality reports — not built.** No missing-parents/cycles/unlinked-accounts/incomplete-dates reporting found.
+- ✅ **Duplicate detection + guided merge for people (2026-07-31).** `DuplicateCandidateService` (name-match via the existing `NameMatcher`, scored HIGH/MEDIUM/LOW with corroborating/conflicting reasons) + `PersonMergeService` (re-points `Relationship`/`UserPersonLink`/`PersonCorrectionRequest` rows, refuses on direct-relationship or both-verified-account conflicts, records one `PERSON_MERGED` audit entry). `/admin/duplicates` — merge is never automatic; requires an explicit, named confirmation per pair. Verified end-to-end against a real dev DB (create duplicate pair → candidate appears → add direct relationship → excluded → conflicting DOB → LOW confidence → real merge → relationships re-pointed, audit log correct).
+- ✅ **Data-quality reports (2026-07-31).** `DataQualityService`: missing/partial parents (generation-aware, doesn't guess which gaps are legitimate roots), relationship cycles (batch three-color DFS, not per-node ancestor checks), unlinked accounts (reuses `UserAccountAdminService`), and date issues (missing/future birth date, death-before-birth, implausible parent-child age gap). `/admin/data-quality`, read-only. Deliberately **not** wired into the sidebar's live badge counts (`AdminSummaryDto`) — both reports scan the full person/relationship tables, and that summary is computed on every admin page load; a live count would mean paying that cost on every page view instead of only when the report is opened.
 
 ## Phase 7 — Production Hardening ⬜
 - Nothing in this phase appears to have started:
@@ -55,7 +55,7 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
   - ⬜ Deployment runbook update, production readiness checklist, rollback plan.
 
 ## Overall
-Phases 0, 1, 2, 3, and 4 are now done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phases 5 and 6 are substantially built but still have named gaps (perf benchmarks; duplicate-merge + data-quality reports, respectively). Phase 7 hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. Best next candidates: Phase 6 (duplicate detection + data-quality reports, pure engineering) or Phase 5 (performance benchmarks).
+Phases 0, 1, 2, 3, 4, and 6 are now done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phase 6's last two gaps (duplicate detection + guided merge, data-quality reports) are built and verified end-to-end against a real dev database. Phase 5 still has one named gap (performance benchmarks at 500/2,000/10,000 synthetic people). Phase 7 hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. Best next candidate: Phase 5 (performance benchmarks) — the only remaining gap outside Phase 7.
 
 ## Sequencing Notes
 

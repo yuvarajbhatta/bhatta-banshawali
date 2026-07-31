@@ -18,7 +18,9 @@
       "adminAccessRequests": "Admin Access Requests",
       "content": "Content",
       "lineageBuilder": "Lineage Builder",
-      "generationsView": "Generations"
+      "generationsView": "Generations",
+      "duplicatePeople": "Duplicate People",
+      "dataQualityReports": "Data Quality"
     },
     "header": {
       "searchPlaceholder": "Search family members...",
@@ -368,6 +370,61 @@
       "generic": "Something went wrong. Please try again."
     },
     "forbidden": "You don't have permission to view this."
+  },
+  "adminDataQualityPage": {
+    "title": "Data Quality",
+    "subtitle": "Read-only reports: missing parents, relationship cycles, unlinked accounts, and date issues.",
+    "forbidden": "You don't have permission to view this.",
+    "sections": {
+      "parentGaps": "Missing Parents",
+      "cycles": "Relationship Cycles",
+      "unlinkedAccounts": "Unlinked Accounts",
+      "dateIssues": "Date Issues"
+    },
+    "columns": {
+      "person": "Person",
+      "generation": "Generation",
+      "knownParents": "Known Parents",
+      "email": "Email",
+      "status": "Status",
+      "issue": "Issue",
+      "detail": "Detail"
+    },
+    "empty": {
+      "parentGaps": "No people with missing parents.",
+      "cycles": "No relationship cycles found.",
+      "unlinkedAccounts": "No unlinked accounts.",
+      "dateIssues": "No date issues found."
+    },
+    "issueTypes": {
+      "MISSING_BIRTH_DATE": "Missing birth date",
+      "DEATH_BEFORE_BIRTH": "Death before birth",
+      "FUTURE_BIRTH_DATE": "Future birth date",
+      "IMPLAUSIBLE_PARENT_AGE_GAP": "Implausible parent age gap"
+    }
+  },
+  "adminDuplicatesPage": {
+    "title": "Duplicate People",
+    "subtitle": "Review candidate duplicate records and merge them -- merging is never automatic.",
+    "forbidden": "You don't have permission to view this.",
+    "empty": "No duplicate candidates found.",
+    "compareAndMerge": "Compare & Merge",
+    "hideDetails": "Hide Details",
+    "dismiss": "Dismiss",
+    "keepThisOne": "Keep this one",
+    "confirmMerge": "Yes, delete {loserName} and keep {survivorName}",
+    "fields": {
+      "survivor": "Survivor",
+      "nepaliName": "Nepali Name",
+      "gender": "Gender",
+      "birthDate": "Birth Date",
+      "deathDate": "Death Date",
+      "generation": "Generation",
+      "populatedFields": "Populated Fields"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "adminAuditLogPage": {
     "title": "Audit Log",

@@ -27,6 +27,7 @@ public class AuditLogService {
     public static final String ACTION_PERSON_CREATED = "PERSON_CREATED";
     public static final String ACTION_PERSON_UPDATED = "PERSON_UPDATED";
     public static final String ACTION_PERSON_DELETED = "PERSON_DELETED";
+    public static final String ACTION_PERSON_MERGED = "PERSON_MERGED";
     public static final String ACTION_RELATIONSHIP_CREATED = "RELATIONSHIP_CREATED";
     public static final String ACTION_RELATIONSHIP_UPDATED = "RELATIONSHIP_UPDATED";
     public static final String ACTION_RELATIONSHIP_DELETED = "RELATIONSHIP_DELETED";

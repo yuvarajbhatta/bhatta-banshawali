@@ -11,6 +11,10 @@ public interface RelationshipRepository extends JpaRepository<Relationship, Long
 
     List<Relationship> findByPersonAndRelationshipType(Person person, RelationshipType type);
     List<Relationship> findByRelatedPersonAndRelationshipType(Person relatedPerson, RelationshipType type);
+
+    /** Every relationship type, not filtered -- see PersonMergeService#merge. */
+    List<Relationship> findByPerson(Person person);
+    List<Relationship> findByRelatedPerson(Person relatedPerson);
     boolean existsByPersonAndRelatedPersonAndRelationshipType(Person person,
                                                               Person relatedPerson,
                                                               RelationshipType relationshipType);

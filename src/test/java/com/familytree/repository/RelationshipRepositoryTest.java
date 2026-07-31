@@ -92,6 +92,21 @@ class RelationshipRepositoryTest {
         assertThat(relationshipRepository.findByPersonAndRelationshipType(parent, RelationshipType.CHILD)).isEmpty();
     }
 
+    @Test
+    void findByPersonAndFindByRelatedPersonIgnoreType() {
+        Person child = personRepository.save(createPerson("Child"));
+        Person father = personRepository.save(createPerson("Father"));
+        Person mother = personRepository.save(createPerson("Mother"));
+
+        Relationship fatherRelationship = relationshipRepository.save(createRelationship(child, father, RelationshipType.FATHER));
+        Relationship motherRelationship = relationshipRepository.save(createRelationship(child, mother, RelationshipType.MOTHER));
+
+        assertThat(relationshipRepository.findByPerson(child))
+                .containsExactlyInAnyOrder(fatherRelationship, motherRelationship);
+        assertThat(relationshipRepository.findByRelatedPerson(father))
+                .containsExactly(fatherRelationship);
+    }
+
     private Person createPerson(String firstName) {
         Person person = new Person();
         person.setFirstName(firstName);
