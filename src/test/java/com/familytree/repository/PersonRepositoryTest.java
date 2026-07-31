@@ -45,6 +45,20 @@ class PersonRepositoryTest {
     }
 
     @Test
+    void searchPersonsIsSafeAgainstSqlInjectionInTheKeyword() {
+        // docs/09-security-threat-model.md item 8 -- JPQL @Param binding means
+        // the whole string, quotes included, is bound as one opaque parameter
+        // value and can never break out of the query structure. This asserts
+        // that ground truth rather than just trusting the theory.
+        personRepository.save(createPerson("Yuva", "Bhatta", 2));
+        personRepository.save(createPerson("Mina", "Sharma", 3));
+
+        List<Person> results = personRepository.searchPersons("' OR '1'='1", null);
+
+        assertThat(results).isEmpty();
+    }
+
+    @Test
     void searchPersonsMatchesNicknameNotesAndGeneration() {
         Person person = createPerson("Jhanka", "Bhatta", 7);
         person.setNickname("JN");

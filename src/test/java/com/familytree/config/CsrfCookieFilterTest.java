@@ -107,4 +107,36 @@ class CsrfCookieFilterTest {
                         .content("{\"field\":\"NICKNAME\",\"proposedValue\":\"x\",\"reason\":\"y\"}"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void authenticatedPostWithAMismatchedXsrfTokenIsRejected() throws Exception {
+        // Distinct from "missing entirely" above -- a token that's present
+        // but doesn't match the session's real token (e.g. stale, or an
+        // attacker's own token from a different session) must be rejected
+        // exactly the same way, not accepted just because a header exists.
+        UserAccount account = new UserAccount();
+        account.setEmail("mismatched@example.com");
+        account.setPasswordHash("{noop}unused");
+        account.setStatus(UserAccountStatus.ACTIVE);
+        userAccountRepository.save(account);
+
+        Person person = new Person();
+        person.setFirstName("Mismatched");
+        person.setLastName("Token");
+        person = personRepository.save(person);
+
+        MvcResult tokenFetch = mockMvc.perform(get("/actuator/health")
+                        .with(SecurityMockMvcRequestPostProcessors.user("mismatched@example.com").roles("USER")))
+                .andReturn();
+        Cookie xsrfCookie = tokenFetch.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(xsrfCookie).isNotNull();
+
+        mockMvc.perform(post("/api/v1/persons/" + person.getId() + "/corrections")
+                        .with(SecurityMockMvcRequestPostProcessors.user("mismatched@example.com").roles("USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"field\":\"NICKNAME\",\"proposedValue\":\"x\",\"reason\":\"y\"}")
+                        .cookie(new MockCookie("XSRF-TOKEN", xsrfCookie.getValue()))
+                        .header("X-XSRF-TOKEN", "not-the-real-token"))
+                .andExpect(status().isForbidden());
+    }
 }

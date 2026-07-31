@@ -125,6 +125,86 @@ class RateLimitFilterTest {
         assertThat(blockedResponse.getStatus()).isEqualTo(429);
     }
 
+    @Test
+    void allowsFamilyTreeRequestsUpToTheLimitThenBlocks() throws Exception {
+        for (int i = 0; i < RateLimitFilter.FAMILY_TREE_CAPACITY; i++) {
+            MockHttpServletRequest request = familyTreeRequest("203.0.113.40");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(familyTreeRequest("203.0.113.40"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void familyTreeLimitIsPerIpAddress() throws Exception {
+        for (int i = 0; i < RateLimitFilter.FAMILY_TREE_CAPACITY; i++) {
+            filter.doFilter(familyTreeRequest("203.0.113.41"), new MockHttpServletResponse(), filterChain);
+        }
+
+        MockHttpServletResponse otherIpResponse = new MockHttpServletResponse();
+        filter.doFilter(familyTreeRequest("203.0.113.42"), otherIpResponse, filterChain);
+
+        assertThat(otherIpResponse.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void allowsPersonSearchRequestsUpToTheLimitThenBlocks() throws Exception {
+        for (int i = 0; i < RateLimitFilter.PERSON_SEARCH_CAPACITY; i++) {
+            MockHttpServletRequest request = personSearchRequest("203.0.113.50");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(personSearchRequest("203.0.113.50"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+        assertThat(blockedResponse.getContentType()).startsWith("application/json");
+    }
+
+    @Test
+    void familyTreeAndPersonSearchLimitsAreIndependentScopes() throws Exception {
+        for (int i = 0; i < RateLimitFilter.FAMILY_TREE_CAPACITY; i++) {
+            filter.doFilter(familyTreeRequest("203.0.113.60"), new MockHttpServletResponse(), filterChain);
+        }
+        // Family-tree quota is exhausted for this IP, but person search is a different scope.
+        MockHttpServletResponse searchResponse = new MockHttpServletResponse();
+        filter.doFilter(personSearchRequest("203.0.113.60"), searchResponse, filterChain);
+
+        assertThat(searchResponse.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void postToPersonsIsNotThrottledAsPersonSearch() throws Exception {
+        // Only GET /api/v1/persons (search) is throttled here -- POST is an
+        // unrelated admin-CRUD path and must never share this bucket.
+        for (int i = 0; i < RateLimitFilter.PERSON_SEARCH_CAPACITY + 5; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/persons");
+            request.addHeader("X-Forwarded-For", "203.0.113.70");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+    }
+
+    private MockHttpServletRequest familyTreeRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/family-tree");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest personSearchRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/persons");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
     private MockHttpServletRequest signupRequest(String clientIp) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/signup");
         request.addHeader("X-Forwarded-For", clientIp);

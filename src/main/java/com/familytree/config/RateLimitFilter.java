@@ -14,10 +14,18 @@ import java.io.IOException;
 import java.time.Duration;
 
 /**
- * Throttles the two endpoints an anonymous caller can hit repeatedly to do
- * damage: signup (spam applications / family-member enumeration) and login
- * (credential stuffing) -- docs/09-security-threat-model.md risks 1 and 2.
- * Keyed by client IP via X-Forwarded-For (set by nginx; see the
+ * Throttles endpoints a caller can hit repeatedly to do damage: signup
+ * (spam applications / family-member enumeration) and login (credential
+ * stuffing) -- docs/09-security-threat-model.md risks 1 and 2 -- plus,
+ * since risk 15 (scraping the family tree) found neither endpoint
+ * throttled at all, the two data-exposure endpoints a scripted loop would
+ * actually hit to bulk-extract family data: the whole-tree fetch and
+ * person search. Those two limits are deliberately generous (a real user
+ * hits /api/v1/family-tree once per /tree or /family page load -- window
+ * expansion is pure client-side slicing, no re-fetch, see
+ * useTreeWindow.ts -- and /api/v1/persons search is live-typing
+ * typeahead in admin forms) so normal use never trips them. Keyed by
+ * client IP via X-Forwarded-For (set by nginx; see the
  * banshawali.yrbhatta.com vhost), falling back to the socket address for
  * direct/local calls.
  */
@@ -27,6 +35,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     static final Duration SIGNUP_PERIOD = Duration.ofHours(1);
     static final int LOGIN_CAPACITY = 10;
     static final Duration LOGIN_PERIOD = Duration.ofMinutes(15);
+    static final int FAMILY_TREE_CAPACITY = 20;
+    static final Duration FAMILY_TREE_PERIOD = Duration.ofMinutes(1);
+    static final int PERSON_SEARCH_CAPACITY = 60;
+    static final Duration PERSON_SEARCH_PERIOD = Duration.ofMinutes(1);
 
     private final RateLimiter rateLimiter;
     // A plain instance, not the application's configured ObjectMapper bean:
@@ -46,6 +58,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String clientIp = clientIp(request);
         boolean isSignup = "POST".equals(request.getMethod()) && "/api/v1/signup".equals(request.getRequestURI());
         boolean isLogin = "POST".equals(request.getMethod()) && "/login".equals(request.getRequestURI());
+        boolean isFamilyTree = "GET".equals(request.getMethod()) && "/api/v1/family-tree".equals(request.getRequestURI());
+        boolean isPersonSearch = "GET".equals(request.getMethod()) && "/api/v1/persons".equals(request.getRequestURI());
 
         if (isSignup && !rateLimiter.tryConsume("signup", clientIp, SIGNUP_CAPACITY, SIGNUP_PERIOD)) {
             respondTooManyRequests(response, request.getRequestURI().startsWith("/api/"));
@@ -53,6 +67,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         if (isLogin && !rateLimiter.tryConsume("login", clientIp, LOGIN_CAPACITY, LOGIN_PERIOD)) {
             respondTooManyRequests(response, false);
+            return;
+        }
+        if (isFamilyTree && !rateLimiter.tryConsume("family-tree", clientIp, FAMILY_TREE_CAPACITY, FAMILY_TREE_PERIOD)) {
+            respondTooManyRequests(response, true);
+            return;
+        }
+        if (isPersonSearch && !rateLimiter.tryConsume("person-search", clientIp, PERSON_SEARCH_CAPACITY, PERSON_SEARCH_PERIOD)) {
+            respondTooManyRequests(response, true);
             return;
         }
 

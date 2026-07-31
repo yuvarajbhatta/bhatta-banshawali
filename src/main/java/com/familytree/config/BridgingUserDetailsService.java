@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -54,20 +56,39 @@ public class BridgingUserDetailsService implements UserDetailsService {
                 .filter(account -> account.getStatus() == UserAccountStatus.ACTIVE);
     }
 
+    // The legacy AppUser table predates the whole UserAccount/Role/verification
+    // workflow and is the site owner's own account (confirmed: production has
+    // exactly one ROLE_ADMIN row here) -- it's granted SUPER_ADMIN too so the
+    // owner is never the one account that could get locked out of
+    // super-admin-gated actions (see SecurityConfig's admin-access-request
+    // approval rule, docs/09-security-threat-model.md item 13).
     private UserDetails toUserDetails(AppUser user) {
+        String role = user.getRole().replace("ROLE_", "");
+        String[] roles = "ADMIN".equals(role) ? new String[] {"ADMIN", "SUPER_ADMIN"} : new String[] {role};
         return User.withUsername(user.getUsername())
                 .password(user.getPassword())
-                .roles(user.getRole().replace("ROLE_", ""))
+                .roles(roles)
                 .build();
     }
 
     private UserDetails toUserDetails(UserAccount account) {
-        boolean isAdmin = account.getRoles().stream()
-                .anyMatch(role -> "ADMINISTRATOR".equals(role.getName()) || "SUPER_ADMINISTRATOR".equals(role.getName()));
+        boolean isSuperAdmin = account.getRoles().stream().anyMatch(role -> "SUPER_ADMINISTRATOR".equals(role.getName()));
+        boolean isAdmin = isSuperAdmin || account.getRoles().stream().anyMatch(role -> "ADMINISTRATOR".equals(role.getName()));
+
+        List<String> roles = new ArrayList<>();
+        if (isAdmin) {
+            roles.add("ADMIN");
+        }
+        if (isSuperAdmin) {
+            roles.add("SUPER_ADMIN");
+        }
+        if (roles.isEmpty()) {
+            roles.add("USER");
+        }
 
         return User.withUsername(account.getEmail())
                 .password(account.getPasswordHash())
-                .roles(isAdmin ? "ADMIN" : "USER")
+                .roles(roles.toArray(new String[0]))
                 .build();
     }
 }

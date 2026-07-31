@@ -36,9 +36,30 @@ public class SecurityConfig {
         return new BridgingUserDetailsService(appUserRepository, userAccountRepository);
     }
 
+    // docs/09-security-threat-model.md item 6 (XSS), for defense-in-depth on
+    // the shrinking set of Thymeleaf-rendered pages this backend still serves
+    // directly (most real pages are Next.js now). script-src needs
+    // 'unsafe-inline' here, unlike the Next.js side (proxy.ts, which uses a
+    // per-request nonce instead): lineage.html and the language-switch
+    // fragment included on nearly every legacy page rely on inline <script>
+    // blocks and onclick="..." handlers throughout, confirmed by a live
+    // click-through that a bare 'self' policy breaks these pages outright.
+    // The other directives (frame-ancestors, base-uri, form-action,
+    // connect-src, img-src) still hold real value even with this concession.
+    private static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+            "form-action 'self'");
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter) throws Exception {
         http
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
                 // session to hijack, so that one endpoint stays exempt. Every
@@ -133,6 +154,19 @@ public class SecurityConfig {
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(
                                 new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
+                        // More specific than the general "/persons" rule below (must come
+                        // first -- authorizeHttpRequests matches in order, first match
+                        // wins): POST /persons is PersonController#savePerson, a create
+                        // endpoint that was previously reachable by any USER, not just
+                        // ADMIN (docs/09-security-threat-model.md item 9 finding).
+                        .requestMatchers(HttpMethod.POST, "/persons").hasRole("ADMIN")
+                        // Granting admin access is a privilege-escalation choke point
+                        // (docs/09-security-threat-model.md item 13) -- must be more
+                        // specific than, and precede, the general "/api/v1/admin/**"
+                        // rule below. Only ADMINISTRATOR+SUPER_ADMINISTRATOR accounts
+                        // (and the legacy AppUser admin) hold ROLE_SUPER_ADMIN --
+                        // see BridgingUserDetailsService.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/admin-access-requests/*/approve").hasRole("SUPER_ADMIN")
                         .requestMatchers("/", "/persons", "/persons/*", "/relationships", "/lineage", "/lineage/tree", "/generations")
                         .hasAnyRole("ADMIN", "USER")
                         .requestMatchers(

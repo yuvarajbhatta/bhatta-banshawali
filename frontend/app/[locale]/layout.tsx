@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { routing } from "@/i18n/routing";
@@ -41,6 +42,11 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
+
+  // Reading the per-request nonce (set by proxy.ts) forces dynamic rendering
+  // and is what lets Next.js apply it to the inline hydration scripts it
+  // injects itself -- see proxy.ts for why a nonce is needed at all.
+  void (await headers()).get("x-nonce");
 
   const messages = await getMessages();
 

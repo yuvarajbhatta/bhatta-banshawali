@@ -45,7 +45,25 @@ class BridgingUserDetailsServiceTest {
 
         assertThat(userDetails.getUsername()).isEqualTo("admin");
         assertThat(userDetails.getPassword()).isEqualTo("encoded-password");
-        assertThat(userDetails.getAuthorities()).extracting("authority").containsExactly("ROLE_ADMIN");
+        // The legacy AppUser admin is the site owner's account and predates the
+        // whole verification workflow -- it gets SUPER_ADMIN too so it's never
+        // the one account that could get locked out of super-admin-gated
+        // actions (docs/09-security-threat-model.md item 13).
+        assertThat(userDetails.getAuthorities()).extracting("authority")
+                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_SUPER_ADMIN");
+    }
+
+    @Test
+    void legacyAppUserWithPlainUserRoleGetsNoSuperAdmin() {
+        AppUser user = new AppUser();
+        user.setUsername("member");
+        user.setPassword("encoded-password");
+        user.setRole("ROLE_USER");
+        when(appUserRepository.findByUsername("member")).thenReturn(Optional.of(user));
+
+        UserDetails userDetails = bridgingUserDetailsService.loadUserByUsername("member");
+
+        assertThat(userDetails.getAuthorities()).extracting("authority").containsExactly("ROLE_USER");
     }
 
     @Test
@@ -98,7 +116,7 @@ class BridgingUserDetailsServiceTest {
     }
 
     @Test
-    void superAdministratorRoleAlsoMapsToRoleAdmin() {
+    void superAdministratorRoleMapsToBothRoleAdminAndRoleSuperAdmin() {
         when(appUserRepository.findByUsername("super@example.com")).thenReturn(Optional.empty());
         Role superAdministrator = new Role();
         superAdministrator.setName("SUPER_ADMINISTRATOR");
@@ -111,7 +129,8 @@ class BridgingUserDetailsServiceTest {
 
         UserDetails userDetails = bridgingUserDetailsService.loadUserByUsername("super@example.com");
 
-        assertThat(userDetails.getAuthorities()).extracting("authority").containsExactly("ROLE_ADMIN");
+        assertThat(userDetails.getAuthorities()).extracting("authority")
+                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_SUPER_ADMIN");
     }
 
     @Test
