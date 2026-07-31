@@ -7,6 +7,7 @@ import type { PersonTreeNodeDto } from "@/lib/api";
 import { TreeCanvas } from "./TreeCanvas";
 import { TreeFilters } from "./TreeFilters";
 import { MemberQuickView } from "./MemberQuickView";
+import { ALL_GENERATIONS_CONFIRM_THRESHOLD, useTreeWindow } from "./useTreeWindow";
 import type { LivingFilter } from "./familyTree.types";
 import styles from "./TreeExplorer.module.css";
 
@@ -18,10 +19,15 @@ interface TreeExplorerProps {
 export function TreeExplorer({ people, initialFocusId }: TreeExplorerProps) {
   const t = useTranslations("treePage");
   const [search, setSearch] = useState("");
-  const [generation, setGeneration] = useState<number | "all">("all");
   const [living, setLiving] = useState<LivingFilter>("all");
   const [selectedId, setSelectedId] = useState<number | null>(initialFocusId);
   const [focusId, setFocusId] = useState<number | null>(initialFocusId);
+
+  // Bounds what actually reaches Dagre/React Flow to a generation window --
+  // see useTreeWindow.ts and docs/08 Phase 5's performance-benchmark
+  // follow-up. `people` itself already holds the whole fetched graph; this
+  // only slices it, no extra network round-trip.
+  const treeWindow = useTreeWindow(people);
 
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
 
@@ -35,15 +41,12 @@ export function TreeExplorer({ people, initialFocusId }: TreeExplorerProps) {
 
   const filteredPeople = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return people.filter((person) => {
+    return treeWindow.windowedPeople.filter((person) => {
       if (normalizedSearch) {
         const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
         if (!haystack.includes(normalizedSearch)) {
           return false;
         }
-      }
-      if (generation !== "all" && person.generationNumber !== generation) {
-        return false;
       }
       if (living === "living" && person.deathDate) {
         return false;
@@ -53,12 +56,12 @@ export function TreeExplorer({ people, initialFocusId }: TreeExplorerProps) {
       }
       return true;
     });
-  }, [people, search, generation, living]);
+  }, [treeWindow.windowedPeople, search, living]);
 
   function handleReset() {
     setSearch("");
-    setGeneration("all");
     setLiving("all");
+    treeWindow.resetToDefaultWindow();
   }
 
   function handleSelect(personId: number) {
@@ -77,14 +80,23 @@ export function TreeExplorer({ people, initialFocusId }: TreeExplorerProps) {
       <TreeFilters
         search={search}
         onSearchChange={setSearch}
-        generation={generation}
-        onGenerationChange={setGeneration}
         generationOptions={generationOptions}
         living={living}
         onLivingChange={setLiving}
         onReset={handleReset}
         visibleCount={filteredPeople.length}
         totalCount={people.length}
+        minGeneration={treeWindow.minGeneration}
+        maxGeneration={treeWindow.maxGeneration}
+        onRangeChange={treeWindow.setRange}
+        canLoadEarlier={treeWindow.minGeneration > treeWindow.overallMinGeneration}
+        canLoadLater={treeWindow.maxGeneration < treeWindow.overallMaxGeneration}
+        onLoadEarlier={treeWindow.loadEarlier}
+        onLoadLater={treeWindow.loadLater}
+        isAllGenerations={treeWindow.isAllGenerations}
+        onShowAllGenerations={treeWindow.showAllGenerations}
+        allGenerationsNeedsConfirm={treeWindow.totalPeopleCount > ALL_GENERATIONS_CONFIRM_THRESHOLD}
+        searchScopeLimited={Boolean(search.trim()) && !treeWindow.isAllGenerations}
       />
 
       <div className={styles.canvasArea}>

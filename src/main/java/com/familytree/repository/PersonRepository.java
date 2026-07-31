@@ -32,4 +32,14 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
 
     @Query("select min(p.generationNumber) from Person p where p.generationNumber is not null")
     Integer findMinGenerationNumber();
+
+    /** Either bound may be null (open-ended); both null returns everyone -- see FamilyTreeAssembler. */
+    @Query("""
+            select p from Person p
+            where (:minGeneration is null or p.generationNumber >= :minGeneration)
+              and (:maxGeneration is null or p.generationNumber <= :maxGeneration)
+            order by p.generationNumber asc, p.id asc
+            """)
+    List<Person> findByGenerationNumberRange(@Param("minGeneration") Integer minGeneration,
+                                              @Param("maxGeneration") Integer maxGeneration);
 }

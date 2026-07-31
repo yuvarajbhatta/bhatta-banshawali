@@ -69,6 +69,10 @@ public class PersonService {
     public List<Person> getAllPersons() {
         return personRepository.findAll();
     }
+    /** Either bound may be null (open-ended) -- see FamilyTreeAssembler's windowed tree view. */
+    public List<Person> getPersonsByGenerationRange(Integer minGeneration, Integer maxGeneration) {
+        return personRepository.findByGenerationNumberRange(minGeneration, maxGeneration);
+    }
     public List<Person> searchPersons(String keyword){
         if (keyword == null || keyword.isBlank()) {
             return personRepository.findAllByOrderByGenerationNumberAscIdAsc();

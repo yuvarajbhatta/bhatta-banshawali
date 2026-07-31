@@ -102,6 +102,47 @@ class PersonRepositoryTest {
         assertThat(personRepository.findMinGenerationNumber()).isNull();
     }
 
+    @Test
+    void findByGenerationNumberRangeRespectsInclusiveBoundsAndOrdering() {
+        Person genOne = personRepository.save(createPerson("First", "Bhatta", 1));
+        Person genTwoA = personRepository.save(createPerson("SecondA", "Bhatta", 2));
+        Person genTwoB = personRepository.save(createPerson("SecondB", "Bhatta", 2));
+        Person genThree = personRepository.save(createPerson("Third", "Bhatta", 3));
+
+        List<Person> results = personRepository.findByGenerationNumberRange(2, 3);
+
+        assertThat(results).extracting(Person::getId)
+                .containsExactly(genTwoA.getId(), genTwoB.getId(), genThree.getId());
+        assertThat(results).doesNotContain(genOne);
+    }
+
+    @Test
+    void findByGenerationNumberRangeSupportsOpenEndedBounds() {
+        Person genOne = personRepository.save(createPerson("First", "Bhatta", 1));
+        Person genTwo = personRepository.save(createPerson("Second", "Bhatta", 2));
+        Person genThree = personRepository.save(createPerson("Third", "Bhatta", 3));
+
+        assertThat(personRepository.findByGenerationNumberRange(2, null))
+                .extracting(Person::getId).containsExactly(genTwo.getId(), genThree.getId());
+        assertThat(personRepository.findByGenerationNumberRange(null, 2))
+                .extracting(Person::getId).containsExactly(genOne.getId(), genTwo.getId());
+    }
+
+    @Test
+    void findByGenerationNumberRangeWithBothBoundsNullReturnsEveryone() {
+        personRepository.save(createPerson("First", "Bhatta", 1));
+        personRepository.save(createPerson("Second", "Bhatta", 2));
+
+        assertThat(personRepository.findByGenerationNumberRange(null, null)).hasSize(2);
+    }
+
+    @Test
+    void findByGenerationNumberRangeReturnsEmptyWhenNoMatch() {
+        personRepository.save(createPerson("First", "Bhatta", 1));
+
+        assertThat(personRepository.findByGenerationNumberRange(5, 10)).isEmpty();
+    }
+
     private Person createPerson(String firstName, String lastName, Integer generation) {
         Person person = new Person();
         person.setFirstName(firstName);

@@ -410,8 +410,22 @@ export type FamilyTreeResult =
 
 // Server-to-server with the browser's session cookie forwarded, same
 // pattern as getMemberProfile/getPersonDetail.
-export async function getFamilyTree(cookieHeader: string): Promise<FamilyTreeResult> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/family-tree`, {
+export interface FamilyTreeWindow {
+  minGeneration?: number;
+  maxGeneration?: number;
+}
+
+function familyTreeWindowQuery(window?: FamilyTreeWindow): string {
+  if (!window) return "";
+  const params = new URLSearchParams();
+  if (window.minGeneration != null) params.set("minGeneration", String(window.minGeneration));
+  if (window.maxGeneration != null) params.set("maxGeneration", String(window.maxGeneration));
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function getFamilyTree(cookieHeader: string, window?: FamilyTreeWindow): Promise<FamilyTreeResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/family-tree${familyTreeWindowQuery(window)}`, {
     headers: { Cookie: cookieHeader },
     cache: "no-store",
   });

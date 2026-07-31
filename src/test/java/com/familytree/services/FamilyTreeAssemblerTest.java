@@ -106,6 +106,73 @@ class FamilyTreeAssemblerTest {
         assertThat(findNode(tree, 3L).birthDate()).isEqualTo(LocalDate.of(1970, 1, 1));
     }
 
+    @Test
+    void windowedBuildReturnsOnlyPersonsWithinGenerationRange() {
+        Person father = person(1L, "Rana", "Bhatta", LocalDate.of(1940, 1, 1));
+        Person mother = person(2L, "Sita", "Bhatta", LocalDate.of(1945, 1, 1));
+        Person child = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+
+        when(personService.getPersonsByGenerationRange(2, 3)).thenReturn(List.of(mother, child));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of(
+                relationship(child, father, RelationshipType.FATHER),
+                relationship(child, mother, RelationshipType.MOTHER),
+                relationship(father, child, RelationshipType.CHILD),
+                relationship(mother, child, RelationshipType.CHILD)
+        ));
+        when(relationshipService.getRootPersonForLineage()).thenReturn(father);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(true, null), 2, 3);
+
+        assertThat(tree.nodes()).hasSize(2);
+        assertThat(tree.nodes()).extracting(PersonTreeNodeDto::id).containsExactlyInAnyOrder(2L, 3L);
+    }
+
+    @Test
+    void windowedBuildKeepsRawReferencesToPersonsOutsideTheWindow() {
+        // Father (generation 1) is outside the [2,3] window, but the child
+        // node still must carry his raw id -- the frontend's own
+        // edge-filtering (useFamilyTreeLayout.ts) decides what to draw with it,
+        // this endpoint never nulls out-of-window references itself.
+        Person father = person(1L, "Rana", "Bhatta", LocalDate.of(1940, 1, 1));
+        Person child = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+
+        when(personService.getPersonsByGenerationRange(2, 3)).thenReturn(List.of(child));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of(
+                relationship(child, father, RelationshipType.FATHER),
+                relationship(father, child, RelationshipType.CHILD)
+        ));
+        when(relationshipService.getRootPersonForLineage()).thenReturn(father);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(true, null), 2, 3);
+
+        assertThat(tree.nodes()).hasSize(1);
+        assertThat(findNode(tree, 3L).fatherId()).isEqualTo(1L);
+    }
+
+    @Test
+    void windowedBuildStillRedactsBirthDateForNonAdminViewingSomeoneElse() {
+        Person self = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+        when(personService.getPersonsByGenerationRange(3, 3)).thenReturn(List.of(self));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of());
+        when(relationshipService.getRootPersonForLineage()).thenReturn(null);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(false, 99L), 3, 3);
+
+        assertThat(findNode(tree, 3L).birthDate()).isNull();
+    }
+
+    @Test
+    void unwindowedOverloadDelegatesToNullBounds() {
+        Person self = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+        when(personService.getAllPersons()).thenReturn(List.of(self));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of());
+        when(relationshipService.getRootPersonForLineage()).thenReturn(null);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(true, null));
+
+        assertThat(tree.nodes()).hasSize(1);
+    }
+
     private PersonTreeNodeDto findNode(FamilyTreeDto tree, long id) {
         return tree.nodes().stream()
                 .filter(node -> node.id().equals(id))

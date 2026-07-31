@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { LivingFilter } from "./familyTree.types";
@@ -8,29 +9,71 @@ import styles from "./TreeFilters.module.css";
 interface TreeFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
-  generation: number | "all";
-  onGenerationChange: (value: number | "all") => void;
   generationOptions: number[];
   living: LivingFilter;
   onLivingChange: (value: LivingFilter) => void;
   onReset: () => void;
   visibleCount: number;
   totalCount: number;
+  minGeneration: number;
+  maxGeneration: number;
+  onRangeChange: (minGeneration: number, maxGeneration: number) => void;
+  canLoadEarlier: boolean;
+  canLoadLater: boolean;
+  onLoadEarlier: () => void;
+  onLoadLater: () => void;
+  isAllGenerations: boolean;
+  onShowAllGenerations: () => void;
+  allGenerationsNeedsConfirm: boolean;
+  searchScopeLimited: boolean;
 }
 
 export function TreeFilters({
   search,
   onSearchChange,
-  generation,
-  onGenerationChange,
   generationOptions,
   living,
   onLivingChange,
   onReset,
   visibleCount,
   totalCount,
+  minGeneration,
+  maxGeneration,
+  onRangeChange,
+  canLoadEarlier,
+  canLoadLater,
+  onLoadEarlier,
+  onLoadLater,
+  isAllGenerations,
+  onShowAllGenerations,
+  allGenerationsNeedsConfirm,
+  searchScopeLimited,
 }: TreeFiltersProps) {
   const t = useTranslations("treePage.filters");
+  const [confirmingAll, setConfirmingAll] = useState(false);
+
+  // Reset the pending confirm whenever the window changes for any other
+  // reason (range edited, expanded, or "all" already showing) -- adjusted
+  // during render (React's recommended pattern for this), not in an effect,
+  // to avoid an extra cascading render.
+  const windowKey = `${minGeneration}-${maxGeneration}-${isAllGenerations}`;
+  const [lastWindowKey, setLastWindowKey] = useState(windowKey);
+  if (windowKey !== lastWindowKey) {
+    setLastWindowKey(windowKey);
+    setConfirmingAll(false);
+  }
+
+  function handleAllGenerationsClick() {
+    if (isAllGenerations) {
+      return;
+    }
+    if (allGenerationsNeedsConfirm && !confirmingAll) {
+      setConfirmingAll(true);
+      return;
+    }
+    setConfirmingAll(false);
+    onShowAllGenerations();
+  }
 
   return (
     <div className={styles.bar}>
@@ -46,19 +89,46 @@ export function TreeFilters({
         />
       </div>
 
-      <select
-        className={styles.select}
-        aria-label={t("generation")}
-        value={generation === "all" ? "all" : String(generation)}
-        onChange={(event) => onGenerationChange(event.target.value === "all" ? "all" : Number(event.target.value))}
-      >
-        <option value="all">{t("allGenerations")}</option>
-        {generationOptions.map((gen) => (
-          <option key={gen} value={gen}>
-            {gen}
-          </option>
-        ))}
-      </select>
+      <div className={styles.rangeGroup}>
+        <span>{t("generation")}</span>
+        <select
+          className={styles.select}
+          aria-label={t("generationFrom")}
+          value={minGeneration}
+          disabled={isAllGenerations}
+          onChange={(event) => onRangeChange(Number(event.target.value), maxGeneration)}
+        >
+          {generationOptions.map((gen) => (
+            <option key={gen} value={gen}>
+              {gen}
+            </option>
+          ))}
+        </select>
+        <span aria-hidden="true">–</span>
+        <select
+          className={styles.select}
+          aria-label={t("generationTo")}
+          value={maxGeneration}
+          disabled={isAllGenerations}
+          onChange={(event) => onRangeChange(minGeneration, Number(event.target.value))}
+        >
+          {generationOptions.map((gen) => (
+            <option key={gen} value={gen}>
+              {gen}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button type="button" className={styles.resetButton} onClick={onLoadEarlier} disabled={!canLoadEarlier || isAllGenerations}>
+        {t("loadEarlier")}
+      </button>
+      <button type="button" className={styles.resetButton} onClick={onLoadLater} disabled={!canLoadLater || isAllGenerations}>
+        {t("loadLater")}
+      </button>
+      <button type="button" className={styles.resetButton} onClick={handleAllGenerationsClick} disabled={isAllGenerations}>
+        {confirmingAll ? t("confirmAllGenerations", { count: totalCount }) : t("allGenerations")}
+      </button>
 
       <select
         className={styles.select}
@@ -76,6 +146,8 @@ export function TreeFilters({
       </button>
 
       <span className={styles.resultCount}>{t("resultCount", { count: visibleCount, total: totalCount })}</span>
+
+      {searchScopeLimited ? <div className={styles.hintRow}>{t("searchScopeHint")}</div> : null}
     </div>
   );
 }

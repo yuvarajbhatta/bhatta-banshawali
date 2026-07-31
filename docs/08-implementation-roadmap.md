@@ -35,10 +35,10 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
 ## Phase 4 — Member Dashboard and Profiles ✅
 - ✅ Dashboard, profile pages, person detail pages, directory/search, privacy redaction, correction-request workflow (`admin/corrections`).
 
-## Phase 5 — Genealogy Experiences 🟡
+## Phase 5 — Genealogy Experiences ✅
 - ✅ Your Family page (ancestors, descendants, relationship-path finder).
 - ✅ Whole Banshawali tree (`/tree`) with the forest-green redesign.
-- 🟡 **Performance benchmarks run (2026-07-31) — result: fail, gate does not pass as built.**
+- ✅ **Performance benchmarks run (2026-07-31) — initial result: fail — then fixed (2026-07-31).**
   `scripts/benchmark/generate-synthetic-family.py` generates a plausible multi-generation tree
   (bulk SQL, disposable dev DB only, never production) at N=500 and N=2,000. Findings:
 
@@ -72,9 +72,25 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
   is a real, separate feature (new scoped endpoint + incremental-fetch frontend work), not something
   to build as a side effect of running this benchmark — flagging it clearly, same as the
   `app_users` AUTO_INCREMENT drift and `PersonService.deletePersonById`'s missing re-pointing were
-  flagged rather than silently fixed earlier. Until it's built, this phase is functionally usable
-  for families the size of the real data today (small) but will degrade badly if the tree grows
-  toward the low thousands.
+  flagged rather than silently fixed earlier.
+
+  **Fixed, same day**: `/tree` now defaults to a 4-generation window (`GET /api/v1/family-tree`
+  gained optional `minGeneration`/`maxGeneration` params — `PersonRepository`, `FamilyTreeAssembler`,
+  `FamilyTreeController`, all backward-compatible; both bounds null still returns everyone, unchanged
+  for `/family`'s unwindowed fetch), with "load earlier/later generations" controls
+  (`useTreeWindow.ts`, pure-function-tested the same way `layoutFamilyTree` already was) and a gated
+  "all generations" escape hatch (confirm-click required above 500 people, so a large family can't
+  silently reproduce the freeze). Verified against the same N=2,000 synthetic dataset, real
+  production build, real browser: default load time-to-fully-rendered went from **~30-35s → ~1.5s**;
+  expanding the window still reaches the full 2,000-person tree, and confirming "all generations"
+  correctly reproduces the original slower-but-functional experience as an intentional opt-in, not a
+  removed capability. Scope was deliberately narrow — investigation found `/family`'s Visual Tree tab
+  (`FamilyVisualTree.tsx`) was already safe (it bounds itself via `buildFamilySubgraphIds` before
+  ever reaching Dagre, regardless of total family size), and `/family`'s Ancestors/Descendants/
+  Relationship Path tabs are plain BFS list views already benchmarked sub-millisecond at 2,000 nodes
+  — neither needed any change. True viewport/pan-driven fetching, branch-based (non-generation)
+  lazy expand/collapse, and server-side search across the whole DB were all explicitly left out as
+  separate, larger follow-ups, not required to close this gate.
 
 ## Phase 6 — Administration and Data Quality ✅
 - ✅ People/relationship admin CRUD, audit log viewer, role/account management, unlinked-account fixer, signup and correction review queues, content management.
@@ -91,7 +107,7 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
   - ⬜ Deployment runbook update, production readiness checklist, rollback plan.
 
 ## Overall
-Phases 0, 1, 2, 3, 4, and 6 are now done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phase 6's last two gaps (duplicate detection + guided merge, data-quality reports) are built and verified end-to-end against a real dev database. Phase 5's benchmark gate has now actually been run (2026-07-31) rather than left outstanding — the result is a genuine fail: the `/tree` page's whole-graph, client-side Dagre-layout approach degrades super-linearly and needs the lazy/viewport-scoped loading the architecture doc always called a hard requirement, not yet built. That's now a concrete, scoped follow-up (see Phase 5 above) rather than an open question. Phase 7 hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. The two things worth doing next: build the `/tree` lazy-loading follow-up (real user-facing risk once the tree grows), or move on to Phase 7.
+Phases 0 through 6 are now all done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phase 6's last two gaps (duplicate detection + guided merge, data-quality reports) are built and verified end-to-end against a real dev database. Phase 5's benchmark gate was actually run (2026-07-31) rather than left outstanding, found a genuine fail (the `/tree` page's whole-graph Dagre layout degraded super-linearly, ~30-35s at 2,000 people), and the fix was built and verified the same day (generation-windowed loading, ~1.5s at the same 2,000-person dataset). Phase 7 is the only phase that hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. Next: Phase 7, or one of the explicitly-flagged-but-not-built follow-ups scattered through this doc (true viewport-driven `/tree` fetching, server-side search, the `deletePersonById` re-pointing gap, etc.).
 
 ## Sequencing Notes
 

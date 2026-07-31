@@ -4,10 +4,13 @@ import com.familytree.dto.FamilyTreeDto;
 import com.familytree.services.FamilyTreeAssembler;
 import com.familytree.services.ViewerContext;
 import com.familytree.services.ViewerContextResolver;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Whole-family graph for the interactive tree view (docs/08 Phase 5).
@@ -29,8 +32,13 @@ public class FamilyTreeController {
     }
 
     @GetMapping
-    public FamilyTreeDto tree(Authentication authentication) {
+    public FamilyTreeDto tree(Authentication authentication,
+                              @RequestParam(required = false) Integer minGeneration,
+                              @RequestParam(required = false) Integer maxGeneration) {
+        if (minGeneration != null && maxGeneration != null && minGeneration > maxGeneration) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minGeneration must not be greater than maxGeneration.");
+        }
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
-        return familyTreeAssembler.buildTree(viewer);
+        return familyTreeAssembler.buildTree(viewer, minGeneration, maxGeneration);
     }
 }

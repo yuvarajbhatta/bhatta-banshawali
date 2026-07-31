@@ -41,7 +41,22 @@ public class FamilyTreeAssembler {
     }
 
     public FamilyTreeDto buildTree(ViewerContext viewer) {
-        List<Person> persons = personService.getAllPersons();
+        return buildTree(viewer, null, null);
+    }
+
+    /**
+     * Windowed variant (docs/08 Phase 5 performance-benchmark follow-up) -- either bound may be
+     * null (open-ended), both null returns everyone (the original behavior, still used by /family's
+     * unwindowed fetch). Relationships are always loaded in full regardless of the window, never
+     * filtered by it: a windowed person's child one generation below maxGeneration must still
+     * appear as a raw childIds entry so the frontend's own edge-filtering (see
+     * useFamilyTreeLayout.ts) can decide what to draw -- this endpoint doesn't null out
+     * out-of-window references itself.
+     */
+    public FamilyTreeDto buildTree(ViewerContext viewer, Integer minGeneration, Integer maxGeneration) {
+        List<Person> persons = (minGeneration != null || maxGeneration != null)
+                ? personService.getPersonsByGenerationRange(minGeneration, maxGeneration)
+                : personService.getAllPersons();
         List<Relationship> relationships = relationshipService.getAllRelationships();
 
         Map<Long, Long> fatherOf = new HashMap<>();
