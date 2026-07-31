@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bhatta Banshawali</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #111827; max-width: 480px; margin: 0 auto;">
+    <h1 style="font-size: 20px;">Bhatta Banshawali</h1>
+
+    <div th:if="${locale == 'ne'}">
+        <p>तपाईंको इमेल ठेगाना पुष्टि गर्न तल क्लिक गर्नुहोस्:</p>
+        <p><a th:href="${actionLink}" style="color: #2563eb;">इमेल पुष्टि गर्नुहोस्</a></p>
+        <p style="color: #6b7280; font-size: 13px;">यो लिंक २४ घण्टामा समाप्त हुनेछ। यदि तपाईंले यो अनुरोध गर्नुभएको छैन भने, यो इमेल बेवास्ता गर्नुहोस्।</p>
+    </div>
+    <div th:unless="${locale == 'ne'}">
+        <p>Please confirm your email address by clicking below:</p>
+        <p><a th:href="${actionLink}" style="color: #2563eb;">Verify my email</a></p>
+        <p style="color: #6b7280; font-size: 13px;">This link expires in 24 hours. If you didn't request this, you can safely ignore this email.</p>
+    </div>
+</body>
+</html>

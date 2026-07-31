@@ -24,7 +24,10 @@ import java.time.Duration;
  * hits /api/v1/family-tree once per /tree or /family page load -- window
  * expansion is pure client-side slicing, no re-fetch, see
  * useTreeWindow.ts -- and /api/v1/persons search is live-typing
- * typeahead in admin forms) so normal use never trips them. Keyed by
+ * typeahead in admin forms) so normal use never trips them. Also throttles
+ * password-reset-request (inbox-spamming a target) and the two token-confirm
+ * endpoints (password-reset and email-verify, sharing one bucket -- cheap
+ * defense-in-depth against brute-forcing, see TokenService). Keyed by
  * client IP via X-Forwarded-For (set by nginx; see the
  * banshawali.yrbhatta.com vhost), falling back to the socket address for
  * direct/local calls.
@@ -39,6 +42,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
     static final Duration FAMILY_TREE_PERIOD = Duration.ofMinutes(1);
     static final int PERSON_SEARCH_CAPACITY = 60;
     static final Duration PERSON_SEARCH_PERIOD = Duration.ofMinutes(1);
+    // Request-side: stops inbox-spamming a target via repeated reset
+    // requests. Confirm-side: cheap defense-in-depth against token
+    // brute-forcing, even though 256-bit SecureRandom tokens (see
+    // TokenService) already make guessing infeasible on their own. Shared
+    // across both confirm endpoints (password-reset and email-verify) --
+    // same kind of action, no reason to track them separately.
+    static final int PASSWORD_RESET_REQUEST_CAPACITY = 5;
+    static final Duration PASSWORD_RESET_REQUEST_PERIOD = Duration.ofHours(1);
+    static final int TOKEN_CONFIRM_CAPACITY = 10;
+    static final Duration TOKEN_CONFIRM_PERIOD = Duration.ofMinutes(15);
 
     private final RateLimiter rateLimiter;
     // A plain instance, not the application's configured ObjectMapper bean:
@@ -60,6 +73,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean isLogin = "POST".equals(request.getMethod()) && "/login".equals(request.getRequestURI());
         boolean isFamilyTree = "GET".equals(request.getMethod()) && "/api/v1/family-tree".equals(request.getRequestURI());
         boolean isPersonSearch = "GET".equals(request.getMethod()) && "/api/v1/persons".equals(request.getRequestURI());
+        boolean isPasswordResetRequest = "POST".equals(request.getMethod())
+                && "/api/v1/password-reset/request".equals(request.getRequestURI());
+        boolean isTokenConfirm = "POST".equals(request.getMethod())
+                && ("/api/v1/password-reset/confirm".equals(request.getRequestURI())
+                        || "/api/v1/verify-email/confirm".equals(request.getRequestURI()));
 
         if (isSignup && !rateLimiter.tryConsume("signup", clientIp, SIGNUP_CAPACITY, SIGNUP_PERIOD)) {
             respondTooManyRequests(response, request.getRequestURI().startsWith("/api/"));
@@ -74,6 +92,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         if (isPersonSearch && !rateLimiter.tryConsume("person-search", clientIp, PERSON_SEARCH_CAPACITY, PERSON_SEARCH_PERIOD)) {
+            respondTooManyRequests(response, true);
+            return;
+        }
+        if (isPasswordResetRequest && !rateLimiter.tryConsume("password-reset-request", clientIp,
+                PASSWORD_RESET_REQUEST_CAPACITY, PASSWORD_RESET_REQUEST_PERIOD)) {
+            respondTooManyRequests(response, true);
+            return;
+        }
+        if (isTokenConfirm && !rateLimiter.tryConsume("token-confirm", clientIp, TOKEN_CONFIRM_CAPACITY, TOKEN_CONFIRM_PERIOD)) {
             respondTooManyRequests(response, true);
             return;
         }

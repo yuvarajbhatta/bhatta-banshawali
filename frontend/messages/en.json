@@ -661,9 +661,53 @@
     "zoomIn": "+ Zoom",
     "zoomOut": "- Zoom"
   },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your account email and we'll send you a link to reset your password.",
+    "emailLabel": "Email",
+    "submit": "Send Reset Link",
+    "submitting": "Sending…",
+    "successTitle": "Check Your Email",
+    "successBody": "If you didn't receive it within a few minutes, check your spam folder or contact support@yrbhatta.com.",
+    "backToLogin": "Back to Login",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "submit": "Reset Password",
+    "submitting": "Resetting…",
+    "successTitle": "Password Reset",
+    "successBody": "Your password has been reset. You can now log in with your new password.",
+    "loginLink": "Go to Login",
+    "invalidToken": "This reset link is invalid or has expired. Please request a new one.",
+    "mismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "verifyEmail": {
+    "title": "Verify Email",
+    "subtitle": "Click below to confirm your email address.",
+    "confirmButton": "Verify My Email",
+    "verifying": "Verifying…",
+    "successMessage": "Your email has been verified.",
+    "loginLink": "Go to Login",
+    "missingToken": "This verification link is missing its token.",
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "login": {
     "bottom": "Don't have an account?",
     "signUp": "Request membership",
+    "forgotPassword": "Forgot your password?",
     "heading": "Welcome back",
     "invalid": "Invalid username or password.",
     "loggedOut": "You have been logged out successfully.",

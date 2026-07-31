@@ -88,6 +88,60 @@ export async function submitSignup(request: SignupRequest): Promise<SignupRespon
   return body;
 }
 
+export class PasswordResetError extends Error {}
+
+// Anonymous, pre-session calls (no login yet) -- same relative-fetch,
+// CSRF-exempt pattern as submitSignup above, not adminApiRequest below
+// (which assumes an authenticated session and always attaches an
+// X-XSRF-TOKEN header).
+export async function requestPasswordReset(email: string): Promise<{ status: string }> {
+  const response = await fetch("/api/v1/password-reset/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new PasswordResetError(body.message ?? "Password reset request failed.");
+  }
+  return body;
+}
+
+export async function confirmPasswordReset(
+  token: string,
+  newPassword: string,
+  confirmNewPassword: string,
+): Promise<{ status: string }> {
+  const response = await fetch("/api/v1/password-reset/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword, confirmNewPassword }),
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new PasswordResetError(body.message ?? "Password reset failed.");
+  }
+  return body;
+}
+
+export class EmailVerificationError extends Error {}
+
+export async function confirmEmailVerification(token: string): Promise<{ status: string }> {
+  const response = await fetch("/api/v1/verify-email/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new EmailVerificationError(body.message ?? "Email verification failed.");
+  }
+  return body;
+}
+
 export async function convertAdToBs(dateAd: string): Promise<{ year: number; month: number; day: number }> {
   const response = await fetch(`/api/v1/date-conversion/ad-to-bs?date=${encodeURIComponent(dateAd)}`);
   if (!response.ok) {

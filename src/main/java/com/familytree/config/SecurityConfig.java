@@ -85,7 +85,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/api/v1/signup"))
+                        // Forgot-password and email-verification confirm are also
+                        // anonymous/pre-session (no session cookie to protect yet),
+                        // same reasoning as signup.
+                        .ignoringRequestMatchers("/api/v1/signup", "/api/v1/password-reset/request",
+                                "/api/v1/password-reset/confirm", "/api/v1/verify-email/confirm"))
                 .addFilterBefore(new RateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class)
                 // Default HttpSessionRequestCache caches ANY unauthenticated
                 // GET, including the Next.js login page's own "is this
@@ -150,6 +154,10 @@ public class SecurityConfig {
                         // account; reveals nothing about any person or family data.
                         .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
+                        // Forgot password / email verification confirm -- anonymous,
+                        // pre-session, matching signup's permitAll treatment above.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/password-reset/request",
+                                "/api/v1/password-reset/confirm", "/api/v1/verify-email/confirm").permitAll()
                         // Scraped by the local Prometheus only; the app port is bound on
                         // all interfaces, so restrict the endpoint to loopback callers.
                         .requestMatchers("/actuator/prometheus").access(

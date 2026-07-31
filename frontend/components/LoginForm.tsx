@@ -82,7 +82,12 @@ export function LoginForm() {
       </div>
 
       <div className={styles.field}>
-        <label htmlFor="password">{t("password")}</label>
+        <div className={styles.passwordLabelRow}>
+          <label htmlFor="password">{t("password")}</label>
+          <Link href="/forgot-password" className={styles.forgotPasswordLink}>
+            {t("forgotPassword")}
+          </Link>
+        </div>
         <div className={styles.passwordWrapper}>
           <input
             id="password"

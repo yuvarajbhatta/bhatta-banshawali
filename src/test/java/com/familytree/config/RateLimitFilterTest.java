@@ -193,6 +193,66 @@ class RateLimitFilterTest {
         }
     }
 
+    @Test
+    void allowsPasswordResetRequestsUpToTheLimitThenBlocks() throws Exception {
+        for (int i = 0; i < RateLimitFilter.PASSWORD_RESET_REQUEST_CAPACITY; i++) {
+            MockHttpServletRequest request = passwordResetRequestRequest("203.0.113.80");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(passwordResetRequestRequest("203.0.113.80"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+        assertThat(blockedResponse.getContentType()).startsWith("application/json");
+    }
+
+    @Test
+    void passwordResetConfirmAndVerifyEmailConfirmShareOneTokenConfirmBucket() throws Exception {
+        for (int i = 0; i < RateLimitFilter.TOKEN_CONFIRM_CAPACITY; i++) {
+            filter.doFilter(passwordResetConfirmRequest("203.0.113.81"), new MockHttpServletResponse(), filterChain);
+        }
+        // Quota exhausted via password-reset/confirm; verify-email/confirm
+        // shares the same bucket, so it's blocked too.
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(verifyEmailConfirmRequest("203.0.113.81"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void tokenConfirmLimitIsIndependentOfPasswordResetRequestLimit() throws Exception {
+        for (int i = 0; i < RateLimitFilter.PASSWORD_RESET_REQUEST_CAPACITY; i++) {
+            filter.doFilter(passwordResetRequestRequest("203.0.113.82"), new MockHttpServletResponse(), filterChain);
+        }
+        // Request-side quota is exhausted for this IP, but confirm is a
+        // different scope.
+        MockHttpServletResponse confirmResponse = new MockHttpServletResponse();
+        filter.doFilter(passwordResetConfirmRequest("203.0.113.82"), confirmResponse, filterChain);
+
+        assertThat(confirmResponse.getStatus()).isEqualTo(200);
+    }
+
+    private MockHttpServletRequest passwordResetRequestRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/password-reset/request");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest passwordResetConfirmRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/password-reset/confirm");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest verifyEmailConfirmRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/verify-email/confirm");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
     private MockHttpServletRequest familyTreeRequest(String clientIp) {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/family-tree");
         request.addHeader("X-Forwarded-For", clientIp);

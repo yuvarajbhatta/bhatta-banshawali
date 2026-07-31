@@ -56,6 +56,12 @@ public class UserAccount {
 
     private LocalDateTime lastLoginAt;
 
+    // Set once the applicant clicks their verification email link (see
+    // EmailVerificationService) -- deliberately independent of `status`
+    // above: it's an admin-review signal and a place for password-reset
+    // to land, not a login gate. See TokenPurpose.EMAIL_VERIFICATION.
+    private LocalDateTime emailVerifiedAt;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_account_roles",
@@ -122,6 +128,14 @@ public class UserAccount {
 
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    public LocalDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
     }
 
     public Set<Role> getRoles() {

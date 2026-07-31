@@ -3,11 +3,13 @@ package com.familytree.services;
 import com.familytree.dto.SignupRequestDto;
 import com.familytree.entity.MatchConfidence;
 import com.familytree.entity.Person;
+import com.familytree.entity.TokenPurpose;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.email.EmailService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +24,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,6 +44,12 @@ class SignupServiceTest {
 
     @Mock
     private FamilyMatchService familyMatchService;
+
+    @Mock
+    private TokenService tokenService;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private SignupService signupService;
@@ -100,6 +110,36 @@ class SignupServiceTest {
 
         verify(userAccountRepository, never()).save(any());
         verify(verificationRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void issuesEmailVerificationTokenAndSendsVerificationEmail() {
+        SignupRequestDto request = validRequest();
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
+        when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
+
+        signupService.submitSignup(request);
+
+        verify(tokenService).issueToken(any(UserAccount.class), eq(TokenPurpose.EMAIL_VERIFICATION));
+        verify(emailService).sendVerificationEmail("yuva@example.com", "raw-token", "en");
+    }
+
+    @Test
+    void signupStillSavesEverythingWhenSendingTheVerificationEmailFails() {
+        SignupRequestDto request = validRequest();
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
+        when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of()));
+        when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
+        doThrow(new RuntimeException("SMTP down")).when(emailService)
+                .sendVerificationEmail(any(), any(), any());
+
+        signupService.submitSignup(request);
+
+        verify(userAccountRepository).save(any(UserAccount.class));
+        verify(verificationRequestRepository).save(any(VerificationRequest.class));
     }
 
     @Test

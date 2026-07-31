@@ -2,7 +2,9 @@ package com.familytree.controller;
 
 import com.familytree.calendar.UnsupportedDateRangeException;
 import com.familytree.dto.ErrorResponseDto;
+import com.familytree.services.AccountNotFoundException;
 import com.familytree.services.EmailAlreadyRegisteredException;
+import com.familytree.services.InvalidOrExpiredTokenException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,6 +28,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public ResponseEntity<ErrorResponseDto> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDto(exception.getMessage()));
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleAccountNotFound(AccountNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponseDto(exception.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidOrExpiredTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidOrExpiredToken(InvalidOrExpiredTokenException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponseDto(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

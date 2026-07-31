@@ -9,6 +9,8 @@ public class AppProperties {
     private final DevUser devUser = new DevUser();
     private final Lineage lineage = new Lineage();
     private final Names names = new Names();
+    private final Email email = new Email();
+    private String frontendBaseUrl = "";
 
     public Admin getAdmin() {
         return admin;
@@ -24,6 +26,18 @@ public class AppProperties {
 
     public Names getNames() {
         return names;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public String getFrontendBaseUrl() {
+        return frontendBaseUrl;
+    }
+
+    public void setFrontendBaseUrl(String frontendBaseUrl) {
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     public static class Admin {
@@ -98,6 +112,27 @@ public class AppProperties {
 
         public void setBackfillMissingNepaliOnStartup(boolean backfillMissingNepaliOnStartup) {
             this.backfillMissingNepaliOnStartup = backfillMissingNepaliOnStartup;
+        }
+    }
+
+    public static class Email {
+        private boolean enabled = false;
+        private String fromAddress = "";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getFromAddress() {
+            return fromAddress;
+        }
+
+        public void setFromAddress(String fromAddress) {
+            this.fromAddress = fromAddress;
         }
     }
 }
