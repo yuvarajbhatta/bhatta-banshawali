@@ -40,7 +40,7 @@ See `adr/001-frontend-and-backend-architecture.md` for the formal ADR. Summary: 
 
 - **React Flow** for node/edge rendering and interaction (pan/zoom/selection), **Dagre or ELK.js** for automatic hierarchical layout of subtrees.
 - **Server-driven, viewport/branch-scoped payloads**: the API returns only the generations/branches currently in view or requested (lazy expand/collapse), never the entire graph in one response. This is a hard requirement once the dataset exceeds a few hundred people, and the API should be designed this way from the start rather than retrofitted.
-- **Benchmark before committing**: load-test the chosen approach against synthetic datasets of 500, 2,000, and (if plausible for this family's actual size) 10,000 people before finalizing the lazy-loading page-size defaults.
+- **Benchmark before committing**: load-test the chosen approach against synthetic datasets of 500, 2,000, and (if plausible for this family's actual size) 10,000 people before finalizing the lazy-loading page-size defaults. **Confirmed necessary, not just theoretical (2026-07-31)**: this lazy/viewport-scoped loading was never actually built — `/api/v1/family-tree` still returns the whole graph in one response — and benchmarking that as-built approach shows exactly the super-linear degradation this section predicted (500→2,000 people: Dagre layout time ~0.9s→~18s). See `docs/08-implementation-roadmap.md` Phase 5 for full results.
 
 ## Authentication & Sessions
 

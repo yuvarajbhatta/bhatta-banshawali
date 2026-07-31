@@ -38,7 +38,43 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
 ## Phase 5 — Genealogy Experiences 🟡
 - ✅ Your Family page (ancestors, descendants, relationship-path finder).
 - ✅ Whole Banshawali tree (`/tree`) with the forest-green redesign.
-- ⬜ **Performance benchmarks not done**: no benchmark scripts/tests found for 500/2,000/10,000-person synthetic datasets. This was a sign-off gate for the phase and should be treated as outstanding.
+- 🟡 **Performance benchmarks run (2026-07-31) — result: fail, gate does not pass as built.**
+  `scripts/benchmark/generate-synthetic-family.py` generates a plausible multi-generation tree
+  (bulk SQL, disposable dev DB only, never production) at N=500 and N=2,000. Findings:
+
+  | N | Backend (`GET /api/v1/family-tree`) | Payload | Dagre layout alone (Node, steady-state) | Real browser: time to fully rendered tree (production build) |
+  |---|---|---|---|---|
+  | 500 | ~75ms | 103 KB | ~0.9s | ~5s |
+  | 2,000 | ~200ms | 417 KB | ~18s | ~30-35s |
+
+  **The backend is not the problem** — `FamilyTreeAssembler` is a fast, simple bulk load at both
+  scales. The problem is entirely client-side: `docs/03-target-architecture.md` calls
+  server-driven, viewport-scoped lazy loading a "hard requirement" once the dataset exceeds a few
+  hundred people, but this was never built — `FamilyTreeAssembler.buildTree()`'s own Javadoc
+  already says "this endpoint returns every person in one response," and both `/tree` and `/family`
+  fetch that single payload and run the *entire* set through `@dagrejs/dagre` layout
+  (`useFamilyTreeLayout.ts`) synchronously on the main thread, then render every node as a real
+  React Flow DOM/SVG element with no virtualization. Growth from 500→2,000 (4x the people) produced
+  ~20x the Dagre layout time and ~6-7x the real end-to-end render time — clearly super-linear, not
+  just "a bit slower." **N=10,000 was deliberately not run**: extrapolating the observed scaling
+  put it at several minutes, which would have added no further decision value (the verdict was
+  already unambiguous at 2,000) for a real cost in session time.
+  Initial testing showed the tree never rendering at all even at N=500 after 30+ seconds — that
+  turned out to be a `next dev` artifact (dev-mode compilation/HMR overhead), not a real production
+  characteristic; re-tested against an actual production build (`npm run build && npm run start`)
+  before drawing any conclusion, which is the number in the table above. Screenshots taken during
+  testing confirm the tree renders correctly once complete — this is a **speed** problem, not a
+  correctness bug.
+  **Recommendation**: build the deferred lazy-loading — the architecture doc's own suggested shape
+  (page/fetch by generation or branch, not the whole graph) is the right starting point, since
+  `PersonTreeNodeDto` already carries `generationNumber` and the `/tree` page already has a
+  generation filter client-side that could become a real server-side query parameter instead. This
+  is a real, separate feature (new scoped endpoint + incremental-fetch frontend work), not something
+  to build as a side effect of running this benchmark — flagging it clearly, same as the
+  `app_users` AUTO_INCREMENT drift and `PersonService.deletePersonById`'s missing re-pointing were
+  flagged rather than silently fixed earlier. Until it's built, this phase is functionally usable
+  for families the size of the real data today (small) but will degrade badly if the tree grows
+  toward the low thousands.
 
 ## Phase 6 — Administration and Data Quality ✅
 - ✅ People/relationship admin CRUD, audit log viewer, role/account management, unlinked-account fixer, signup and correction review queues, content management.
@@ -55,7 +91,7 @@ Each phase ends with: run all relevant tests, update docs, summarize files chang
   - ⬜ Deployment runbook update, production readiness checklist, rollback plan.
 
 ## Overall
-Phases 0, 1, 2, 3, 4, and 6 are now done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phase 6's last two gaps (duplicate detection + guided merge, data-quality reports) are built and verified end-to-end against a real dev database. Phase 5 still has one named gap (performance benchmarks at 500/2,000/10,000 synthetic people). Phase 7 hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. Best next candidate: Phase 5 (performance benchmarks) — the only remaining gap outside Phase 7.
+Phases 0, 1, 2, 3, 4, and 6 are now done. Phase 3's open policy question is resolved (manual review only, permanently). Phase 1's staging-environment question is resolved (intentionally not built; disposable-database rehearsal instead) and its CI static-analysis gap is closed (CodeQL added; Dependabot was already there). Phase 6's last two gaps (duplicate detection + guided merge, data-quality reports) are built and verified end-to-end against a real dev database. Phase 5's benchmark gate has now actually been run (2026-07-31) rather than left outstanding — the result is a genuine fail: the `/tree` page's whole-graph, client-side Dagre-layout approach degrades super-linearly and needs the lazy/viewport-scoped loading the architecture doc always called a hard requirement, not yet built. That's now a concrete, scoped follow-up (see Phase 5 above) rather than an open question. Phase 7 hasn't started, and its backup/restore drill is blocked on host-level backup tooling that doesn't exist yet for *any* app on this box — that's a bigger, host-wide task outside this repo's scope. The two things worth doing next: build the `/tree` lazy-loading follow-up (real user-facing risk once the tree grows), or move on to Phase 7.
 
 ## Sequencing Notes
 
