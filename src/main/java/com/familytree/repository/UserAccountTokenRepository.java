@@ -12,4 +12,6 @@ public interface UserAccountTokenRepository extends JpaRepository<UserAccountTok
     Optional<UserAccountToken> findByTokenHashAndPurpose(String tokenHash, TokenPurpose purpose);
 
     List<UserAccountToken> findByUserAccountIdAndPurposeAndConsumedAtIsNull(Long userAccountId, TokenPurpose purpose);
+
+    List<UserAccountToken> findByUserAccountId(Long userAccountId);
 }

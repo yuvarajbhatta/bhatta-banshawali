@@ -13,6 +13,7 @@ import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
+import com.familytree.repository.UserAccountTokenRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import com.familytree.web.PersonDisplayHelper;
@@ -66,6 +67,9 @@ class UserAccountAdminServiceTest {
 
     @Mock
     private UserPersonLinkService userPersonLinkService;
+
+    @Mock
+    private UserAccountTokenRepository userAccountTokenRepository;
 
     @InjectMocks
     private UserAccountAdminService service;
@@ -333,6 +337,9 @@ class UserAccountAdminServiceTest {
         com.familytree.entity.AdminAccessRequest ownAccessRequest = new com.familytree.entity.AdminAccessRequest();
         when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of(ownAccessRequest));
 
+        com.familytree.entity.UserAccountToken ownToken = new com.familytree.entity.UserAccountToken();
+        when(userAccountTokenRepository.findByUserAccountId(6L)).thenReturn(List.of(ownToken));
+
         service.delete(6L, "admin");
 
         assertThat(reviewedByThisAccount.getReviewedBy()).isNull();
@@ -340,6 +347,7 @@ class UserAccountAdminServiceTest {
         verify(userPersonLinkRepository).deleteAll(List.of(ownLink));
         verify(verificationRequestRepository).deleteAll(List.of(ownSignup));
         verify(adminAccessRequestRepository).deleteAll(List.of(ownAccessRequest));
+        verify(userAccountTokenRepository).deleteAll(List.of(ownToken));
         verify(userAccountRepository).delete(account);
         verify(auditLogService).record(AuditLogService.ACTION_ACCOUNT_DELETED, AuditLogService.ENTITY_USER_ACCOUNT,
                 6L, "Deleted account fake@example.com", "admin");

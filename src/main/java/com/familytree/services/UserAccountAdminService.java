@@ -13,6 +13,7 @@ import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
+import com.familytree.repository.UserAccountTokenRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import com.familytree.web.PersonDisplayHelper;
@@ -49,6 +50,7 @@ public class UserAccountAdminService {
     private final AuditLogService auditLogService;
     private final PersonDisplayHelper personDisplay;
     private final UserPersonLinkService userPersonLinkService;
+    private final UserAccountTokenRepository userAccountTokenRepository;
 
     public UserAccountAdminService(UserAccountRepository userAccountRepository,
                                    UserPersonLinkRepository userPersonLinkRepository,
@@ -58,7 +60,8 @@ public class UserAccountAdminService {
                                    PersonRepository personRepository,
                                    AuditLogService auditLogService,
                                    PersonDisplayHelper personDisplay,
-                                   UserPersonLinkService userPersonLinkService) {
+                                   UserPersonLinkService userPersonLinkService,
+                                   UserAccountTokenRepository userAccountTokenRepository) {
         this.userAccountRepository = userAccountRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.verificationRequestRepository = verificationRequestRepository;
@@ -68,6 +71,7 @@ public class UserAccountAdminService {
         this.auditLogService = auditLogService;
         this.personDisplay = personDisplay;
         this.userPersonLinkService = userPersonLinkService;
+        this.userAccountTokenRepository = userAccountTokenRepository;
     }
 
     public List<AdminUserAccountDto> listAll() {
@@ -224,16 +228,18 @@ public class UserAccountAdminService {
 
     /**
      * Permanently wipes the account -- their own signup submissions,
-     * person link, correction submissions, and admin-access requests --
-     * so the email address is free for a fresh signup. Backward
-     * references where this account acted as a reviewer/verifier of
-     * someone else's request are nulled out (those columns are nullable
-     * and the reviewer's username is already preserved separately as a
-     * string), not deleted, so other people's review history survives.
+     * person link, correction submissions, admin-access requests, and
+     * password-reset/email-verification tokens -- so the email address
+     * is free for a fresh signup. Backward references where this account
+     * acted as a reviewer/verifier of someone else's request are nulled
+     * out (those columns are nullable and the reviewer's username is
+     * already preserved separately as a string), not deleted, so other
+     * people's review history survives.
      *
      * @throws IllegalArgumentException if the acting admin tries to delete their own
      *          account, or the target account currently has admin access (revoke it
-     *          first via {@link #revokeAdminAccess}, then delete)
+     *          first via {@link #revokeAdminAccess}, then delete) -- deleting an admin
+     *          account is a deliberately harder, two-step action, not one click
      */
     @Transactional
     public void delete(Long userAccountId, String actorUsername) {
@@ -253,6 +259,7 @@ public class UserAccountAdminService {
         personCorrectionRequestRepository.deleteAll(personCorrectionRequestRepository.findBySubmittedById(userAccountId));
         adminAccessRequestRepository.deleteAll(adminAccessRequestRepository.findByUserAccountId(userAccountId));
         verificationRequestRepository.deleteAll(verificationRequestRepository.findByUserAccountId(userAccountId));
+        userAccountTokenRepository.deleteAll(userAccountTokenRepository.findByUserAccountId(userAccountId));
         userAccountRepository.delete(account);
 
         auditLogService.record(AuditLogService.ACTION_ACCOUNT_DELETED, AuditLogService.ENTITY_USER_ACCOUNT,
