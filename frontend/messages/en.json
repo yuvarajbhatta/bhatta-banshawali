@@ -179,9 +179,8 @@
       "generation": "Generation {number}",
       "viewFullProfile": "View full profile",
       "familyTitle": "Your Family",
-      "familyHint": "Drag to rotate the view -- click a name to open their profile.",
-      "father": "Father",
-      "mother": "Mother",
+      "familyHint": "Your lineage, back through your recorded ancestors -- click a name to open their profile.",
+      "ancestorChainUnknown": "No ancestors recorded yet.",
       "viewYourFamily": "View Your Family",
       "viewFullTree": "View Full Tree",
       "browseDirectory": "Browse the Directory"

@@ -185,6 +185,10 @@ export interface MemberProfileDto {
   linked: boolean;
   person: PersonSummaryDto | null;
   family: FamilySnapshotDto | null;
+  // Self included, walking the FATHER line as far back as it's recorded --
+  // the same lineage view an admin sees when linking a signup (see
+  // MatchCandidateDto.ancestorChain / PersonProfileAssembler.ancestorChain).
+  ancestorChain: PersonSummaryDto[];
 }
 
 export type MemberProfileResult =

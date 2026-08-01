@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/motion/Reveal";
-import { FamilyConstellation } from "@/components/dashboard/FamilyConstellation";
+import { AncestorChain } from "@/components/dashboard/AncestorChain";
 import type { MemberProfileDto } from "@/lib/api";
 import styles from "./MemberDashboard.module.css";
 
@@ -17,7 +17,7 @@ export async function MemberDashboard({ profile }: { profile: MemberProfileDto }
     );
   }
 
-  const { person, family } = profile;
+  const { person, ancestorChain } = profile;
 
   return (
     <div className={styles.dashboard}>
@@ -43,7 +43,7 @@ export async function MemberDashboard({ profile }: { profile: MemberProfileDto }
             <h3>{t("familyTitle")}</h3>
             <p className={styles.familyHint}>{t("familyHint")}</p>
           </div>
-          <FamilyConstellation self={person} family={family} fatherLabel={t("father")} motherLabel={t("mother")} />
+          <AncestorChain chain={ancestorChain} />
           <div className={styles.viewTreeAction}>
             <Link href="/family">
               <Button variant="primary">{t("viewYourFamily")}</Button>

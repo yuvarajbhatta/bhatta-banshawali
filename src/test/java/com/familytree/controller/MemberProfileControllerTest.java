@@ -1,6 +1,7 @@
 package com.familytree.controller;
 
 import com.familytree.dto.MemberProfileDto;
+import com.familytree.dto.PersonSummaryDto;
 import com.familytree.entity.Person;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserPersonLink;
@@ -121,6 +122,7 @@ class MemberProfileControllerTest {
         assertThat(profile.family().spouses()).isEmpty();
         assertThat(profile.family().children()).hasSize(1);
         assertThat(profile.family().children().get(0).englishFullName()).isEqualTo("Kiran");
+        assertThat(profile.ancestorChain()).extracting(PersonSummaryDto::id).containsExactly(100L, 101L);
     }
 
     @Test

@@ -9,8 +9,7 @@ import styles from "./HeroScene.module.css";
 /**
  * Purely decorative -- an abstract, unlabeled branching structure
  * evoking a family tree/star-map, sitting behind the hero copy. Not
- * built from real data (that's the dashboard's FamilyConstellation);
- * this is atmosphere.
+ * built from real data; this is atmosphere.
  */
 export function HeroScene() {
   const quality = useSceneQuality();
