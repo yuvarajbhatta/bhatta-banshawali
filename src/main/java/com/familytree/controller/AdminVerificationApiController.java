@@ -3,7 +3,7 @@ package com.familytree.controller;
 import com.familytree.dto.AdminSignupDecisionRequestDto;
 import com.familytree.dto.AdminSignupDetailDto;
 import com.familytree.dto.AdminSignupSummaryDto;
-import com.familytree.dto.PersonSummaryDto;
+import com.familytree.dto.MatchCandidateDto;
 import com.familytree.entity.Person;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
@@ -70,17 +70,22 @@ public class AdminVerificationApiController {
     public AdminSignupDetailDto detail(@PathVariable Long id, Authentication authentication) {
         VerificationRequest request = getOrThrow(id);
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
-        List<PersonSummaryDto> candidates = resolveCandidatePersons(request.getMatchedCandidatePersonIds()).stream()
-                .map(person -> personProfileAssembler.summarize(person, viewer))
-                .toList();
-        // summarizeForSearch() (not summarize()) resolves each father
-        // candidate's OWN father into parentHint -- the grandfather
-        // corroboration -- reusing the disambiguation pattern already
-        // added to PersonPicker.tsx's search results.
-        List<PersonSummaryDto> fatherCandidates = resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()).stream()
-                .map(person -> personProfileAssembler.summarizeForSearch(person, viewer))
-                .toList();
+        List<MatchCandidateDto> candidates = toMatchCandidates(
+                resolveCandidatePersons(request.getMatchedCandidatePersonIds()), viewer);
+        List<MatchCandidateDto> fatherCandidates = toMatchCandidates(
+                resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()), viewer);
         return toDetail(request, candidates, fatherCandidates);
+    }
+
+    // Each candidate's ancestorChain (the FATHER line, as far back as it's
+    // recorded) is what actually lets the admin tell same-named candidates
+    // apart -- see PersonProfileAssembler.ancestorChain.
+    private List<MatchCandidateDto> toMatchCandidates(List<Person> persons, ViewerContext viewer) {
+        return persons.stream()
+                .map(person -> new MatchCandidateDto(
+                        personProfileAssembler.summarize(person, viewer),
+                        personProfileAssembler.ancestorChain(person, viewer)))
+                .toList();
     }
 
     @PostMapping("/{id}/approve")
@@ -120,8 +125,8 @@ public class AdminVerificationApiController {
         );
     }
 
-    private AdminSignupDetailDto toDetail(VerificationRequest request, List<PersonSummaryDto> candidates,
-                                          List<PersonSummaryDto> fatherCandidates) {
+    private AdminSignupDetailDto toDetail(VerificationRequest request, List<MatchCandidateDto> candidates,
+                                          List<MatchCandidateDto> fatherCandidates) {
         return new AdminSignupDetailDto(
                 request.getId(),
                 request.getSubmittedFullName(),

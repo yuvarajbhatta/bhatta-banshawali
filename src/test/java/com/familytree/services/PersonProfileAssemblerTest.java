@@ -271,4 +271,84 @@ class PersonProfileAssemblerTest {
         assertThat(snapshot.father().englishFullName()).isEqualTo("Bhoj");
         assertThat(snapshot.father().birthDate()).isNull();
     }
+
+    @Test
+    void ancestorChainWalksTheFatherLineIncludingThePersonItself() {
+        // A real, multi-generation chain -- proves the walk doesn't stop
+        // after one or two hops, which is the whole point of this method.
+        Person yuva = new Person();
+        yuva.setId(1L);
+        yuva.setFirstName("Yuva Raj");
+        yuva.setLastName("Bhatta");
+
+        Person father = new Person();
+        father.setId(2L);
+        father.setFirstName("Bhoj Raj");
+        father.setLastName("Bhatta");
+
+        Person grandfather = new Person();
+        grandfather.setId(3L);
+        grandfather.setFirstName("Jhanka Nath");
+        grandfather.setLastName("Bhatta");
+
+        Person greatGrandfather = new Person();
+        greatGrandfather.setId(4L);
+        greatGrandfather.setFirstName("Megh Nath");
+        greatGrandfather.setLastName("Bhatta");
+
+        when(relationshipService.getRelationshipsByPersonAndType(yuva, RelationshipType.FATHER))
+                .thenReturn(List.of(relationshipTo(father)));
+        when(relationshipService.getRelationshipsByPersonAndType(father, RelationshipType.FATHER))
+                .thenReturn(List.of(relationshipTo(grandfather)));
+        when(relationshipService.getRelationshipsByPersonAndType(grandfather, RelationshipType.FATHER))
+                .thenReturn(List.of(relationshipTo(greatGrandfather)));
+        when(relationshipService.getRelationshipsByPersonAndType(greatGrandfather, RelationshipType.FATHER))
+                .thenReturn(List.of());
+
+        List<PersonSummaryDto> chain = assembler().ancestorChain(yuva, ADMIN);
+
+        assertThat(chain).extracting(PersonSummaryDto::englishFullName)
+                .containsExactly("Yuva Raj Bhatta", "Bhoj Raj Bhatta", "Jhanka Nath Bhatta", "Megh Nath Bhatta");
+    }
+
+    @Test
+    void ancestorChainIsJustThePersonWhenNoFatherIsRecorded() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setFirstName("Latadev");
+        person.setLastName("Bhatta");
+        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
+
+        List<PersonSummaryDto> chain = assembler().ancestorChain(person, ADMIN);
+
+        assertThat(chain).extracting(PersonSummaryDto::englishFullName).containsExactly("Latadev Bhatta");
+    }
+
+    @Test
+    void ancestorChainStopsAtASafetyDepthRatherThanLoopingForeverOnACycle() {
+        // Historical data could in principle contain a cycle predating
+        // saveRelationshipWithAutoLinks's cycle guard -- this must
+        // terminate rather than hang.
+        Person a = new Person();
+        a.setId(1L);
+        a.setFirstName("A");
+        Person b = new Person();
+        b.setId(2L);
+        b.setFirstName("B");
+
+        when(relationshipService.getRelationshipsByPersonAndType(a, RelationshipType.FATHER))
+                .thenReturn(List.of(relationshipTo(b)));
+        when(relationshipService.getRelationshipsByPersonAndType(b, RelationshipType.FATHER))
+                .thenReturn(List.of(relationshipTo(a)));
+
+        List<PersonSummaryDto> chain = assembler().ancestorChain(a, ADMIN);
+
+        assertThat(chain).hasSize(50);
+    }
+
+    private Relationship relationshipTo(Person father) {
+        Relationship relationship = new Relationship();
+        relationship.setRelatedPerson(father);
+        return relationship;
+    }
 }

@@ -14,8 +14,10 @@ import java.util.List;
  * themselves -- see VerificationRequest.matchedCandidatePersonIds /
  * matchedFatherCandidatePersonIds. candidates are existing Person records
  * to link the account to directly; fatherCandidates are existing fathers
- * to create a brand-new Person as a child of (each entry's parentHint is
- * that father's own father -- the grandfather corroboration).
+ * to create a brand-new Person as a child of. Each candidate's
+ * ancestorChain (see PersonProfileAssembler.ancestorChain) is what lets
+ * the admin tell apart several same-named candidates by their actual
+ * lineage, instead of an opaque ID.
  */
 public record AdminSignupDetailDto(
         Long id,
@@ -40,7 +42,7 @@ public record AdminSignupDetailDto(
         LocalDateTime reviewedAt,
         String decisionNote,
         LocalDateTime createdAt,
-        List<PersonSummaryDto> candidates,
-        List<PersonSummaryDto> fatherCandidates
+        List<MatchCandidateDto> candidates,
+        List<MatchCandidateDto> fatherCandidates
 ) {
 }

@@ -9,6 +9,7 @@ import {
   rejectSignup,
   requestMoreInfoSignup,
   type AdminSignupDetailDto,
+  type MatchCandidateDto,
 } from "@/lib/api";
 import { Badge, matchConfidenceTone, verificationStatusTone } from "./Badge";
 import styles from "./SignupDetail.module.css";
@@ -146,26 +147,19 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
             </thead>
             <tbody>
               {detail.candidates.map((candidate) => (
-                <tr key={candidate.id}>
-                  {detail.status === "PENDING" ? (
-                    <td>
-                      <input
-                        type="radio"
-                        name="matchSelection"
-                        checked={selectedMatch?.type === "link" && selectedMatch.personId === candidate.id}
-                        onChange={() => setSelectedMatch({ type: "link", personId: candidate.id })}
-                        aria-label={candidate.englishFullName}
-                      />
-                    </td>
-                  ) : null}
-                  <td>{candidate.id}</td>
-                  <td>
-                    <Link href={`/directory/${candidate.id}`} className={styles.candidateLink}>
-                      {candidate.englishFullName}
-                    </Link>
-                  </td>
-                  <td>{candidate.generationNumber ?? "—"}</td>
-                </tr>
+                <CandidateRows
+                  key={candidate.person.id}
+                  candidate={candidate}
+                  columns={detail.status === "PENDING" ? 4 : 3}
+                  radio={
+                    detail.status === "PENDING"
+                      ? {
+                          checked: selectedMatch?.type === "link" && selectedMatch.personId === candidate.person.id,
+                          onChange: () => setSelectedMatch({ type: "link", personId: candidate.person.id }),
+                        }
+                      : null
+                  }
+                />
               ))}
             </tbody>
           </table>
@@ -182,32 +176,23 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
                   <th>ID</th>
                   <th>{t("fatherName")}</th>
                   <th>Generation</th>
-                  <th>{t("grandfatherName")}</th>
                 </tr>
               </thead>
               <tbody>
                 {detail.fatherCandidates.map((candidate) => (
-                  <tr key={candidate.id}>
-                    {detail.status === "PENDING" ? (
-                      <td>
-                        <input
-                          type="radio"
-                          name="matchSelection"
-                          checked={selectedMatch?.type === "createChild" && selectedMatch.fatherId === candidate.id}
-                          onChange={() => setSelectedMatch({ type: "createChild", fatherId: candidate.id })}
-                          aria-label={candidate.englishFullName}
-                        />
-                      </td>
-                    ) : null}
-                    <td>{candidate.id}</td>
-                    <td>
-                      <Link href={`/directory/${candidate.id}`} className={styles.candidateLink}>
-                        {candidate.englishFullName}
-                      </Link>
-                    </td>
-                    <td>{candidate.generationNumber ?? "—"}</td>
-                    <td>{candidate.parentHint ?? "—"}</td>
-                  </tr>
+                  <CandidateRows
+                    key={candidate.person.id}
+                    candidate={candidate}
+                    columns={detail.status === "PENDING" ? 4 : 3}
+                    radio={
+                      detail.status === "PENDING"
+                        ? {
+                            checked: selectedMatch?.type === "createChild" && selectedMatch.fatherId === candidate.person.id,
+                            onChange: () => setSelectedMatch({ type: "createChild", fatherId: candidate.person.id }),
+                          }
+                        : null
+                    }
+                  />
                 ))}
               </tbody>
             </table>
@@ -257,5 +242,56 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
         )}
       </div>
     </div>
+  );
+}
+
+interface CandidateRowsProps {
+  candidate: MatchCandidateDto;
+  columns: number;
+  radio: { checked: boolean; onChange: () => void } | null;
+}
+
+// A real family tree with a shared surname and a small pool of recurring
+// first names can produce several identically-named candidates -- a bare
+// name and ID is useless for telling them apart. The ancestor-chain row
+// beneath each candidate is what actually lets the admin recognize the
+// correct lineage, the same way they'd recognize their own family by
+// name rather than by an arbitrary database ID.
+function CandidateRows({ candidate, columns, radio }: CandidateRowsProps) {
+  const t = useTranslations("adminSignupsPage");
+  const { person, ancestorChain } = candidate;
+
+  return (
+    <>
+      <tr>
+        {radio ? (
+          <td>
+            <input type="radio" name="matchSelection" checked={radio.checked} onChange={radio.onChange} aria-label={person.englishFullName} />
+          </td>
+        ) : null}
+        <td>{person.id}</td>
+        <td>
+          <Link href={`/directory/${person.id}`} className={styles.candidateLink}>
+            {person.englishFullName}
+          </Link>
+        </td>
+        <td>{person.generationNumber ?? "—"}</td>
+      </tr>
+      <tr>
+        <td colSpan={columns} className={styles.ancestorChainCell}>
+          <span className={styles.ancestorChainLabel}>{t("ancestorChain")}: </span>
+          {ancestorChain.length > 1
+            ? ancestorChain.map((ancestor, index) => (
+                <span key={ancestor.id}>
+                  {index > 0 ? " → " : ""}
+                  <Link href={`/directory/${ancestor.id}`} className={styles.candidateLink}>
+                    {ancestor.englishFullName}
+                  </Link>
+                </span>
+              ))
+            : t("ancestorChainUnknown")}
+        </td>
+      </tr>
+    </>
   );
 }

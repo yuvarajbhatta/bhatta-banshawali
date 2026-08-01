@@ -9,6 +9,7 @@ import com.familytree.entity.RelationshipType;
 import com.familytree.web.PersonDisplayHelper;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -66,6 +67,29 @@ public class PersonProfileAssembler {
                 canSeeSensitive ? person.getBirthDate() : null,
                 parentHint
         );
+    }
+
+    // A real family tree with a shared surname and a small pool of recurring
+    // first names can produce several identically-named father candidates
+    // during signup review -- a bare name is useless for telling them
+    // apart. This walks the FATHER line (person included, as the first
+    // entry) as far back as it's recorded, so the admin can visually
+    // recognize the correct lineage the same way they'd recognize their
+    // own family by name, not just by an arbitrary database ID. Capped at
+    // a generous depth purely as a defensive guard against bad historical
+    // data forming a cycle -- saveRelationshipWithAutoLinks already blocks
+    // new cycles, but this is a read path over data that could predate it.
+    private static final int MAX_ANCESTOR_CHAIN_DEPTH = 50;
+
+    public List<PersonSummaryDto> ancestorChain(Person person, ViewerContext viewer) {
+        List<PersonSummaryDto> chain = new ArrayList<>();
+        Person current = person;
+        for (int depth = 0; current != null && depth < MAX_ANCESTOR_CHAIN_DEPTH; depth++) {
+            chain.add(summarize(current, viewer));
+            current = relationshipService.getRelationshipsByPersonAndType(current, RelationshipType.FATHER)
+                    .stream().findFirst().map(Relationship::getRelatedPerson).orElse(null);
+        }
+        return chain;
     }
 
     public FamilySnapshotDto familySnapshot(Person person, ViewerContext viewer) {

@@ -126,7 +126,9 @@ class AdminVerificationApiControllerTest {
         AdminSignupDetailDto detail = controller().detail(5L, asAdmin());
 
         assertThat(detail.candidates()).hasSize(2);
-        assertThat(detail.candidates().get(0).englishFullName()).isEqualTo("Bhoj Bhatta");
+        assertThat(detail.candidates().get(0).person().englishFullName()).isEqualTo("Bhoj Bhatta");
+        assertThat(detail.candidates().get(0).ancestorChain()).extracting(p -> p.englishFullName())
+                .containsExactly("Bhoj Bhatta");
     }
 
     @Test
@@ -150,8 +152,8 @@ class AdminVerificationApiControllerTest {
 
         AdminSignupDetailDto detail = controller().detail(6L, asAdmin());
 
-        assertThat(detail.candidates()).extracting(p -> p.id()).containsExactly(1L);
-        assertThat(detail.fatherCandidates()).extracting(p -> p.id()).containsExactly(2L);
+        assertThat(detail.candidates()).extracting(c -> c.person().id()).containsExactly(1L);
+        assertThat(detail.fatherCandidates()).extracting(c -> c.person().id()).containsExactly(2L);
     }
 
     @Test

@@ -514,6 +514,15 @@ export interface AdminSignupSummaryDto {
   createdAt: string;
 }
 
+// One candidate on the signup review screen. ancestorChain walks the
+// FATHER line as far back as it's recorded, starting with person itself
+// -- this is what lets the admin tell apart several same-named
+// candidates by their actual lineage instead of a bare ID.
+export interface MatchCandidateDto {
+  person: PersonSummaryDto;
+  ancestorChain: PersonSummaryDto[];
+}
+
 export interface AdminSignupDetailDto {
   id: number;
   submittedFullName: string;
@@ -537,13 +546,11 @@ export interface AdminSignupDetailDto {
   reviewedAt: string | null;
   decisionNote: string | null;
   createdAt: string;
-  candidates: PersonSummaryDto[];
+  candidates: MatchCandidateDto[];
   // Existing Persons found by matching the submitted father's name --
   // selecting one creates a brand-new Person for this applicant as that
-  // father's child, rather than linking to an existing record. Each
-  // entry's parentHint is that father's own father (the grandfather
-  // corroboration).
-  fatherCandidates: PersonSummaryDto[];
+  // father's child, rather than linking to an existing record.
+  fatherCandidates: MatchCandidateDto[];
 }
 
 // Mirrors com.familytree.dto.AdminCorrectionSummaryDto.

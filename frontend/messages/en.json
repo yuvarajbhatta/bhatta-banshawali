@@ -274,6 +274,8 @@
     "createAsChildTitle": "Create as a new person",
     "createAsChildHelp": "These are possible fathers already in the tree, found by matching the submitted father's name. Selecting one creates a brand-new person for this applicant as that father's child -- use this when the applicant doesn't exist in the tree yet, but their father does.",
     "createThisChild": "Create",
+    "ancestorChain": "Ancestors",
+    "ancestorChainUnknown": "No ancestors recorded",
     "decision": "Decision",
     "decisionNote": "Decision Note (optional)",
     "approve": "Approve",
