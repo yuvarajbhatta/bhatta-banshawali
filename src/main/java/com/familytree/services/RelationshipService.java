@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,19 @@ public class RelationshipService {
         }
         if (type == RelationshipType.SPOUSE){
             saveIfMissing(relatedPerson, person, RelationshipType.SPOUSE);
+        }
+        if (type == RelationshipType.CHILD) {
+            // "relatedPerson is the CHILD of person" -- the reciprocal is
+            // relatedPerson's FATHER or MOTHER being person, decided by
+            // person's own gender. Without this, saving a relationship as
+            // "Child" (rather than "Father"/"Mother", both selectable from
+            // the same form) left a one-sided edge: the child had no
+            // FATHER/MOTHER edge at all, so every father/ancestor-chain
+            // lookup from the child's own side silently found nothing.
+            inferParentType(person).ifPresent(parentType -> {
+                saveIfMissing(relatedPerson, person, parentType);
+                autoCreateSpouseBetweenParents(relatedPerson, person, parentType);
+            });
         }
 
         // Logs only the primary relationship the caller asked for, not the
@@ -358,6 +372,53 @@ public class RelationshipService {
 
     public List<Person> getParentsForPerson(Person person) {
         return getParentsForPerson(person, null);
+    }
+
+    /**
+     * Resolves person's father, falling back to a reversed CHILD-type edge
+     * (person as relatedPerson, i.e. "the father saved this as -- I have a
+     * child -- instead of -- this is my father") when no direct FATHER edge
+     * exists. This historical shape can happen because saveRelationshipWithAutoLinks
+     * only auto-completes the reciprocal for FATHER/MOTHER/SPOUSE saves, not
+     * for a CHILD-type save made directly -- an admin picking "Child" from
+     * the Relationships form's type dropdown produces exactly this one-sided
+     * edge. Falls back to the candidate's gender to tell a reversed father
+     * edge apart from a reversed mother edge recorded the same way.
+     */
+    public Optional<Person> getFatherForPerson(Person person) {
+        return getParentByTypeWithFallback(person, RelationshipType.FATHER, "m");
+    }
+
+    /** Same fallback as getFatherForPerson, for the mother line. */
+    public Optional<Person> getMotherForPerson(Person person) {
+        return getParentByTypeWithFallback(person, RelationshipType.MOTHER, "f");
+    }
+
+    private Optional<Person> getParentByTypeWithFallback(Person person, RelationshipType type, String genderPrefix) {
+        Optional<Person> direct = relationshipRepository.findByPersonAndRelationshipType(person, type)
+                .stream().findFirst().map(Relationship::getRelatedPerson);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        return relationshipRepository.findByRelatedPersonAndRelationshipType(person, RelationshipType.CHILD).stream()
+                .map(Relationship::getPerson)
+                .filter(candidate -> matchesGenderPrefix(candidate, genderPrefix))
+                .findFirst();
+    }
+
+    /** FATHER if person reads as male, MOTHER if female, empty if the gender field can't tell us -- see saveRelationshipWithAutoLinks's CHILD-type branch. */
+    private Optional<RelationshipType> inferParentType(Person person) {
+        if (matchesGenderPrefix(person, "m")) {
+            return Optional.of(RelationshipType.FATHER);
+        }
+        if (matchesGenderPrefix(person, "f")) {
+            return Optional.of(RelationshipType.MOTHER);
+        }
+        return Optional.empty();
+    }
+
+    private boolean matchesGenderPrefix(Person person, String genderPrefix) {
+        return person.getGender() != null && person.getGender().toLowerCase(Locale.ROOT).startsWith(genderPrefix);
     }
 
     private List<Person> getParentsForPerson(Person person, Long excludeRelationshipId) {

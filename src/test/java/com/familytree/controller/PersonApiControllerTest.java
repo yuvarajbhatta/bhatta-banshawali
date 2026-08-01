@@ -84,10 +84,8 @@ class PersonApiControllerTest {
         person.setFirstName("Yuva");
         person.setLastName("Bhatta");
         when(personService.getPersonById(7L)).thenReturn(person);
-        when(relationshipService.getRelationshipsByPersonAndType(person, com.familytree.entity.RelationshipType.FATHER))
-                .thenReturn(List.of());
-        when(relationshipService.getRelationshipsByPersonAndType(person, com.familytree.entity.RelationshipType.MOTHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 

@@ -4,8 +4,6 @@ import com.familytree.dto.FamilySnapshotDto;
 import com.familytree.dto.PersonDetailDto;
 import com.familytree.dto.PersonSummaryDto;
 import com.familytree.entity.Person;
-import com.familytree.entity.Relationship;
-import com.familytree.entity.RelationshipType;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -103,10 +102,7 @@ class PersonProfileAssemblerTest {
         father.setId(2L);
         father.setFirstName("Bhoj");
         father.setLastName("Bhatta");
-        Relationship fatherRel = new Relationship();
-        fatherRel.setRelatedPerson(father);
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
-                .thenReturn(List.of(fatherRel));
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.of(father));
 
         PersonSummaryDto summary = assembler().summarizeForSearch(person, ADMIN);
 
@@ -119,8 +115,7 @@ class PersonProfileAssemblerTest {
         person.setId(1L);
         person.setFirstName("Yuva");
 
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
 
         PersonSummaryDto summary = assembler().summarizeForSearch(person, ADMIN);
 
@@ -146,12 +141,8 @@ class PersonProfileAssemblerTest {
         Person father = new Person();
         father.setId(2L);
         father.setFirstName("Bhoj");
-        Relationship fatherRel = new Relationship();
-        fatherRel.setRelatedPerson(father);
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
-                .thenReturn(List.of(fatherRel));
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.of(father));
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
 
         Person spouse = new Person();
         spouse.setId(3L);
@@ -186,8 +177,8 @@ class PersonProfileAssemblerTest {
         person.setNotes("Some notes");
         person.setPhotoPath("/uploads/yuva.jpg");
 
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
@@ -216,8 +207,8 @@ class PersonProfileAssemblerTest {
         person.setCurrentAddress("Kathmandu");
         person.setDeathDate(null);
 
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
@@ -237,8 +228,8 @@ class PersonProfileAssemblerTest {
         person.setBirthDate(LocalDate.of(1995, 6, 15));
         person.setCurrentAddress("Kathmandu");
 
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
@@ -257,12 +248,8 @@ class PersonProfileAssemblerTest {
         father.setId(2L);
         father.setFirstName("Bhoj");
         father.setBirthDate(LocalDate.of(1965, 1, 1));
-        Relationship fatherRel = new Relationship();
-        fatherRel.setRelatedPerson(father);
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER))
-                .thenReturn(List.of(fatherRel));
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.of(father));
+        when(relationshipService.getMotherForPerson(person)).thenReturn(Optional.empty());
         when(relationshipService.getSpousesForPerson(person)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(person)).thenReturn(List.of());
 
@@ -296,14 +283,10 @@ class PersonProfileAssemblerTest {
         greatGrandfather.setFirstName("Megh Nath");
         greatGrandfather.setLastName("Bhatta");
 
-        when(relationshipService.getRelationshipsByPersonAndType(yuva, RelationshipType.FATHER))
-                .thenReturn(List.of(relationshipTo(father)));
-        when(relationshipService.getRelationshipsByPersonAndType(father, RelationshipType.FATHER))
-                .thenReturn(List.of(relationshipTo(grandfather)));
-        when(relationshipService.getRelationshipsByPersonAndType(grandfather, RelationshipType.FATHER))
-                .thenReturn(List.of(relationshipTo(greatGrandfather)));
-        when(relationshipService.getRelationshipsByPersonAndType(greatGrandfather, RelationshipType.FATHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(yuva)).thenReturn(Optional.of(father));
+        when(relationshipService.getFatherForPerson(father)).thenReturn(Optional.of(grandfather));
+        when(relationshipService.getFatherForPerson(grandfather)).thenReturn(Optional.of(greatGrandfather));
+        when(relationshipService.getFatherForPerson(greatGrandfather)).thenReturn(Optional.empty());
 
         List<PersonSummaryDto> chain = assembler().ancestorChain(yuva, ADMIN);
 
@@ -317,7 +300,7 @@ class PersonProfileAssemblerTest {
         person.setId(1L);
         person.setFirstName("Latadev");
         person.setLastName("Bhatta");
-        when(relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(person)).thenReturn(Optional.empty());
 
         List<PersonSummaryDto> chain = assembler().ancestorChain(person, ADMIN);
 
@@ -336,19 +319,11 @@ class PersonProfileAssemblerTest {
         b.setId(2L);
         b.setFirstName("B");
 
-        when(relationshipService.getRelationshipsByPersonAndType(a, RelationshipType.FATHER))
-                .thenReturn(List.of(relationshipTo(b)));
-        when(relationshipService.getRelationshipsByPersonAndType(b, RelationshipType.FATHER))
-                .thenReturn(List.of(relationshipTo(a)));
+        when(relationshipService.getFatherForPerson(a)).thenReturn(Optional.of(b));
+        when(relationshipService.getFatherForPerson(b)).thenReturn(Optional.of(a));
 
         List<PersonSummaryDto> chain = assembler().ancestorChain(a, ADMIN);
 
         assertThat(chain).hasSize(50);
-    }
-
-    private Relationship relationshipTo(Person father) {
-        Relationship relationship = new Relationship();
-        relationship.setRelatedPerson(father);
-        return relationship;
     }
 }

@@ -2,8 +2,6 @@ package com.familytree.controller;
 
 import com.familytree.dto.MemberProfileDto;
 import com.familytree.entity.Person;
-import com.familytree.entity.Relationship;
-import com.familytree.entity.RelationshipType;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
@@ -104,12 +102,8 @@ class MemberProfileControllerTest {
         Person father = new Person();
         father.setId(101L);
         father.setFirstName("Bhoj");
-        Relationship fatherRelationship = new Relationship();
-        fatherRelationship.setRelatedPerson(father);
-        when(relationshipService.getRelationshipsByPersonAndType(self, RelationshipType.FATHER))
-                .thenReturn(List.of(fatherRelationship));
-        when(relationshipService.getRelationshipsByPersonAndType(self, RelationshipType.MOTHER))
-                .thenReturn(List.of());
+        when(relationshipService.getFatherForPerson(self)).thenReturn(Optional.of(father));
+        when(relationshipService.getMotherForPerson(self)).thenReturn(Optional.empty());
 
         Person child = new Person();
         child.setId(102L);

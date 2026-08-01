@@ -4,8 +4,6 @@ import com.familytree.dto.FamilySnapshotDto;
 import com.familytree.dto.PersonDetailDto;
 import com.familytree.dto.PersonSummaryDto;
 import com.familytree.entity.Person;
-import com.familytree.entity.Relationship;
-import com.familytree.entity.RelationshipType;
 import com.familytree.web.PersonDisplayHelper;
 import org.springframework.stereotype.Service;
 
@@ -50,9 +48,8 @@ public class PersonProfileAssembler {
      * benefit (those rows already show whose father/mother they are).
      */
     public PersonSummaryDto summarizeForSearch(Person person, ViewerContext viewer) {
-        Person father = relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)
-                .stream().findFirst().map(Relationship::getRelatedPerson).orElse(null);
-        String parentHint = father == null ? null : personDisplay.englishFullName(father);
+        String parentHint = relationshipService.getFatherForPerson(person)
+                .map(personDisplay::englishFullName).orElse(null);
         return summarize(person, viewer, parentHint);
     }
 
@@ -86,17 +83,16 @@ public class PersonProfileAssembler {
         Person current = person;
         for (int depth = 0; current != null && depth < MAX_ANCESTOR_CHAIN_DEPTH; depth++) {
             chain.add(summarize(current, viewer));
-            current = relationshipService.getRelationshipsByPersonAndType(current, RelationshipType.FATHER)
-                    .stream().findFirst().map(Relationship::getRelatedPerson).orElse(null);
+            current = relationshipService.getFatherForPerson(current).orElse(null);
         }
         return chain;
     }
 
     public FamilySnapshotDto familySnapshot(Person person, ViewerContext viewer) {
-        PersonSummaryDto father = relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.FATHER)
-                .stream().findFirst().map(r -> summarize(r.getRelatedPerson(), viewer)).orElse(null);
-        PersonSummaryDto mother = relationshipService.getRelationshipsByPersonAndType(person, RelationshipType.MOTHER)
-                .stream().findFirst().map(r -> summarize(r.getRelatedPerson(), viewer)).orElse(null);
+        PersonSummaryDto father = relationshipService.getFatherForPerson(person)
+                .map(p -> summarize(p, viewer)).orElse(null);
+        PersonSummaryDto mother = relationshipService.getMotherForPerson(person)
+                .map(p -> summarize(p, viewer)).orElse(null);
         List<PersonSummaryDto> spouses = relationshipService.getSpousesForPerson(person).stream()
                 .map(p -> summarize(p, viewer)).toList();
         List<PersonSummaryDto> children = relationshipService.getChildrenForPerson(person).stream()

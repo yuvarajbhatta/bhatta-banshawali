@@ -82,6 +82,61 @@ class RelationshipServiceTest {
     }
 
     @Test
+    void saveRelationshipWithAutoLinksCreatesReciprocalFatherEdgeForChildTypeSave() {
+        // An admin picking "Child" (instead of "Father") from the
+        // Relationships form's type dropdown used to leave a one-sided
+        // edge with no reciprocal at all -- this is the fix.
+        Person father = createPerson(2L, "Father");
+        father.setGender("Male");
+        Person child = createPerson(1L, "Child");
+        when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER)).thenReturn(List.of());
+        noKnownParentsFor(father);
+
+        relationshipService.saveRelationshipWithAutoLinks(father, child, RelationshipType.CHILD);
+
+        ArgumentCaptor<Relationship> captor = ArgumentCaptor.forClass(Relationship.class);
+        verify(relationshipRepository, atLeastOnce()).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(Relationship::getRelationshipType)
+                .containsExactlyInAnyOrder(RelationshipType.CHILD, RelationshipType.FATHER);
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksCreatesReciprocalMotherEdgeForChildTypeSave() {
+        Person mother = createPerson(2L, "Mother");
+        mother.setGender("Female");
+        Person child = createPerson(1L, "Child");
+        when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.FATHER)).thenReturn(List.of());
+        noKnownParentsFor(mother);
+
+        relationshipService.saveRelationshipWithAutoLinks(mother, child, RelationshipType.CHILD);
+
+        ArgumentCaptor<Relationship> captor = ArgumentCaptor.forClass(Relationship.class);
+        verify(relationshipRepository, atLeastOnce()).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(Relationship::getRelationshipType)
+                .containsExactlyInAnyOrder(RelationshipType.CHILD, RelationshipType.MOTHER);
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksDoesNotGuessReciprocalWhenGenderIsUnknown() {
+        Person parent = createPerson(2L, "Parent"); // gender left unset
+        Person child = createPerson(1L, "Child");
+        when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
+        noKnownParentsFor(parent);
+
+        relationshipService.saveRelationshipWithAutoLinks(parent, child, RelationshipType.CHILD);
+
+        ArgumentCaptor<Relationship> captor = ArgumentCaptor.forClass(Relationship.class);
+        verify(relationshipRepository, atLeastOnce()).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(Relationship::getRelationshipType)
+                .containsExactly(RelationshipType.CHILD);
+    }
+
+    @Test
     void saveRelationshipWithAutoLinksCreatesReverseSpouseLink() {
         Person person = createPerson(1L, "Yuva");
         Person spouse = createPerson(2L, "Mina");
@@ -242,6 +297,57 @@ class RelationshipServiceTest {
                 .thenReturn(List.of());
 
         assertThat(relationshipService.getParentsForPerson(child)).containsExactlyInAnyOrder(father, mother);
+    }
+
+    @Test
+    void getFatherForPersonReturnsDirectFatherEdgeWhenPresent() {
+        Person child = createPerson(1L, "Child");
+        Person father = createPerson(2L, "Father");
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.FATHER))
+                .thenReturn(List.of(relationship(child, father, RelationshipType.FATHER)));
+
+        assertThat(relationshipService.getFatherForPerson(child)).contains(father);
+    }
+
+    @Test
+    void getFatherForPersonFallsBackToAReversedChildEdgeWhenNoDirectFatherEdgeExists() {
+        // The exact shape a "Child" (rather than "Father") save from the
+        // Relationships admin form leaves behind: only the father's own
+        // "X is my child" edge exists, never the child's "Y is my father"
+        // edge -- see saveRelationshipWithAutoLinks's CHILD-type branch.
+        Person child = createPerson(1L, "Child");
+        Person father = createPerson(2L, "Father");
+        father.setGender("Male");
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(child, RelationshipType.CHILD))
+                .thenReturn(List.of(relationship(father, child, RelationshipType.CHILD)));
+
+        assertThat(relationshipService.getFatherForPerson(child)).contains(father);
+    }
+
+    @Test
+    void getFatherForPersonIgnoresAReversedChildEdgeFromAFemaleCandidate() {
+        // A mother recorded the same backwards way must never surface as "father".
+        Person child = createPerson(1L, "Child");
+        Person mother = createPerson(2L, "Mother");
+        mother.setGender("Female");
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.FATHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(child, RelationshipType.CHILD))
+                .thenReturn(List.of(relationship(mother, child, RelationshipType.CHILD)));
+
+        assertThat(relationshipService.getFatherForPerson(child)).isEmpty();
+    }
+
+    @Test
+    void getMotherForPersonFallsBackToAReversedChildEdgeWhenNoDirectMotherEdgeExists() {
+        Person child = createPerson(1L, "Child");
+        Person mother = createPerson(2L, "Mother");
+        mother.setGender("Female");
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER)).thenReturn(List.of());
+        when(relationshipRepository.findByRelatedPersonAndRelationshipType(child, RelationshipType.CHILD))
+                .thenReturn(List.of(relationship(mother, child, RelationshipType.CHILD)));
+
+        assertThat(relationshipService.getMotherForPerson(child)).contains(mother);
     }
 
     @Test
