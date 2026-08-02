@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/motion/Reveal";
 import { AncestorChain } from "@/components/dashboard/AncestorChain";
+import { ImmediateFamily } from "@/components/dashboard/ImmediateFamily";
 import type { MemberProfileDto } from "@/lib/api";
 import styles from "./MemberDashboard.module.css";
 
@@ -17,7 +18,7 @@ export async function MemberDashboard({ profile }: { profile: MemberProfileDto }
     );
   }
 
-  const { person, ancestorChain } = profile;
+  const { person, family, ancestorChain } = profile;
 
   return (
     <div className={styles.dashboard}>
@@ -43,6 +44,7 @@ export async function MemberDashboard({ profile }: { profile: MemberProfileDto }
             <h3>{t("familyTitle")}</h3>
             <p className={styles.familyHint}>{t("familyHint")}</p>
           </div>
+          <ImmediateFamily family={family} />
           <AncestorChain chain={ancestorChain} />
           <div className={styles.viewTreeAction}>
             <Link href="/family">

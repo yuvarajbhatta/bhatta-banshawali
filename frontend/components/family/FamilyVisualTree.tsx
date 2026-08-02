@@ -15,7 +15,10 @@ interface FamilyVisualTreeProps {
 
 export function FamilyVisualTree({ index, selfId }: FamilyVisualTreeProps) {
   const t = useTranslations("familyPage.visualTree");
-  const [selectedId, setSelectedId] = useState<number | null>(selfId);
+  // Centered on self via focusId below, but not auto-selected -- selecting
+  // opens the MemberQuickView drawer, which shouldn't pop open before the
+  // member has actually clicked a node.
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const subgraphPeople = useMemo(() => {
     const ids = buildFamilySubgraphIds(index, selfId);
