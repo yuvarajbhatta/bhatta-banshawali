@@ -85,4 +85,37 @@ describe("layoutFamilyTree", () => {
     expect(nodes).toEqual([]);
     expect(edges).toEqual([]);
   });
+
+  it("defaults every node to not highlighted when no highlight is passed", () => {
+    const people = [person({ id: 1 }), person({ id: 2 })];
+    const { nodes } = layoutFamilyTree(people, null);
+
+    expect(nodes.every((n) => n.data.highlighted === false)).toBe(true);
+  });
+
+  it("marks nodes and edges present in the highlight sets", () => {
+    const parent = person({ id: 1, childIds: [2] });
+    const child = person({ id: 2, fatherId: 1 });
+    const { nodes, edges } = layoutFamilyTree([parent, child], null, {
+      nodeIds: new Set([1, 2]),
+      edgeIds: new Set(["pc-1-2"]),
+    });
+
+    expect(nodes.find((n) => n.id === "1")?.data.highlighted).toBe(true);
+    expect(nodes.find((n) => n.id === "2")?.data.highlighted).toBe(true);
+
+    const edge = edges.find((e) => e.id === "pc-1-2");
+    expect(edge?.style).toMatchObject({ stroke: "var(--color-warning)", strokeWidth: 3 });
+    expect(edge?.zIndex).toBe(10);
+  });
+
+  it("leaves edges outside the highlight set with their normal style", () => {
+    const parent = person({ id: 1, childIds: [2] });
+    const child = person({ id: 2, fatherId: 1 });
+    const { edges } = layoutFamilyTree([parent, child], null, { nodeIds: new Set(), edgeIds: new Set() });
+
+    const edge = edges.find((e) => e.id === "pc-1-2");
+    expect(edge?.style).toMatchObject({ stroke: "var(--color-neutral-300)", strokeWidth: 1.5 });
+    expect(edge?.zIndex).toBe(0);
+  });
 });

@@ -23,6 +23,14 @@
   box-shadow: 0 0 0 3px var(--color-primary-100);
 }
 
+/* Distinct from .cardSelected (green -- "this is the one you clicked")
+   and from spouse edges/female avatars (gold) -- amber marks "on the
+   highlighted path back to you" specifically. */
+.cardHighlighted {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 2px var(--color-warning-bg);
+}
+
 .cardDeceased {
   background: var(--color-neutral-50);
 }

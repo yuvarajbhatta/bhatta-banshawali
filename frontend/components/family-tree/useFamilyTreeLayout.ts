@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import type { MemberNodeData } from "./familyTree.types";
+import type { HighlightedPath } from "./treeHighlight";
 
 export const NODE_WIDTH = 216;
 export const NODE_HEIGHT = 88;
@@ -11,6 +12,8 @@ export interface FamilyTreeLayout {
   nodes: Node<MemberNodeData>[];
   edges: Edge[];
 }
+
+const EMPTY_HIGHLIGHT: HighlightedPath = { nodeIds: new Set(), edgeIds: new Set() };
 
 /**
  * Pure data transform: PersonTreeNodeDto[] -> Dagre-laid-out React Flow
@@ -23,7 +26,11 @@ export interface FamilyTreeLayout {
  * filtering the input list (search/generation/living filters) never
  * produces a dangling edge to a node that isn't rendered.
  */
-export function layoutFamilyTree(people: PersonTreeNodeDto[], selectedId: number | null): FamilyTreeLayout {
+export function layoutFamilyTree(
+  people: PersonTreeNodeDto[],
+  selectedId: number | null,
+  highlight: HighlightedPath = EMPTY_HIGHLIGHT,
+): FamilyTreeLayout {
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({ rankdir: "TB", nodesep: 40, ranksep: 88 });
   graph.setDefaultEdgeLabel(() => ({}));
@@ -63,19 +70,26 @@ export function layoutFamilyTree(people: PersonTreeNodeDto[], selectedId: number
       id: String(person.id),
       type: "member",
       position: { x: position.x - NODE_WIDTH / 2, y: position.y - NODE_HEIGHT / 2 },
-      data: { person, selected: person.id === selectedId },
+      data: { person, selected: person.id === selectedId, highlighted: highlight.nodeIds.has(person.id) },
     };
   });
 
-  const edges: Edge[] = parentChildPairs.map((pair) => ({
-    id: `pc-${pair.parentId}-${pair.childId}`,
-    source: String(pair.parentId),
-    target: String(pair.childId),
-    sourceHandle: "bottom-source",
-    targetHandle: "top-target",
-    type: "smoothstep",
-    style: { stroke: "var(--color-neutral-300)", strokeWidth: 1.5 },
-  }));
+  const edges: Edge[] = parentChildPairs.map((pair) => {
+    const id = `pc-${pair.parentId}-${pair.childId}`;
+    const onPath = highlight.edgeIds.has(id);
+    return {
+      id,
+      source: String(pair.parentId),
+      target: String(pair.childId),
+      sourceHandle: "bottom-source",
+      targetHandle: "top-target",
+      type: "smoothstep",
+      zIndex: onPath ? 10 : 0,
+      style: onPath
+        ? { stroke: "var(--color-warning)", strokeWidth: 3 }
+        : { stroke: "var(--color-neutral-300)", strokeWidth: 1.5 },
+    };
+  });
 
   const seenSpousePairs = new Set<string>();
   for (const person of people) {
@@ -94,14 +108,19 @@ export function layoutFamilyTree(people: PersonTreeNodeDto[], selectedId: number
       const personIsLeft = !personPosition || !spouseNodePosition || personPosition.x <= spouseNodePosition.x;
       const [leftId, rightId] = personIsLeft ? [person.id, spouseId] : [spouseId, person.id];
 
+      const spouseEdgeId = `sp-${key}`;
+      const onPath = highlight.edgeIds.has(spouseEdgeId);
       edges.push({
-        id: `sp-${key}`,
+        id: spouseEdgeId,
         source: String(leftId),
         target: String(rightId),
         sourceHandle: "right-source",
         targetHandle: "left-target",
         type: "straight",
-        style: { stroke: "var(--color-gold-500)", strokeWidth: 2 },
+        zIndex: onPath ? 10 : 0,
+        style: onPath
+          ? { stroke: "var(--color-warning)", strokeWidth: 3 }
+          : { stroke: "var(--color-gold-500)", strokeWidth: 2 },
       });
     }
   }
@@ -109,6 +128,10 @@ export function layoutFamilyTree(people: PersonTreeNodeDto[], selectedId: number
   return { nodes, edges };
 }
 
-export function useFamilyTreeLayout(people: PersonTreeNodeDto[], selectedId: number | null): FamilyTreeLayout {
-  return useMemo(() => layoutFamilyTree(people, selectedId), [people, selectedId]);
+export function useFamilyTreeLayout(
+  people: PersonTreeNodeDto[],
+  selectedId: number | null,
+  highlight: HighlightedPath = EMPTY_HIGHLIGHT,
+): FamilyTreeLayout {
+  return useMemo(() => layoutFamilyTree(people, selectedId, highlight), [people, selectedId, highlight]);
 }

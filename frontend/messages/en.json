@@ -66,12 +66,18 @@
       "loadLater": "Load later generations",
       "allGenerations": "All generations",
       "confirmAllGenerations": "Show all {count} people? Click again to confirm",
-      "searchScopeHint": "Searches only the generations currently loaded -- use \"All generations\" to search everyone.",
+      "searchScopeHint": "Searches only the people currently shown -- reset the view or use \"All generations\" to search everyone.",
       "living": "Living",
       "deceased": "Deceased",
       "allPeople": "Living & deceased",
       "reset": "Reset filters",
       "resultCount": "{count} of {total} people shown"
+    },
+    "focus": {
+      "ancestors": "Ancestors",
+      "descendants": "Descendants",
+      "highlightPath": "Highlight path to me",
+      "expandAll": "Expand all"
     },
     "legend": {
       "title": "Legend",

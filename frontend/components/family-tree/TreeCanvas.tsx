@@ -15,6 +15,7 @@ import { MemberNode } from "./MemberNode";
 import { TreeControls } from "./TreeControls";
 import { TreeLegend } from "./TreeLegend";
 import { useFamilyTreeLayout } from "./useFamilyTreeLayout";
+import type { HighlightedPath } from "./treeHighlight";
 import styles from "./TreeCanvas.module.css";
 
 const NODE_TYPES: NodeTypes = { member: MemberNode };
@@ -24,10 +25,11 @@ interface TreeCanvasProps {
   selectedId: number | null;
   focusId: number | null;
   onSelect: (personId: number) => void;
+  highlight?: HighlightedPath;
 }
 
-export function TreeCanvas({ people, selectedId, focusId, onSelect }: TreeCanvasProps) {
-  const { nodes: layoutNodes, edges } = useFamilyTreeLayout(people, selectedId);
+export function TreeCanvas({ people, selectedId, focusId, onSelect, highlight }: TreeCanvasProps) {
+  const { nodes: layoutNodes, edges } = useFamilyTreeLayout(people, selectedId, highlight);
   const { setCenter, fitView } = useReactFlow();
   const lastFocusedIdRef = useRef<number | null>(null);
 

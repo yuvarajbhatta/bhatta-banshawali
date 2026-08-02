@@ -10,7 +10,7 @@ type MemberNodeType = Node<MemberNodeData, "member">;
 
 function MemberNodeComponent({ data }: NodeProps<MemberNodeType>) {
   const t = useTranslations("treePage.node");
-  const { person, selected, onSelect } = data;
+  const { person, selected, highlighted, onSelect } = data;
 
   const name = person.englishFullName.trim() || t("unknownName");
   const isDeceased = Boolean(person.deathDate);
@@ -46,7 +46,12 @@ function MemberNodeComponent({ data }: NodeProps<MemberNodeType>) {
         tabIndex={0}
         aria-pressed={selected}
         aria-label={`${name}, ${years}`}
-        className={[styles.card, selected ? styles.cardSelected : "", isDeceased ? styles.cardDeceased : ""]
+        className={[
+          styles.card,
+          selected ? styles.cardSelected : "",
+          highlighted ? styles.cardHighlighted : "",
+          isDeceased ? styles.cardDeceased : "",
+        ]
           .filter(Boolean)
           .join(" ")}
         onClick={() => onSelect?.(person.id)}

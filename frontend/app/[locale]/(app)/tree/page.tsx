@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { TreeExplorer } from "@/components/family-tree/TreeExplorer";
-import { getFamilyTree } from "@/lib/api";
+import { getFamilyTree, getMemberProfile } from "@/lib/api";
 
 export default async function FamilyTreePage({
   searchParams,
@@ -15,18 +15,30 @@ export default async function FamilyTreePage({
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
 
-  const result = await getFamilyTree(cookieHeader);
+  const [result, profileResult] = await Promise.all([getFamilyTree(cookieHeader), getMemberProfile(cookieHeader)]);
 
-  if (result.kind === "unauthenticated") {
+  if (result.kind === "unauthenticated" || profileResult.kind === "unauthenticated") {
     redirect("/login");
   }
 
   const focusId = focus ? Number.parseInt(focus, 10) : null;
 
+  // Admins (AppUser login, no-account) and members not yet linked to a
+  // Person just don't get "highlight path to me" -- everything else on
+  // this page works the same either way.
+  const selfId =
+    profileResult.kind === "ok" && profileResult.profile.linked && profileResult.profile.person
+      ? profileResult.profile.person.id
+      : null;
+
   return (
     <>
       <PageHeader title={t("title")} subtitle={t("subtitle")} />
-      <TreeExplorer people={result.tree.nodes} initialFocusId={Number.isNaN(focusId as number) ? null : focusId} />
+      <TreeExplorer
+        people={result.tree.nodes}
+        initialFocusId={Number.isNaN(focusId as number) ? null : focusId}
+        selfId={selfId}
+      />
     </>
   );
 }
