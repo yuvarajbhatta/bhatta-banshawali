@@ -178,14 +178,12 @@
       "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
       "generation": "Generation {number}",
       "viewFullProfile": "View full profile",
-      "familyTitle": "Your Family",
-      "familyHint": "Your registered relatives and lineage -- click a name to open their profile.",
       "father": "Father",
       "mother": "Mother",
-      "spouse": "Spouse",
-      "children": "Children",
-      "notRecorded": "Not recorded yet",
-      "ancestorChainUnknown": "No ancestors recorded yet.",
+      "born": "Born",
+      "notRecorded": "Not recorded",
+      "knownAncestors": "Known Ancestors",
+      "directDescendants": "Direct Descendants",
       "viewYourFamily": "View Your Family",
       "viewFullTree": "View Full Tree",
       "browseDirectory": "Browse the Directory"
@@ -208,17 +206,25 @@
     "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
     "you": "You",
     "tabs": {
-      "visualTree": "Visual Tree",
-      "ancestors": "Ancestors",
+      "immediateFamily": "Immediate Family",
+      "lineage": "Lineage",
       "descendants": "Descendants",
       "relationshipPath": "Relationship Path"
     },
-    "visualTree": {
-      "empty": "No ancestors or descendants have been recorded yet."
+    "immediateFamily": {
+      "father": "Father",
+      "mother": "Mother",
+      "spouse": "Spouse",
+      "children": "Children",
+      "siblings": "Siblings",
+      "grandparents": "Grandparents",
+      "notRecorded": "Not recorded yet"
     },
-    "ancestors": {
+    "lineage": {
       "empty": "No ancestors have been recorded yet.",
-      "distanceLabel": "{count} gen. up"
+      "distanceLabel": "{count} gen. back",
+      "oldest": "Oldest recorded",
+      "showMore": "Show {count} more generations"
     },
     "descendants": {
       "empty": "No descendants have been recorded yet.",

@@ -3,15 +3,16 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { PersonTreeNodeDto } from "@/lib/api";
-import { buildGraphIndex } from "@/lib/familyGraph";
-import { FamilyVisualTree } from "./FamilyVisualTree";
+import { buildGraphIndex, getImmediateFamily } from "@/lib/familyGraph";
+import { ImmediateFamily } from "./ImmediateFamily";
+import { LineageTimeline } from "./LineageTimeline";
 import { LineageList } from "./LineageList";
 import { RelationshipPathFinder } from "./RelationshipPathFinder";
 import styles from "./YourFamilyExplorer.module.css";
 
-type Tab = "visualTree" | "ancestors" | "descendants" | "relationshipPath";
+type Tab = "immediateFamily" | "lineage" | "descendants" | "relationshipPath";
 
-const TABS: Tab[] = ["visualTree", "ancestors", "descendants", "relationshipPath"];
+const TABS: Tab[] = ["immediateFamily", "lineage", "descendants", "relationshipPath"];
 
 interface YourFamilyExplorerProps {
   people: PersonTreeNodeDto[];
@@ -20,8 +21,9 @@ interface YourFamilyExplorerProps {
 
 export function YourFamilyExplorer({ people, selfId }: YourFamilyExplorerProps) {
   const t = useTranslations("familyPage.tabs");
-  const [activeTab, setActiveTab] = useState<Tab>("visualTree");
+  const [activeTab, setActiveTab] = useState<Tab>("immediateFamily");
   const index = useMemo(() => buildGraphIndex(people), [people]);
+  const immediateFamily = useMemo(() => getImmediateFamily(index, selfId), [index, selfId]);
 
   return (
     <div>
@@ -40,9 +42,9 @@ export function YourFamilyExplorer({ people, selfId }: YourFamilyExplorerProps) 
         ))}
       </div>
 
-      {activeTab === "visualTree" ? <FamilyVisualTree index={index} selfId={selfId} /> : null}
-      {activeTab === "ancestors" ? <LineageList index={index} selfId={selfId} direction="ancestors" /> : null}
-      {activeTab === "descendants" ? <LineageList index={index} selfId={selfId} direction="descendants" /> : null}
+      {activeTab === "immediateFamily" && immediateFamily ? <ImmediateFamily family={immediateFamily} /> : null}
+      {activeTab === "lineage" ? <LineageTimeline index={index} selfId={selfId} /> : null}
+      {activeTab === "descendants" ? <LineageList index={index} selfId={selfId} /> : null}
       {activeTab === "relationshipPath" ? <RelationshipPathFinder index={index} selfId={selfId} /> : null}
     </div>
   );

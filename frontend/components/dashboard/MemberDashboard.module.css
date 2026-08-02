@@ -47,35 +47,62 @@
   font-weight: var(--font-weight-medium);
 }
 
-.familyPanel {
+.factGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+
+.fact {
+  display: contents;
+}
+
+.fact dt {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.fact dd {
+  margin: 0;
+}
+
+.factLink {
+  color: var(--color-primary-600-text);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.factLink:hover {
+  text-decoration: underline;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
 }
 
-.viewTreeAction {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-top: var(--space-4);
+.statValue {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-700-text);
 }
 
-.familyHeader {
-  margin-bottom: var(--space-4);
-}
-
-.familyHeader h3 {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-xl);
-}
-
-.familyHint {
+.statLabel {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  margin: 0;
 }
 
 .notice {
@@ -89,4 +116,6 @@
 .actions {
   display: flex;
   justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }

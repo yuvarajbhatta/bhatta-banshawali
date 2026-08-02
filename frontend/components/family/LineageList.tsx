@@ -4,22 +4,21 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { PersonTreeNodeDto } from "@/lib/api";
-import { getAncestors, getDescendants, type FamilyGraphIndex, type LineageEntry } from "@/lib/familyGraph";
+import { getDescendants, type FamilyGraphIndex, type LineageEntry } from "@/lib/familyGraph";
 import styles from "./LineageList.module.css";
 
 interface LineageListProps {
   index: FamilyGraphIndex;
   selfId: number;
-  direction: "ancestors" | "descendants";
 }
 
-export function LineageList({ index, selfId, direction }: LineageListProps) {
-  const t = useTranslations(`familyPage.${direction}`);
+// Ancestors moved to LineageTimeline's connected vertical view; this now
+// only covers descendants, which reads fine as flat generation-grouped
+// rows since a member's descendants form a single branch below them.
+export function LineageList({ index, selfId }: LineageListProps) {
+  const t = useTranslations("familyPage.descendants");
 
-  const entries = useMemo(
-    () => (direction === "ancestors" ? getAncestors(index, selfId) : getDescendants(index, selfId)),
-    [index, selfId, direction],
-  );
+  const entries = useMemo(() => getDescendants(index, selfId), [index, selfId]);
   const groups = useMemo(() => groupByDistance(entries), [entries]);
 
   if (entries.length === 0) {

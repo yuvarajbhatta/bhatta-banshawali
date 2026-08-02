@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PersonTreeNodeDto } from "./api";
-import {
-  buildFamilySubgraphIds,
-  buildGraphIndex,
-  findRelationshipPath,
-  getAncestors,
-  getDescendants,
-  getImmediateFamily,
-} from "./familyGraph";
+import { buildGraphIndex, findRelationshipPath, getAncestors, getDescendants, getImmediateFamily } from "./familyGraph";
 
 function person(overrides: Partial<PersonTreeNodeDto> & { id: number }): PersonTreeNodeDto {
   return {
@@ -87,6 +80,21 @@ describe("getImmediateFamily", () => {
     const index = buildGraphIndex(FIXTURE);
     expect(getImmediateFamily(index, 999)).toBeNull();
   });
+
+  it("resolves grandparents through both parents, deduped and filtered", () => {
+    const index = buildGraphIndex(FIXTURE);
+    const family = getImmediateFamily(index, 5);
+
+    // Father (3)'s parents are 1 and 2; mother (4) has none recorded.
+    expect(family?.grandparents.map((g) => g.id).sort()).toEqual([1, 2]);
+  });
+
+  it("returns no grandparents when neither parent has parents recorded", () => {
+    const index = buildGraphIndex(FIXTURE);
+    const family = getImmediateFamily(index, 3);
+
+    expect(family?.grandparents).toEqual([]);
+  });
 });
 
 describe("findRelationshipPath", () => {
@@ -126,23 +134,5 @@ describe("findRelationshipPath", () => {
   it("returns null for an id that isn't in the graph", () => {
     const index = buildGraphIndex(FIXTURE);
     expect(findRelationshipPath(index, 5, 999)).toBeNull();
-  });
-});
-
-describe("buildFamilySubgraphIds", () => {
-  it("includes self, ancestors, descendants, spouses, and siblings within range", () => {
-    const index = buildGraphIndex(FIXTURE);
-    const ids = buildFamilySubgraphIds(index, 5, { ancestorGenerations: 2, descendantGenerations: 1 });
-
-    expect(ids).toEqual(new Set([5, 3, 4, 1, 2, 6, 7]));
-  });
-
-  it("excludes generations beyond the requested range", () => {
-    const index = buildGraphIndex(FIXTURE);
-    const ids = buildFamilySubgraphIds(index, 5, { ancestorGenerations: 1, descendantGenerations: 0 });
-
-    expect(ids.has(1)).toBe(false); // grandparent, out of range
-    expect(ids.has(7)).toBe(false); // child (descendant), out of range
-    expect(ids.has(3)).toBe(true); // parent, in range
   });
 });

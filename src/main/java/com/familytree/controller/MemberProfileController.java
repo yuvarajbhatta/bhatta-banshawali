@@ -62,7 +62,6 @@ public class MemberProfileController {
 
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
         return new MemberProfileDto(account.getEmail(), true,
-                personProfileAssembler.summarize(person, viewer), personProfileAssembler.familySnapshot(person, viewer),
-                personProfileAssembler.ancestorChain(person, viewer));
+                personProfileAssembler.summarize(person, viewer), personProfileAssembler.familySnapshot(person, viewer));
     }
 }

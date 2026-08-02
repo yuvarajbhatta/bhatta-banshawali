@@ -79,6 +79,7 @@ export interface ImmediateFamily {
   spouses: PersonTreeNodeDto[];
   children: PersonTreeNodeDto[];
   siblings: PersonTreeNodeDto[];
+  grandparents: PersonTreeNodeDto[];
 }
 
 export function getImmediateFamily(index: FamilyGraphIndex, selfId: number): ImmediateFamily | null {
@@ -104,7 +105,19 @@ export function getImmediateFamily(index: FamilyGraphIndex, selfId: number): Imm
     }
   }
 
-  return { self, father, mother, spouses, children, siblings: resolveAll(index, Array.from(siblingIds)) };
+  const grandparentIds = [father?.fatherId, father?.motherId, mother?.fatherId, mother?.motherId].filter(
+    (id): id is number => id != null,
+  );
+
+  return {
+    self,
+    father,
+    mother,
+    spouses,
+    children,
+    siblings: resolveAll(index, Array.from(siblingIds)),
+    grandparents: resolveAll(index, grandparentIds),
+  };
 }
 
 function resolveAll(index: FamilyGraphIndex, ids: number[]): PersonTreeNodeDto[] {
@@ -192,62 +205,4 @@ export function findRelationshipPath(index: FamilyGraphIndex, fromId: number, to
     .filter((step): step is RelationshipStep => step !== null);
 
   return steps.length === reversed.length ? steps : null;
-}
-
-export interface FamilySubgraphOptions {
-  ancestorGenerations: number;
-  descendantGenerations: number;
-}
-
-const DEFAULT_SUBGRAPH_OPTIONS: FamilySubgraphOptions = { ancestorGenerations: 3, descendantGenerations: 3 };
-
-/**
- * The bounded set of person ids shown in the "Your Family" visual tree
- * tab: self, spouses, siblings, ancestors/descendants up to N
- * generations (default 3, each with their own spouses) -- deliberately
- * not the whole 740-person dataset that /tree shows.
- */
-export function buildFamilySubgraphIds(
-  index: FamilyGraphIndex,
-  selfId: number,
-  options: FamilySubgraphOptions = DEFAULT_SUBGRAPH_OPTIONS,
-): Set<number> {
-  const ids = new Set<number>([selfId]);
-  const self = index.byId.get(selfId);
-  if (!self) {
-    return ids;
-  }
-
-  for (const spouseId of self.spouseIds) {
-    ids.add(spouseId);
-  }
-
-  for (const ancestor of getAncestors(index, selfId)) {
-    if (ancestor.distance > options.ancestorGenerations) {
-      continue;
-    }
-    ids.add(ancestor.person.id);
-    for (const spouseId of ancestor.person.spouseIds) {
-      ids.add(spouseId);
-    }
-  }
-
-  for (const descendant of getDescendants(index, selfId)) {
-    if (descendant.distance > options.descendantGenerations) {
-      continue;
-    }
-    ids.add(descendant.person.id);
-    for (const spouseId of descendant.person.spouseIds) {
-      ids.add(spouseId);
-    }
-  }
-
-  const immediate = getImmediateFamily(index, selfId);
-  if (immediate) {
-    for (const sibling of immediate.siblings) {
-      ids.add(sibling.id);
-    }
-  }
-
-  return ids;
 }
