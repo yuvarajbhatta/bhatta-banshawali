@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/AppShell";
-import { getAdminSummary, getMemberProfile, getMyAdminAccessRequestStatus } from "@/lib/api";
+import { getAdminSummary, getAnnouncementUnreadCount, getMemberProfile, getMyAdminAccessRequestStatus } from "@/lib/api";
 
 /**
  * Shared chrome (sidebar + header) for the authenticated section of the
@@ -18,13 +18,14 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
 
-  const [result, adminSummary, accessRequestResult] = await Promise.all([
+  const [result, adminSummary, accessRequestResult, announcementUnreadCount] = await Promise.all([
     getMemberProfile(cookieHeader),
     // Cheap enough to call for every authenticated page load: returns
     // null on a 403 (not an admin), which also doubles as the sidebar's
     // "should the Administration section render at all" check.
     getAdminSummary(cookieHeader),
     getMyAdminAccessRequestStatus(cookieHeader),
+    getAnnouncementUnreadCount(cookieHeader),
   ]);
 
   if (result.kind === "unauthenticated") {
@@ -68,6 +69,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       email={email}
       adminAccessRequestStatus={adminAccessRequestStatus}
       adminCounts={adminSummary}
+      announcementUnreadCount={announcementUnreadCount}
     >
       {children}
     </AppShell>

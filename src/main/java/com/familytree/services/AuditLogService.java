@@ -53,6 +53,10 @@ public class AuditLogService {
     // Only a moderation takedown (an admin removing someone else's
     // upload) is logged -- see PersonPhotoService#delete.
     public static final String ACTION_PHOTO_DELETED = "PHOTO_DELETED";
+    public static final String ACTION_ANNOUNCEMENT_CREATED = "ANNOUNCEMENT_CREATED";
+    public static final String ACTION_ANNOUNCEMENT_UPDATED = "ANNOUNCEMENT_UPDATED";
+    public static final String ACTION_ANNOUNCEMENT_STATUS_CHANGED = "ANNOUNCEMENT_STATUS_CHANGED";
+    public static final String ACTION_ANNOUNCEMENT_DELETED = "ANNOUNCEMENT_DELETED";
 
     public static final String ENTITY_PERSON = "PERSON";
     public static final String ENTITY_RELATIONSHIP = "RELATIONSHIP";
@@ -61,6 +65,7 @@ public class AuditLogService {
     public static final String ENTITY_USER_ACCOUNT = "USER_ACCOUNT";
     public static final String ENTITY_CONTENT = "CONTENT";
     public static final String ENTITY_PERSON_PHOTO = "PERSON_PHOTO";
+    public static final String ENTITY_ANNOUNCEMENT = "ANNOUNCEMENT";
 
     private final AuditLogRepository auditLogRepository;
 

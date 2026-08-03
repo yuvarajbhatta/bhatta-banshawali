@@ -1075,6 +1075,160 @@ export function deleteAdminArticle(id: number): Promise<void> {
   return adminApiRequest(`/api/v1/admin/content/${id}`, "DELETE");
 }
 
+// Mirrors com.familytree.entity.AnnouncementCategory/AnnouncementStatus
+// and the Announcement/AdminAnnouncement DTOs -- News & Alerts. Simpler
+// draft/published workflow than articles (no IN_REVIEW): see
+// AnnouncementPost's doc comment.
+export type AnnouncementCategory = "APP_UPDATE" | "FAMILY_NEWS" | "CELEBRATION" | "OBITUARY" | "HELP_REQUEST";
+export type AnnouncementStatus = "DRAFT" | "PUBLISHED";
+
+export interface AnnouncementPhotoDto {
+  id: number;
+  caption: string | null;
+  uploadedAt: string;
+}
+
+export interface AnnouncementDto {
+  id: number;
+  category: AnnouncementCategory;
+  titleEn: string;
+  titleNe: string | null;
+  bodyEn: string;
+  bodyNe: string | null;
+  pinned: boolean;
+  publishedAt: string;
+  photos: AnnouncementPhotoDto[];
+}
+
+export interface AdminAnnouncementDto {
+  id: number;
+  category: AnnouncementCategory;
+  titleEn: string;
+  titleNe: string | null;
+  bodyEn: string;
+  bodyNe: string | null;
+  status: AnnouncementStatus;
+  pinned: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  photos: AnnouncementPhotoDto[];
+}
+
+export interface AdminAnnouncementRequest {
+  category: AnnouncementCategory;
+  titleEn: string;
+  titleNe?: string;
+  bodyEn: string;
+  bodyNe?: string;
+  pinned: boolean;
+}
+
+// Server-to-server, same pattern as getPublishedArticle/getAdminSummary
+// above -- authenticated (any member), not admin-gated.
+export async function getAnnouncements(cookieHeader: string): Promise<AnnouncementDto[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/announcements`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load announcements: ${response.status}`);
+  }
+  return response.json();
+}
+
+// Cheap enough to call on every authenticated page load, same reasoning
+// as getAdminSummary -- feeds the News & Alerts nav badge. Resolves to 0
+// rather than throwing on any non-ok response so a hiccup here never
+// breaks the shared layout for an unrelated page.
+export async function getAnnouncementUnreadCount(cookieHeader: string): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/announcements/unread-count`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return 0;
+  }
+  const body: { unreadCount: number } = await response.json();
+  return body.unreadCount;
+}
+
+// Called directly from the browser when the News tab is opened, same
+// CSRF pattern as submitCorrection.
+export async function markAnnouncementsSeen(): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
+  await fetch("/api/v1/announcements/mark-seen", {
+    method: "POST",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+  });
+}
+
+// Same-origin relative URL -- authenticated GET, browser's session
+// cookie rides along automatically.
+export function announcementPhotoFileUrl(postId: number, photoId: number): string {
+  return `/api/v1/announcements/${postId}/photos/${photoId}/file`;
+}
+
+export async function getAdminAnnouncements(cookieHeader: string): Promise<AdminListResult<AdminAnnouncementDto>> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/announcements`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) return { kind: "unauthenticated" };
+  if (response.status === 403) return { kind: "forbidden" };
+  if (!response.ok) throw new Error(`Failed to load announcements: ${response.status}`);
+  return { kind: "ok", items: await response.json() };
+}
+
+export function createAdminAnnouncement(body: AdminAnnouncementRequest): Promise<AdminAnnouncementDto> {
+  return adminApiRequest("/api/v1/admin/announcements", "POST", body);
+}
+
+export function updateAdminAnnouncement(id: number, body: AdminAnnouncementRequest): Promise<AdminAnnouncementDto> {
+  return adminApiRequest(`/api/v1/admin/announcements/${id}`, "PUT", body);
+}
+
+export function publishAnnouncement(id: number): Promise<AdminAnnouncementDto> {
+  return adminApiRequest(`/api/v1/admin/announcements/${id}/publish`, "POST");
+}
+
+export function unpublishAnnouncement(id: number): Promise<AdminAnnouncementDto> {
+  return adminApiRequest(`/api/v1/admin/announcements/${id}/unpublish`, "POST");
+}
+
+export function deleteAdminAnnouncement(id: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/announcements/${id}`, "DELETE");
+}
+
+// FormData, not JSON -- same reasoning as uploadPersonPhoto.
+export async function uploadAnnouncementPhoto(postId: number, file: File, caption: string): Promise<AnnouncementPhotoDto> {
+  const xsrfToken = readXsrfTokenCookie();
+  const formData = new FormData();
+  formData.append("file", file);
+  if (caption.trim()) {
+    formData.append("caption", caption.trim());
+  }
+
+  const response = await fetch(`/api/v1/admin/announcements/${postId}/photos`, {
+    method: "POST",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new AdminActionError(body?.message ?? "Failed to upload photo.");
+  }
+  return response.json();
+}
+
+export function deleteAnnouncementPhoto(postId: number, photoId: number): Promise<void> {
+  return adminApiRequest(`/api/v1/admin/announcements/${postId}/photos/${photoId}`, "DELETE");
+}
+
 // Mirrors the JSON shape RelationshipService#buildLineageTree already
 // produces for the legacy /lineage page -- reused as-is (not under
 // /api/v1/admin, a pre-existing endpoint) rather than building a new

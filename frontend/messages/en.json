@@ -20,6 +20,7 @@
       "yourFamily": "Your Family",
       "familyTree": "Family Tree",
       "members": "Members",
+      "news": "News & Alerts",
       "administration": "Administration",
       "signupReview": "Signup Review",
       "correctionReview": "Corrections",
@@ -29,6 +30,7 @@
       "manageUserAccounts": "Manage User Accounts",
       "adminAccessRequests": "Admin Access Requests",
       "content": "Content",
+      "newsManager": "News & Alerts",
       "lineageBuilder": "Lineage Builder",
       "generationsView": "Generations",
       "duplicatePeople": "Duplicate People",
@@ -239,6 +241,18 @@
       "noneWaiting": "Nothing waiting for review.",
       "familyMembers": "Documented Family Members",
       "generationsRecorded": "Documented Generations"
+    }
+  },
+  "newsPage": {
+    "title": "News & Alerts",
+    "empty": "No announcements yet.",
+    "pinned": "Pinned",
+    "categories": {
+      "APP_UPDATE": "App Update",
+      "FAMILY_NEWS": "Family News",
+      "CELEBRATION": "Celebration",
+      "OBITUARY": "Obituary",
+      "HELP_REQUEST": "Help Request"
     }
   },
   "familyPage": {
@@ -583,6 +597,50 @@
       "IN_REVIEW": "In Review",
       "PUBLISHED": "Published",
       "UNPUBLISHED": "Unpublished"
+    }
+  },
+  "adminNewsPage": {
+    "title": "News & Alerts",
+    "subtitle": "Post app updates, family news, celebrations, obituaries, or help requests -- write it, add photos if you like, then publish when it's ready.",
+    "empty": "No announcements yet.",
+    "forbidden": "You don't have permission to view this.",
+    "newAnnouncement": "New Announcement",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Permanently delete \"{title}\"? This cannot be undone.",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "updated": "Updated {date}",
+    "actionError": "Could not update this announcement. Please try again.",
+    "bodyHint": "Separate paragraphs with a blank line. Nepali is optional -- the feed falls back to English when it's missing.",
+    "fields": {
+      "category": "Category",
+      "titleEn": "Title (English)",
+      "titleNe": "Title (Nepali)",
+      "bodyEn": "Body (English)",
+      "bodyNe": "Body (Nepali)",
+      "pinned": "Pin to top of the feed"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published"
+    },
+    "categories": {
+      "APP_UPDATE": "App Update",
+      "FAMILY_NEWS": "Family News",
+      "CELEBRATION": "Celebration",
+      "OBITUARY": "Obituary",
+      "HELP_REQUEST": "Help Request"
+    },
+    "photos": {
+      "addPhoto": "Add Photo",
+      "uploading": "Uploading…",
+      "delete": "Remove photo",
+      "captionPlaceholder": "Caption (optional)",
+      "uploadError": "Could not upload this photo. Please try again."
     }
   },
   "adminGenerationsPage": {

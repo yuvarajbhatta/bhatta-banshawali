@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
+  Bell,
   Copy,
   FileCheck,
   FileText,
@@ -19,12 +20,16 @@ import {
 } from "lucide-react";
 
 export interface AppNavItem {
-  href: "/dashboard" | "/family" | "/tree" | "/directory";
-  labelKey: "dashboard" | "yourFamily" | "familyTree" | "members";
+  href: "/dashboard" | "/family" | "/tree" | "/directory" | "/news";
+  labelKey: "dashboard" | "yourFamily" | "familyTree" | "members" | "news";
   icon: LucideIcon;
+  // Only "/news" carries a badge (the unread announcement count) -- a
+  // single boolean flag rather than a countKey lookup table like
+  // ADMIN_NAV_ITEMS below, since there's just the one case.
+  showUnreadBadge?: boolean;
 }
 
-// The four authenticated sections that actually exist (docs/08 Phases 4-5)
+// The five authenticated sections that actually exist (docs/08 Phases 4-5)
 // -- not the full brief's Photos/Events/Reports/etc. sidebar, which would
 // be dead links (see docs/frontend-redesign-plan.md).
 export const APP_NAV_ITEMS: AppNavItem[] = [
@@ -32,6 +37,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { href: "/family", labelKey: "yourFamily", icon: Workflow },
   { href: "/tree", labelKey: "familyTree", icon: GitFork },
   { href: "/directory", labelKey: "members", icon: Users },
+  { href: "/news", labelKey: "news", icon: Bell, showUnreadBadge: true },
 ];
 
 export interface AdminNavItem {
@@ -43,6 +49,7 @@ export interface AdminNavItem {
     | "/admin/accounts"
     | "/admin/admin-access-requests"
     | "/admin/content"
+    | "/admin/news"
     | "/admin/lineage"
     | "/admin/generations"
     | "/admin/audit-log"
@@ -56,6 +63,7 @@ export interface AdminNavItem {
     | "manageUserAccounts"
     | "adminAccessRequests"
     | "content"
+    | "newsManager"
     | "lineageBuilder"
     | "generationsView"
     | "auditLog"
@@ -87,6 +95,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/duplicates", labelKey: "duplicatePeople", icon: Copy },
   { href: "/admin/data-quality", labelKey: "dataQualityReports", icon: AlertTriangle },
   { href: "/admin/content", labelKey: "content", icon: FileText },
+  { href: "/admin/news", labelKey: "newsManager", icon: Bell },
   { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },
   { href: "/admin/generations", labelKey: "generationsView", icon: Layers },
   { href: "/admin/audit-log", labelKey: "auditLog", icon: History },

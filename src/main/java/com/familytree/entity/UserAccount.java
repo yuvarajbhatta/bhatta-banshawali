@@ -62,6 +62,13 @@ public class UserAccount {
     // to land, not a login gate. See TokenPurpose.EMAIL_VERIFICATION.
     private LocalDateTime emailVerifiedAt;
 
+    // Watermark for the News & Alerts unread badge (see AnnouncementService)
+    // -- null means "never opened the tab", so every published post counts
+    // as unread. A single timestamp rather than a per-post read-receipt
+    // table: coarser ("new since you last looked", not "which posts you've
+    // read") but sufficient for a broadcast feed with no per-item state.
+    private LocalDateTime lastSeenAnnouncementsAt;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_account_roles",
@@ -144,5 +151,13 @@ public class UserAccount {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public LocalDateTime getLastSeenAnnouncementsAt() {
+        return lastSeenAnnouncementsAt;
+    }
+
+    public void setLastSeenAnnouncementsAt(LocalDateTime lastSeenAnnouncementsAt) {
+        this.lastSeenAnnouncementsAt = lastSeenAnnouncementsAt;
     }
 }

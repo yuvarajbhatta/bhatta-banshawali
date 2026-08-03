@@ -19,10 +19,19 @@ interface AppShellProps {
   email: string | null;
   adminAccessRequestStatus: "NONE" | "PENDING" | null;
   adminCounts?: AdminNavCounts | null;
+  announcementUnreadCount?: number;
   children: ReactNode;
 }
 
-export function AppShell({ displayName, roleLabel, email, adminAccessRequestStatus, adminCounts, children }: AppShellProps) {
+export function AppShell({
+  displayName,
+  roleLabel,
+  email,
+  adminAccessRequestStatus,
+  adminCounts,
+  announcementUnreadCount,
+  children,
+}: AppShellProps) {
   const t = useTranslations("appShell.header");
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -90,6 +99,7 @@ export function AppShell({ displayName, roleLabel, email, adminAccessRequestStat
       <aside className={styles.desktopSidebar}>
         <Sidebar
           adminCounts={adminCounts}
+          announcementUnreadCount={announcementUnreadCount}
           footer={<SidebarFooterActions adminAccessRequestStatus={adminAccessRequestStatus} />}
         />
       </aside>
@@ -141,6 +151,7 @@ export function AppShell({ displayName, roleLabel, email, adminAccessRequestStat
                 <Sidebar
                   onNavigate={() => setMobileNavOpen(false)}
                   adminCounts={adminCounts}
+                  announcementUnreadCount={announcementUnreadCount}
                   footer={<SidebarFooterActions adminAccessRequestStatus={adminAccessRequestStatus} />}
                 />
               </div>

@@ -17,9 +17,10 @@ interface SidebarProps {
   onNavigate?: () => void;
   footer?: ReactNode;
   adminCounts?: AdminNavCounts | null;
+  announcementUnreadCount?: number;
 }
 
-export function Sidebar({ onNavigate, footer, adminCounts }: SidebarProps) {
+export function Sidebar({ onNavigate, footer, adminCounts, announcementUnreadCount }: SidebarProps) {
   const t = useTranslations("appShell.nav");
   const brandT = useTranslations("app");
   const pathname = usePathname();
@@ -41,6 +42,7 @@ export function Sidebar({ onNavigate, footer, adminCounts }: SidebarProps) {
         <div className={styles.navGroup}>
           {APP_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const badgeCount = item.showUnreadBadge ? announcementUnreadCount : undefined;
             return (
               <Link
                 key={item.href}
@@ -51,6 +53,7 @@ export function Sidebar({ onNavigate, footer, adminCounts }: SidebarProps) {
               >
                 <Icon size={18} className={styles.navIcon} aria-hidden="true" />
                 {t(item.labelKey)}
+                {badgeCount != null && badgeCount > 0 ? <span className={styles.countBadge}>{badgeCount}</span> : null}
               </Link>
             );
           })}
