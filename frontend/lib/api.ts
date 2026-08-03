@@ -160,6 +160,22 @@ export async function convertBsToAd(year: number, month: number, day: number): P
   return response.json();
 }
 
+// Server-side counterpart of convertAdToBs, for use in server components
+// rendering a BS date alongside an AD one. Some AD dates fall outside the
+// converter's supported BS range, so this resolves to null instead of
+// throwing -- callers should fall back to showing the AD date alone.
+export async function getBsDateForAd(
+  dateAd: string,
+): Promise<{ year: number; month: number; day: number } | null> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/date-conversion/ad-to-bs?date=${encodeURIComponent(dateAd)}`,
+  );
+  if (!response.ok) {
+    return null;
+  }
+  return response.json();
+}
+
 export interface PersonSummaryDto {
   id: number;
   englishFullName: string;
@@ -364,6 +380,7 @@ export const CORRECTABLE_PERSON_FIELDS = [
   "CURRENT_ADDRESS",
   "NOTES",
   "GENERATION_NUMBER",
+  "GOTRA",
 ] as const;
 
 export type CorrectablePersonField = (typeof CORRECTABLE_PERSON_FIELDS)[number];

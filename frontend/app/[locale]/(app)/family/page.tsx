@@ -23,7 +23,7 @@ export default async function YourFamilyPage() {
   if (selfId == null) {
     return (
       <>
-        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+        <PageHeader title={t("title")} />
         <p>{t("unlinked")}</p>
       </>
     );
@@ -36,7 +36,7 @@ export default async function YourFamilyPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} />
       <YourFamilyExplorer people={treeResult.tree.nodes} selfId={selfId} />
     </>
   );

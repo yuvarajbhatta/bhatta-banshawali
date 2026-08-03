@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { deletePersonPhoto, personPhotoFileUrl, type PersonPhotoDto } from "@/lib/api";
 import styles from "./PhotoGallery.module.css";
@@ -9,9 +10,10 @@ interface PhotoGalleryProps {
   personId: number;
   photos: PersonPhotoDto[];
   onDeleted: (photoId: number) => void;
+  onAddClick: () => void;
 }
 
-export function PhotoGallery({ personId, photos, onDeleted }: PhotoGalleryProps) {
+export function PhotoGallery({ personId, photos, onDeleted, onAddClick }: PhotoGalleryProps) {
   const t = useTranslations("personDetailPage.photos");
   const [enlarged, setEnlarged] = useState<PersonPhotoDto | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -33,13 +35,13 @@ export function PhotoGallery({ personId, photos, onDeleted }: PhotoGalleryProps)
     }
   }
 
-  if (photos.length === 0) {
-    return <p className={styles.empty}>{t("empty")}</p>;
-  }
-
   return (
     <>
       <div className={styles.grid}>
+        <button type="button" className={styles.addTile} onClick={onAddClick} aria-label={t("addPhoto")}>
+          <Plus size={22} aria-hidden="true" />
+        </button>
+
         {photos.map((photo) => (
           <figure key={photo.id} className={styles.item}>
             <button type="button" className={styles.thumbButton} onClick={() => setEnlarged(photo)}>

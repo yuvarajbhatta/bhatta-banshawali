@@ -2,6 +2,18 @@
   "app": {
     "name": "Family Tree App"
   },
+  "common": {
+    "adLabel": "AD",
+    "bsLabel": "BS",
+    "adMonths": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "bsMonths": [
+      "Baisakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin",
+      "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
+    ]
+  },
   "appShell": {
     "nav": {
       "dashboard": "Dashboard",
@@ -151,7 +163,6 @@
     "noNotes": "No notes added.",
     "photos": {
       "title": "Photos",
-      "empty": "No photos added yet.",
       "addPhoto": "Add a photo",
       "fileLabel": "Photo",
       "captionLabel": "Caption (optional)",
@@ -168,6 +179,12 @@
       "toggle": "Something wrong here?",
       "fieldLabel": "Field",
       "valueLabel": "Correct Value",
+      "dobAd": "AD",
+      "dobBs": "BS",
+      "dobBsYear": "Year",
+      "dobBsMonth": "Month",
+      "dobBsDay": "Day",
+      "dobBsInvalid": "Enter a valid Bikram Sambat date.",
       "reasonLabel": "Reason",
       "reasonPlaceholder": "How do you know this is correct? (e.g. family records, personal knowledge)",
       "submit": "Submit Correction",
@@ -188,14 +205,14 @@
         "BIRTH_PLACE": "Birth Place",
         "CURRENT_ADDRESS": "Current Address",
         "NOTES": "Notes",
-        "GENERATION_NUMBER": "Generation Number"
+        "GENERATION_NUMBER": "Generation Number",
+        "GOTRA": "Gotra"
       }
     }
   },
   "dashboardPage": {
     "title": "Dashboard",
     "member": {
-      "welcomeBack": "Welcome back",
       "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
       "generation": "Generation {number}",
       "viewFullProfile": "View full profile",
@@ -203,7 +220,6 @@
       "mother": "Mother",
       "born": "Born",
       "gotra": "Gotra",
-      "memberSince": "Member Since",
       "notRecorded": "Not recorded",
       "knownAncestors": "Known Ancestors",
       "directDescendants": "Direct Descendants",
@@ -227,7 +243,6 @@
   },
   "familyPage": {
     "title": "Your Family",
-    "subtitle": "Your own line -- ancestors, descendants, and how you connect to anyone else in the register.",
     "unlinked": "Your account is approved, but it hasn't been matched to a family record yet. An administrator will link your profile shortly.",
     "you": "You",
     "tabs": {

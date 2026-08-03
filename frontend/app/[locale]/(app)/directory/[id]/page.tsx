@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { CorrectionForm } from "@/components/CorrectionForm";
 import { PhotoAlbumSection } from "@/components/PhotoAlbumSection";
+import { BirthDateDisplay } from "@/components/BirthDateDisplay";
 import { getPersonDetail, getPersonPhotos, type PersonSummaryDto } from "@/lib/api";
 import styles from "./page.module.css";
 
@@ -35,7 +36,13 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
             <dl className={styles.grid}>
               <dt>{t("fields.birthDate")}</dt>
-              <dd>{result.person.birthDate ?? t("notAdded")}</dd>
+              <dd>
+                {result.person.birthDate ? (
+                  <BirthDateDisplay dateAd={result.person.birthDate} />
+                ) : (
+                  t("notAdded")
+                )}
+              </dd>
 
               <dt>{t("fields.deathDate")}</dt>
               <dd>{result.person.deathDate ?? t("notAdded")}</dd>

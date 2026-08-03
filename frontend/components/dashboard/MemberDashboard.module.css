@@ -17,23 +17,21 @@
   padding: var(--space-8);
 }
 
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary-600-text);
-  margin: 0 0 var(--space-2);
+@media (max-width: 640px) {
+  .hero {
+    padding: var(--space-4);
+  }
 }
 
 .name {
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-weight-bold);
   margin: 0 0 var(--space-1);
 }
 
 .nepaliName {
   color: var(--color-text-muted);
+  font-size: var(--text-sm);
   margin: 0 0 var(--space-3);
 }
 
@@ -52,6 +50,7 @@
   grid-template-columns: auto 1fr;
   gap: var(--space-2) var(--space-4);
   margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
 }
 
 .fact {
@@ -79,7 +78,7 @@
 
 .statsRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
 }
 
@@ -95,7 +94,7 @@
 }
 
 .statValue {
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary-700-text);
 }
@@ -103,6 +102,27 @@
 .statLabel {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+@media (max-width: 640px) {
+  .statsRow {
+    gap: var(--space-2);
+  }
+
+  .statTile {
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    gap: 0;
+  }
+
+  .statValue {
+    font-size: var(--text-base);
+  }
+
+  .statLabel {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+  }
 }
 
 .albumPanel {
@@ -126,4 +146,18 @@
   justify-content: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .actions {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+  }
+
+  .actions > * {
+    flex-shrink: 0;
+  }
 }

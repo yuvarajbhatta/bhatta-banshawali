@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/motion/Reveal";
 import { PhotoAlbumSection } from "@/components/PhotoAlbumSection";
+import { BirthDateDisplay } from "@/components/BirthDateDisplay";
 import type { MemberProfileDto, PersonPhotoDto, PersonSummaryDto, PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, getAncestors, getDescendants } from "@/lib/familyGraph";
 import styles from "./MemberDashboard.module.css";
@@ -24,19 +25,16 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
     );
   }
 
-  const { person, family, gotra, memberSince, pendingCorrectionCount } = profile;
+  const { person, family, gotra, pendingCorrectionCount } = profile;
   const index = buildGraphIndex(people);
   const ancestorCount = getAncestors(index, person.id).length;
   const descendantCount = getDescendants(index, person.id).length;
-  const birthYear = person.birthDate ? new Date(person.birthDate).getFullYear() : null;
-  const memberSinceYear = new Date(memberSince).getFullYear();
 
   return (
     <div className={styles.dashboard}>
       <Reveal>
         <div className={styles.hero}>
           <div>
-            <p className={styles.eyebrow}>{t("welcomeBack")}</p>
             <h2 className={styles.name}>{person.englishFullName}</h2>
             {person.nepaliFullName ? <p className={styles.nepaliName}>{person.nepaliFullName}</p> : null}
             {person.generationNumber != null ? (
@@ -47,7 +45,7 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
               <FactRow label={t("mother")} person={family.mother} notRecordedLabel={t("notRecorded")} />
               <div className={styles.fact}>
                 <dt>{t("born")}</dt>
-                <dd>{birthYear ?? t("notRecorded")}</dd>
+                <dd>{person.birthDate ? <BirthDateDisplay dateAd={person.birthDate} /> : t("notRecorded")}</dd>
               </div>
               {gotra ? (
                 <div className={styles.fact}>
@@ -55,14 +53,12 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
                   <dd>{gotra}</dd>
                 </div>
               ) : null}
-              <div className={styles.fact}>
-                <dt>{t("memberSince")}</dt>
-                <dd>{memberSinceYear}</dd>
-              </div>
             </dl>
           </div>
           <Link href={`/directory/${person.id}`}>
-            <Button variant="secondary">{t("viewFullProfile")}</Button>
+            <Button variant="secondary" size="sm">
+              {t("viewFullProfile")}
+            </Button>
           </Link>
         </div>
       </Reveal>
@@ -84,13 +80,19 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
 
       <Reveal delay={0.2} className={styles.actions}>
         <Link href="/family">
-          <Button variant="primary">{t("viewYourFamily")}</Button>
+          <Button variant="primary" size="sm">
+            {t("viewYourFamily")}
+          </Button>
         </Link>
         <Link href={`/tree?focus=${person.id}`}>
-          <Button variant="secondary">{t("viewFullTree")}</Button>
+          <Button variant="secondary" size="sm">
+            {t("viewFullTree")}
+          </Button>
         </Link>
         <Link href="/directory">
-          <Button variant="secondary">{t("browseDirectory")}</Button>
+          <Button variant="secondary" size="sm">
+            {t("browseDirectory")}
+          </Button>
         </Link>
       </Reveal>
     </div>

@@ -21,5 +21,6 @@ public enum CorrectablePersonField {
     BIRTH_PLACE,
     CURRENT_ADDRESS,
     NOTES,
-    GENERATION_NUMBER
+    GENERATION_NUMBER,
+    GOTRA
 }

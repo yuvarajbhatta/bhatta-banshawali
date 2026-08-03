@@ -19,15 +19,11 @@ export function ImmediateFamily({ family }: ImmediateFamilyProps) {
       <div className={styles.grid}>
         <FamilyMemberCard label={t("father")} people={family.father ? [family.father] : []} emptyLabel={t("notRecorded")} />
         <FamilyMemberCard label={t("mother")} people={family.mother ? [family.mother] : []} emptyLabel={t("notRecorded")} />
+        {family.grandparents.length > 0 ? <FamilyMemberCard label={t("grandparents")} people={family.grandparents} /> : null}
+        {family.siblings.length > 0 ? <FamilyMemberCard label={t("siblings")} people={family.siblings} /> : null}
         {family.spouses.length > 0 ? <FamilyMemberCard label={t("spouse")} people={family.spouses} /> : null}
         {family.children.length > 0 ? <FamilyMemberCard label={t("children")} people={family.children} /> : null}
-        {family.siblings.length > 0 ? <FamilyMemberCard label={t("siblings")} people={family.siblings} /> : null}
       </div>
-      {family.grandparents.length > 0 ? (
-        <div className={styles.grandparents}>
-          <FamilyMemberCard label={t("grandparents")} people={family.grandparents} />
-        </div>
-      ) : null}
     </div>
   );
 }

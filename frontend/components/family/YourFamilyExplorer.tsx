@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, getImmediateFamily } from "@/lib/familyGraph";
+import { CorrectionForm } from "@/components/CorrectionForm";
 import { ImmediateFamily } from "./ImmediateFamily";
 import { LineageTimeline } from "./LineageTimeline";
 import { LineageList } from "./LineageList";
@@ -42,7 +43,14 @@ export function YourFamilyExplorer({ people, selfId }: YourFamilyExplorerProps) 
         ))}
       </div>
 
-      {activeTab === "immediateFamily" && immediateFamily ? <ImmediateFamily family={immediateFamily} /> : null}
+      {activeTab === "immediateFamily" && immediateFamily ? (
+        <>
+          <ImmediateFamily family={immediateFamily} />
+          <div className={styles.correction}>
+            <CorrectionForm personId={selfId} />
+          </div>
+        </>
+      ) : null}
       {activeTab === "lineage" ? <LineageTimeline index={index} selfId={selfId} /> : null}
       {activeTab === "descendants" ? <LineageList index={index} selfId={selfId} /> : null}
       {activeTab === "relationshipPath" ? <RelationshipPathFinder index={index} selfId={selfId} /> : null}

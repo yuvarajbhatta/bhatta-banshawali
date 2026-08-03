@@ -113,6 +113,7 @@ public class PersonCorrectionService {
             case CURRENT_ADDRESS -> person.getCurrentAddress();
             case NOTES -> person.getNotes();
             case GENERATION_NUMBER -> person.getGenerationNumber() == null ? null : person.getGenerationNumber().toString();
+            case GOTRA -> person.getGotra();
         };
     }
 
@@ -132,6 +133,7 @@ public class PersonCorrectionService {
             case CURRENT_ADDRESS -> person.setCurrentAddress(value);
             case NOTES -> person.setNotes(value);
             case GENERATION_NUMBER -> person.setGenerationNumber(Integer.parseInt(value));
+            case GOTRA -> person.setGotra(value);
         }
     }
 }
