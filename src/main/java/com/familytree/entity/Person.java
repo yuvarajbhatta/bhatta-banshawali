@@ -48,6 +48,9 @@ public class Person {
     @Column(length = 500)
     private String currentAddress;
 
+    @Column(length = 100)
+    private String gotra;
+
     @Column(length = 4000)
     private String notes;
 
@@ -141,6 +144,12 @@ public class Person {
     }
     public void setCurrentAddress(String currentAddress) {
         this.currentAddress = currentAddress;
+    }
+    public String getGotra() {
+        return gotra;
+    }
+    public void setGotra(String gotra) {
+        this.gotra = gotra;
     }
 
     public Integer getGenerationNumber() {

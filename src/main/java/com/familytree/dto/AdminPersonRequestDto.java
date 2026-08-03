@@ -45,6 +45,9 @@ public class AdminPersonRequestDto {
     @Size(max = 500, message = "Current address must be 500 characters or fewer.")
     private String currentAddress;
 
+    @Size(max = 100, message = "Gotra must be 100 characters or fewer.")
+    private String gotra;
+
     @Size(max = 4000, message = "Notes must be 4000 characters or fewer.")
     private String notes;
 
@@ -158,6 +161,14 @@ public class AdminPersonRequestDto {
 
     public void setCurrentAddress(String currentAddress) {
         this.currentAddress = currentAddress;
+    }
+
+    public String getGotra() {
+        return gotra;
+    }
+
+    public void setGotra(String gotra) {
+        this.gotra = gotra;
     }
 
     public String getNotes() {

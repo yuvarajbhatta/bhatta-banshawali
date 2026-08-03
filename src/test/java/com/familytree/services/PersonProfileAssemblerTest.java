@@ -174,6 +174,7 @@ class PersonProfileAssemblerTest {
         person.setBirthDate(LocalDate.of(1995, 6, 15));
         person.setBirthPlace("Kispang");
         person.setCurrentAddress("Kathmandu");
+        person.setGotra("Kashyap");
         person.setNotes("Some notes");
         person.setPhotoPath("/uploads/yuva.jpg");
 
@@ -190,6 +191,7 @@ class PersonProfileAssemblerTest {
         assertThat(detail.birthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
         assertThat(detail.birthPlace()).isEqualTo("Kispang");
         assertThat(detail.currentAddress()).isEqualTo("Kathmandu");
+        assertThat(detail.gotra()).isEqualTo("Kashyap");
         assertThat(detail.notes()).isEqualTo("Some notes");
         assertThat(detail.photoPath()).isEqualTo("/uploads/yuva.jpg");
         assertThat(detail.family()).isNotNull();

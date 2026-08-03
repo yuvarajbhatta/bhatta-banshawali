@@ -134,7 +134,8 @@
       "birthDate": "Birth Date",
       "deathDate": "Death Date",
       "birthPlace": "Birth Place",
-      "currentAddress": "Current Address"
+      "currentAddress": "Current Address",
+      "gotra": "Gotra"
     },
     "notAdded": "Not added",
     "family": {
@@ -187,9 +188,12 @@
       "father": "Father",
       "mother": "Mother",
       "born": "Born",
+      "gotra": "Gotra",
+      "memberSince": "Member Since",
       "notRecorded": "Not recorded",
       "knownAncestors": "Known Ancestors",
       "directDescendants": "Direct Descendants",
+      "pendingCorrections": "Pending Corrections",
       "viewYourFamily": "View Your Family",
       "viewFullTree": "View Full Tree",
       "browseDirectory": "Browse the Directory"
@@ -360,6 +364,7 @@
       "deathDate": "Death Date",
       "birthPlace": "Birth Place",
       "currentAddress": "Current Address",
+      "gotra": "Gotra",
       "notesSection": "Notes",
       "notes": "Notes",
       "firstNameRequired": "First name is required.",

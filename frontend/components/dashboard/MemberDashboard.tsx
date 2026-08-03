@@ -22,11 +22,12 @@ export async function MemberDashboard({ profile, people }: MemberDashboardProps)
     );
   }
 
-  const { person, family } = profile;
+  const { person, family, gotra, memberSince, pendingCorrectionCount } = profile;
   const index = buildGraphIndex(people);
   const ancestorCount = getAncestors(index, person.id).length;
   const descendantCount = getDescendants(index, person.id).length;
   const birthYear = person.birthDate ? new Date(person.birthDate).getFullYear() : null;
+  const memberSinceYear = new Date(memberSince).getFullYear();
 
   return (
     <div className={styles.dashboard}>
@@ -46,6 +47,16 @@ export async function MemberDashboard({ profile, people }: MemberDashboardProps)
                 <dt>{t("born")}</dt>
                 <dd>{birthYear ?? t("notRecorded")}</dd>
               </div>
+              {gotra ? (
+                <div className={styles.fact}>
+                  <dt>{t("gotra")}</dt>
+                  <dd>{gotra}</dd>
+                </div>
+              ) : null}
+              <div className={styles.fact}>
+                <dt>{t("memberSince")}</dt>
+                <dd>{memberSinceYear}</dd>
+              </div>
             </dl>
           </div>
           <Link href={`/directory/${person.id}`}>
@@ -58,6 +69,7 @@ export async function MemberDashboard({ profile, people }: MemberDashboardProps)
         <div className={styles.statsRow}>
           <StatTile value={ancestorCount} label={t("knownAncestors")} />
           <StatTile value={descendantCount} label={t("directDescendants")} />
+          <StatTile value={pendingCorrectionCount} label={t("pendingCorrections")} />
         </div>
       </Reveal>
 

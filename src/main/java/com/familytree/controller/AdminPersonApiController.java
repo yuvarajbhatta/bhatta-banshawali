@@ -91,6 +91,7 @@ public class AdminPersonApiController {
         person.setPhotoPath(request.getPhotoPath());
         person.setBirthPlace(request.getBirthPlace());
         person.setCurrentAddress(request.getCurrentAddress());
+        person.setGotra(request.getGotra());
         person.setNotes(request.getNotes());
         return person;
     }
@@ -112,6 +113,7 @@ public class AdminPersonApiController {
                 person.getPhotoPath(),
                 person.getBirthPlace(),
                 person.getCurrentAddress(),
+                person.getGotra(),
                 person.getNotes()
         );
     }

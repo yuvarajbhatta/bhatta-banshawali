@@ -21,6 +21,7 @@ const EMPTY: AdminPersonRequest = {
   photoPath: null,
   birthPlace: null,
   currentAddress: null,
+  gotra: null,
   notes: null,
 };
 
@@ -189,6 +190,13 @@ export function PersonForm({ initial, submitLabel, onSubmit }: PersonFormProps) 
               onChange={(event) => set("currentAddress", event.target.value || null)}
             />
           </div>
+        </div>
+        <div className={styles.row}>
+          <div className={styles.field}>
+            <label htmlFor="gotra">{t("gotra")}</label>
+            <input id="gotra" value={values.gotra ?? ""} onChange={(event) => set("gotra", event.target.value || null)} />
+          </div>
+          <div />
         </div>
       </div>
 

@@ -1,10 +1,12 @@
 package com.familytree.controller;
 
 import com.familytree.dto.MemberProfileDto;
+import com.familytree.entity.CorrectionRequestStatus;
 import com.familytree.entity.Person;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
+import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.services.PersonProfileAssembler;
@@ -17,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -24,6 +27,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +40,9 @@ class MemberProfileControllerTest {
     private UserPersonLinkRepository userPersonLinkRepository;
 
     @Mock
+    private PersonCorrectionRequestRepository correctionRequestRepository;
+
+    @Mock
     private RelationshipService relationshipService;
 
     @Mock
@@ -44,7 +51,8 @@ class MemberProfileControllerTest {
     private MemberProfileController controllerWithRealAssembler() {
         PersonProfileAssembler assembler = new PersonProfileAssembler(relationshipService, new PersonDisplayHelper());
         ViewerContextResolver viewerContextResolver = new ViewerContextResolver(userAccountRepository, userPersonLinkRepository);
-        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, assembler, viewerContextResolver);
+        return new MemberProfileController(userAccountRepository, userPersonLinkRepository, correctionRequestRepository,
+                assembler, viewerContextResolver);
     }
 
     @Test
@@ -53,7 +61,7 @@ class MemberProfileControllerTest {
         UserAccount account = new UserAccount();
         account.setEmail("applicant@example.com");
         when(userAccountRepository.findByEmail("applicant@example.com")).thenReturn(Optional.of(account));
-        when(userPersonLinkRepository.findByUserAccountId(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
+        when(userPersonLinkRepository.findByUserAccountId(any())).thenReturn(List.of());
 
         MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
@@ -61,6 +69,10 @@ class MemberProfileControllerTest {
         assertThat(profile.person()).isNull();
         assertThat(profile.family()).isNull();
         assertThat(profile.email()).isEqualTo("applicant@example.com");
+        // memberSince/pendingCorrectionCount describe the account itself,
+        // so they're still populated even though nothing's linked yet.
+        assertThat(profile.memberSince()).isEqualTo(account.getCreatedAt().toLocalDate());
+        assertThat(profile.gotra()).isNull();
     }
 
     @Test
@@ -73,7 +85,7 @@ class MemberProfileControllerTest {
         UserPersonLink pendingLink = new UserPersonLink();
         pendingLink.setLinkStatus(UserPersonLinkStatus.PENDING);
         pendingLink.setPerson(new Person());
-        when(userPersonLinkRepository.findByUserAccountId(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(pendingLink));
+        when(userPersonLinkRepository.findByUserAccountId(any())).thenReturn(List.of(pendingLink));
 
         MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
@@ -93,11 +105,12 @@ class MemberProfileControllerTest {
         self.setFirstName("Yuva");
         self.setLastName("Bhatta");
         self.setGenerationNumber(8);
+        self.setGotra("Kashyap");
 
         UserPersonLink verifiedLink = new UserPersonLink();
         verifiedLink.setLinkStatus(UserPersonLinkStatus.VERIFIED);
         verifiedLink.setPerson(self);
-        when(userPersonLinkRepository.findByUserAccountId(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(verifiedLink));
+        when(userPersonLinkRepository.findByUserAccountId(any())).thenReturn(List.of(verifiedLink));
 
         Person father = new Person();
         father.setId(101L);
@@ -111,6 +124,8 @@ class MemberProfileControllerTest {
         when(relationshipService.getSpousesForPerson(self)).thenReturn(List.of());
         when(relationshipService.getChildrenForPerson(self)).thenReturn(List.of(child));
 
+        when(correctionRequestRepository.countBySubmittedByIdAndStatus(any(), any())).thenReturn(2L);
+
         MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
 
         assertThat(profile.linked()).isTrue();
@@ -121,6 +136,24 @@ class MemberProfileControllerTest {
         assertThat(profile.family().spouses()).isEmpty();
         assertThat(profile.family().children()).hasSize(1);
         assertThat(profile.family().children().get(0).englishFullName()).isEqualTo("Kiran");
+        assertThat(profile.gotra()).isEqualTo("Kashyap");
+        assertThat(profile.memberSince()).isEqualTo(account.getCreatedAt().toLocalDate());
+        assertThat(profile.pendingCorrectionCount()).isEqualTo(2L);
+    }
+
+    @Test
+    void queriesPendingCorrectionCountForThisAccountOnly() {
+        when(authentication.getName()).thenReturn("applicant@example.com");
+        UserAccount account = new UserAccount();
+        ReflectionTestUtils.setField(account, "id", 42L);
+        account.setEmail("applicant@example.com");
+        when(userAccountRepository.findByEmail("applicant@example.com")).thenReturn(Optional.of(account));
+        when(userPersonLinkRepository.findByUserAccountId(any())).thenReturn(List.of());
+        when(correctionRequestRepository.countBySubmittedByIdAndStatus(42L, CorrectionRequestStatus.PENDING)).thenReturn(3L);
+
+        MemberProfileDto profile = controllerWithRealAssembler().me(authentication);
+
+        assertThat(profile.pendingCorrectionCount()).isEqualTo(3L);
     }
 
     @Test

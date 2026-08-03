@@ -114,6 +114,7 @@ public class PersonProfileAssembler {
                 person.getDeathDate(),
                 person.getBirthPlace(),
                 canSeeSensitive ? person.getCurrentAddress() : null,
+                person.getGotra(),
                 person.getNotes(),
                 person.getPhotoPath(),
                 familySnapshot(person, viewer)

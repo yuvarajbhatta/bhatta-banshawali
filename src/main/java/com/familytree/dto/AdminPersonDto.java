@@ -24,6 +24,7 @@ public record AdminPersonDto(
         String photoPath,
         String birthPlace,
         String currentAddress,
+        String gotra,
         String notes
 ) {
 }

@@ -12,6 +12,9 @@ public interface PersonCorrectionRequestRepository extends JpaRepository<PersonC
     /** Corrections this account submitted -- see UserAccountAdminService#delete. */
     List<PersonCorrectionRequest> findBySubmittedById(Long userAccountId);
 
+    /** Pending-corrections-mine dashboard stat -- see MemberProfileController. */
+    long countBySubmittedByIdAndStatus(Long userAccountId, CorrectionRequestStatus status);
+
     /** Corrections about this person -- see PersonMergeService#merge. */
     List<PersonCorrectionRequest> findByPersonId(Long personId);
 }

@@ -134,7 +134,8 @@
       "birthDate": "जन्म मिति",
       "deathDate": "मृत्यु मिति",
       "birthPlace": "जन्म स्थान",
-      "currentAddress": "हालको ठेगाना"
+      "currentAddress": "हालको ठेगाना",
+      "gotra": "गोत्र"
     },
     "notAdded": "थपिएको छैन",
     "family": {
@@ -187,9 +188,12 @@
       "father": "बुबा",
       "mother": "आमा",
       "born": "जन्म",
+      "gotra": "गोत्र",
+      "memberSince": "सदस्य भएको मिति",
       "notRecorded": "अभिलेख गरिएको छैन",
       "knownAncestors": "थाहा भएका पुर्खा",
       "directDescendants": "प्रत्यक्ष सन्तान",
+      "pendingCorrections": "विचाराधीन सुधार",
       "viewYourFamily": "तपाईंको परिवार हेर्नुहोस्",
       "viewFullTree": "पूरा रूख हेर्नुहोस्",
       "browseDirectory": "निर्देशिका ब्राउज गर्नुहोस्"
@@ -360,6 +364,7 @@
       "deathDate": "मृत्यु मिति",
       "birthPlace": "जन्मस्थान",
       "currentAddress": "हालको ठेगाना",
+      "gotra": "गोत्र",
       "notesSection": "टिप्पणीहरू",
       "notes": "टिप्पणीहरू",
       "firstNameRequired": "पहिलो नाम आवश्यक छ।",

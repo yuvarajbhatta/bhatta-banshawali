@@ -185,6 +185,12 @@ export interface MemberProfileDto {
   linked: boolean;
   person: PersonSummaryDto | null;
   family: FamilySnapshotDto | null;
+  // gotra/memberSince/pendingCorrectionCount describe the account and
+  // its linked Person, not the family snapshot -- memberSince and
+  // pendingCorrectionCount are populated even when unlinked.
+  gotra: string | null;
+  memberSince: string;
+  pendingCorrectionCount: number;
 }
 
 export type MemberProfileResult =
@@ -225,6 +231,7 @@ export interface PersonDetailDto {
   deathDate: string | null;
   birthPlace: string | null;
   currentAddress: string | null;
+  gotra: string | null;
   notes: string | null;
   photoPath: string | null;
   family: FamilySnapshotDto;
@@ -700,6 +707,7 @@ export interface AdminPersonDto {
   photoPath: string | null;
   birthPlace: string | null;
   currentAddress: string | null;
+  gotra: string | null;
   notes: string | null;
 }
 

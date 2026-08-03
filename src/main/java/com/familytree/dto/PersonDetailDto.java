@@ -19,6 +19,7 @@ public record PersonDetailDto(
         LocalDate deathDate,
         String birthPlace,
         String currentAddress,
+        String gotra,
         String notes,
         String photoPath,
         FamilySnapshotDto family

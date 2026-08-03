@@ -1,10 +1,12 @@
 package com.familytree.controller;
 
 import com.familytree.dto.MemberProfileDto;
+import com.familytree.entity.CorrectionRequestStatus;
 import com.familytree.entity.Person;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
+import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.services.PersonProfileAssembler;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
 
 /**
  * The logged-in member's own dashboard data (docs/08 Phase 4). Only
@@ -31,15 +35,18 @@ public class MemberProfileController {
 
     private final UserAccountRepository userAccountRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
+    private final PersonCorrectionRequestRepository correctionRequestRepository;
     private final PersonProfileAssembler personProfileAssembler;
     private final ViewerContextResolver viewerContextResolver;
 
     public MemberProfileController(UserAccountRepository userAccountRepository,
                                    UserPersonLinkRepository userPersonLinkRepository,
+                                   PersonCorrectionRequestRepository correctionRequestRepository,
                                    PersonProfileAssembler personProfileAssembler,
                                    ViewerContextResolver viewerContextResolver) {
         this.userAccountRepository = userAccountRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
+        this.correctionRequestRepository = correctionRequestRepository;
         this.personProfileAssembler = personProfileAssembler;
         this.viewerContextResolver = viewerContextResolver;
     }
@@ -50,6 +57,10 @@ public class MemberProfileController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No member profile for this account."));
 
+        LocalDate memberSince = account.getCreatedAt().toLocalDate();
+        long pendingCorrectionCount = correctionRequestRepository.countBySubmittedByIdAndStatus(
+                account.getId(), CorrectionRequestStatus.PENDING);
+
         Person person = userPersonLinkRepository.findByUserAccountId(account.getId()).stream()
                 .filter(link -> link.getLinkStatus() == UserPersonLinkStatus.VERIFIED)
                 .map(UserPersonLink::getPerson)
@@ -57,11 +68,12 @@ public class MemberProfileController {
                 .orElse(null);
 
         if (person == null) {
-            return MemberProfileDto.unlinked(account.getEmail());
+            return MemberProfileDto.unlinked(account.getEmail(), memberSince, pendingCorrectionCount);
         }
 
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
         return new MemberProfileDto(account.getEmail(), true,
-                personProfileAssembler.summarize(person, viewer), personProfileAssembler.familySnapshot(person, viewer));
+                personProfileAssembler.summarize(person, viewer), personProfileAssembler.familySnapshot(person, viewer),
+                person.getGotra(), memberSince, pendingCorrectionCount);
     }
 }

@@ -42,6 +42,9 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
 
               <dt>{t("fields.currentAddress")}</dt>
               <dd>{result.person.currentAddress ?? t("notAdded")}</dd>
+
+              <dt>{t("fields.gotra")}</dt>
+              <dd>{result.person.gotra ?? t("notAdded")}</dd>
             </dl>
           </div>
 
