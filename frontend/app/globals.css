@@ -94,22 +94,6 @@
   --text-3xl: clamp(1.875rem, 1.5rem + 1.9vw, 2.5rem);
   --text-4xl: clamp(2.25rem, 1.7rem + 2.8vw, 3.5rem);
   --text-5xl: clamp(2.75rem, 1.9rem + 4.3vw, 4.75rem);
-}
-
-/* The fluid clamp() floors above are still sized for tablet/desktop hero
-   copy -- on an actual phone (not just a narrow desktop window) every one
-   of them reads oversized. Scaled down as a system-wide override rather
-   than patched per component, since "fonts are too big" was reported
-   everywhere on mobile, not on one page. */
-@media (max-width: 480px) {
-  :root {
-    --text-lg: 1rem;
-    --text-xl: 1.125rem;
-    --text-2xl: 1.25rem;
-    --text-3xl: 1.5rem;
-    --text-4xl: 1.875rem;
-    --text-5xl: 2.25rem;
-  }
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -169,6 +153,22 @@
   --z-canvas-overlay: 10;
   --z-nav: 100;
   --z-modal: 1000;
+}
+
+/* The fluid clamp() floors above are still sized for tablet/desktop hero
+   copy -- on an actual phone (not just a narrow desktop window) every one
+   of them reads oversized. Scaled down as a system-wide override rather
+   than patched per component, since "fonts are too big" was reported
+   everywhere on mobile, not on one page. */
+@media (max-width: 480px) {
+  :root {
+    --text-lg: 1rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.25rem;
+    --text-3xl: 1.5rem;
+    --text-4xl: 1.875rem;
+    --text-5xl: 2.25rem;
+  }
 }
 
 :root[data-theme="dark"] {
