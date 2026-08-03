@@ -82,6 +82,56 @@ class FamilyTreeAssemblerTest {
     }
 
     @Test
+    void fallsBackToReverseChildEdgeWhenNoDirectFatherOrMotherEdgeExists() {
+        // Same historical data shape RelationshipService#getFatherForPerson
+        // already handles (see its own doc comment): only the parent's own
+        // recorded "this is my child" CHILD edge exists, no direct
+        // FATHER/MOTHER edge from the child's side.
+        Person father = person(1L, "Rana", "Bhatta", LocalDate.of(1940, 1, 1));
+        Person mother = person(2L, "Sita", "Bhatta", LocalDate.of(1945, 1, 1));
+        Person child = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+
+        when(personService.getAllPersons()).thenReturn(List.of(father, mother, child));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of(
+                relationship(father, child, RelationshipType.CHILD),
+                relationship(mother, child, RelationshipType.CHILD)
+        ));
+        when(relationshipService.getRootPersonForLineage()).thenReturn(father);
+        when(relationshipService.matchesGenderPrefix(father, "m")).thenReturn(true);
+        when(relationshipService.matchesGenderPrefix(mother, "m")).thenReturn(false);
+        when(relationshipService.matchesGenderPrefix(mother, "f")).thenReturn(true);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(true, null));
+
+        PersonTreeNodeDto childNode = findNode(tree, 3L);
+        assertThat(childNode.fatherId()).isEqualTo(1L);
+        assertThat(childNode.motherId()).isEqualTo(2L);
+    }
+
+    @Test
+    void directFatherEdgeTakesPrecedenceOverAReverseChildEdgeFallbackCandidate() {
+        Person recordedFather = person(1L, "Rana", "Bhatta", LocalDate.of(1940, 1, 1));
+        Person otherManWithAChildEdge = person(4L, "Other", "Bhatta", LocalDate.of(1938, 1, 1));
+        Person child = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
+
+        when(personService.getAllPersons()).thenReturn(List.of(recordedFather, otherManWithAChildEdge, child));
+        when(relationshipService.getAllRelationships()).thenReturn(List.of(
+                relationship(child, recordedFather, RelationshipType.FATHER),
+                relationship(otherManWithAChildEdge, child, RelationshipType.CHILD)
+        ));
+        when(relationshipService.getRootPersonForLineage()).thenReturn(recordedFather);
+
+        FamilyTreeDto tree = assembler().buildTree(new ViewerContext(true, null));
+
+        // The direct FATHER edge wins regardless of what the fallback
+        // candidate's gender check would have said -- not stubbing
+        // matchesGenderPrefix for otherManWithAChildEdge here (it's free to
+        // return its Mockito default) is itself part of the point: the
+        // fallback's answer must never overwrite an existing direct edge.
+        assertThat(findNode(tree, 3L).fatherId()).isEqualTo(1L);
+    }
+
+    @Test
     void redactsBirthDateForNonAdminViewingSomeoneElse() {
         Person self = person(3L, "Yuva", "Bhatta", LocalDate.of(1970, 1, 1));
         when(personService.getAllPersons()).thenReturn(List.of(self));

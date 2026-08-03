@@ -127,6 +127,48 @@ class VerificationReviewServiceTest {
     }
 
     @Test
+    void approveWithLinkedPersonIdBackfillsAMissingBirthDateFromTheSubmittedSignup() {
+        // The common case for a large pre-populated tree: the matched
+        // person is an existing, sparse seed-data record with no
+        // birthDate ever entered. The applicant's own verified submission
+        // is as authoritative a source as any for filling that gap.
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setSubmittedDobAd(LocalDate.of(1995, 6, 15));
+        when(verificationRequestRepository.findById(22L)).thenReturn(Optional.of(request));
+
+        Person person = new Person();
+        person.setId(78L);
+        person.setBirthDate(null);
+        when(personRepository.findById(78L)).thenReturn(Optional.of(person));
+
+        verificationReviewService.approve(22L, "admin", null, 78L, null);
+
+        assertThat(person.getBirthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
+        verify(personRepository).save(person);
+    }
+
+    @Test
+    void approveWithLinkedPersonIdNeverOverwritesAnExistingBirthDate() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setSubmittedDobAd(LocalDate.of(1995, 6, 15));
+        when(verificationRequestRepository.findById(23L)).thenReturn(Optional.of(request));
+
+        Person person = new Person();
+        person.setId(79L);
+        person.setBirthDate(LocalDate.of(1940, 1, 1));
+        when(personRepository.findById(79L)).thenReturn(Optional.of(person));
+
+        verificationReviewService.approve(23L, "admin", null, 79L, null);
+
+        assertThat(person.getBirthDate()).isEqualTo(LocalDate.of(1940, 1, 1));
+        verify(personRepository, never()).save(person);
+    }
+
+    @Test
     void approveWithoutLinkedPersonIdNeverTouchesUserPersonLinkService() {
         UserAccount account = new UserAccount();
         VerificationRequest request = new VerificationRequest();

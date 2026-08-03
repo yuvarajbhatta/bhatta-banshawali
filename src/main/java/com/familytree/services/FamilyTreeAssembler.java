@@ -63,6 +63,16 @@ public class FamilyTreeAssembler {
         Map<Long, Long> motherOf = new HashMap<>();
         Map<Long, List<Long>> spousesOf = new HashMap<>();
         Map<Long, List<Long>> childrenOf = new HashMap<>();
+        // Reverse-CHILD-edge fallback candidates (RelationshipService#
+        // getFatherForPerson/getMotherForPerson's fallback, applied here in
+        // bulk over the same relationships list instead of calling that
+        // per-person method for every node -- this endpoint intentionally
+        // loads everything once rather than querying per person, see the
+        // class doc). A direct FATHER/MOTHER edge always wins: these are
+        // only ever used to fill a gap via putIfAbsent below, after the
+        // main pass has recorded every direct edge.
+        Map<Long, Long> fatherCandidateFromChildEdge = new HashMap<>();
+        Map<Long, Long> motherCandidateFromChildEdge = new HashMap<>();
 
         for (Relationship relationship : relationships) {
             Long personId = relationship.getPerson().getId();
@@ -71,10 +81,20 @@ public class FamilyTreeAssembler {
             switch (relationship.getRelationshipType()) {
                 case FATHER -> fatherOf.put(personId, relatedId);
                 case MOTHER -> motherOf.put(personId, relatedId);
-                case CHILD -> childrenOf.computeIfAbsent(personId, key -> new ArrayList<>()).add(relatedId);
+                case CHILD -> {
+                    childrenOf.computeIfAbsent(personId, key -> new ArrayList<>()).add(relatedId);
+                    Person recorder = relationship.getPerson();
+                    if (relationshipService.matchesGenderPrefix(recorder, "m")) {
+                        fatherCandidateFromChildEdge.putIfAbsent(relatedId, personId);
+                    } else if (relationshipService.matchesGenderPrefix(recorder, "f")) {
+                        motherCandidateFromChildEdge.putIfAbsent(relatedId, personId);
+                    }
+                }
                 case SPOUSE -> spousesOf.computeIfAbsent(personId, key -> new ArrayList<>()).add(relatedId);
             }
         }
+        fatherCandidateFromChildEdge.forEach(fatherOf::putIfAbsent);
+        motherCandidateFromChildEdge.forEach(motherOf::putIfAbsent);
 
         List<PersonTreeNodeDto> nodes = persons.stream()
                 .map(person -> toNode(person, viewer, fatherOf, motherOf, spousesOf, childrenOf))

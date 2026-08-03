@@ -91,6 +91,7 @@ public class VerificationReviewService {
         } else if (linkedPersonId != null) {
             personToLink = personRepository.findById(linkedPersonId)
                     .orElseThrow(() -> new RuntimeException("Person not found with id: " + linkedPersonId));
+            backfillBirthDateIfMissing(personToLink, request);
         }
 
         if (personToLink != null) {
@@ -124,6 +125,21 @@ public class VerificationReviewService {
                         + personDisplay.englishFullName(father), reviewerUsername);
 
         return newPerson;
+    }
+
+    // A matched EXISTING person is very often a sparse seed-data record
+    // with no birthDate ever entered -- the applicant's own verified
+    // signup submission is as authoritative a source as any for filling
+    // that specific gap. Never overwrites a birthDate the record already
+    // has: existing data always wins over backfilling from the
+    // applicant's claim, same conservatism as everywhere else admin-
+    // entered data is treated as more trustworthy than an unverified
+    // submission.
+    private void backfillBirthDateIfMissing(Person person, VerificationRequest request) {
+        if (person.getBirthDate() == null && request.getSubmittedDobAd() != null) {
+            person.setBirthDate(request.getSubmittedDobAd());
+            personRepository.save(person);
+        }
     }
 
     @Transactional

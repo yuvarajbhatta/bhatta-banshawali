@@ -435,7 +435,11 @@ public class RelationshipService {
         return Optional.empty();
     }
 
-    private boolean matchesGenderPrefix(Person person, String genderPrefix) {
+    // Package-private (not private): FamilyTreeAssembler applies this same
+    // reverse-CHILD-edge fallback rule in bulk, over the whole relationships
+    // list, rather than calling getFatherForPerson/getMotherForPerson once
+    // per person -- see its buildTree().
+    boolean matchesGenderPrefix(Person person, String genderPrefix) {
         return person.getGender() != null && person.getGender().toLowerCase(Locale.ROOT).startsWith(genderPrefix);
     }
 
