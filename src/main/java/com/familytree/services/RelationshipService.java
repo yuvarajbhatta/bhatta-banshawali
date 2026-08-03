@@ -394,6 +394,24 @@ public class RelationshipService {
         return getParentByTypeWithFallback(person, RelationshipType.MOTHER, "f");
     }
 
+    /** Other children of either parent -- see PersonPhotoService's upload-authorization check. */
+    public List<Person> getSiblingsForPerson(Person person) {
+        Map<Long, Person> siblingMap = new LinkedHashMap<>();
+
+        getFatherForPerson(person).ifPresent(father -> getChildrenForPerson(father).forEach(child -> {
+            if (!child.getId().equals(person.getId())) {
+                siblingMap.put(child.getId(), child);
+            }
+        }));
+        getMotherForPerson(person).ifPresent(mother -> getChildrenForPerson(mother).forEach(child -> {
+            if (!child.getId().equals(person.getId())) {
+                siblingMap.put(child.getId(), child);
+            }
+        }));
+
+        return new ArrayList<>(siblingMap.values());
+    }
+
     private Optional<Person> getParentByTypeWithFallback(Person person, RelationshipType type, String genderPrefix) {
         Optional<Person> direct = relationshipRepository.findByPersonAndRelationshipType(person, type)
                 .stream().findFirst().map(Relationship::getRelatedPerson);

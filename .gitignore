@@ -1,5 +1,9 @@
 HELP.md
 target/
+# Local-dev Picture Album storage (application-local.properties'
+# app.uploads.directory) -- production uses /srv/data/familytree, outside
+# this repo entirely.
+/uploads/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

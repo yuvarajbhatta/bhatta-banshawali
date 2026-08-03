@@ -1,0 +1,7 @@
+.title {
+  margin: 0 0 var(--space-3);
+}
+
+.uploadArea {
+  margin-bottom: var(--space-4);
+}

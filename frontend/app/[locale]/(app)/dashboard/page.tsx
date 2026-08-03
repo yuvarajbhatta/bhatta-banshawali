@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { MemberDashboard } from "@/components/dashboard/MemberDashboard";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
-import { getAdminSummary, getFamilyTree, getMemberProfile, getPublicStats } from "@/lib/api";
+import { getAdminSummary, getFamilyTree, getMemberProfile, getPersonPhotos, getPublicStats } from "@/lib/api";
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboardPage");
@@ -36,11 +36,11 @@ export default async function DashboardPage() {
     );
   }
 
-  if (!result.profile.linked) {
+  if (!result.profile.linked || !result.profile.person) {
     return (
       <>
         <PageHeader title={t("title")} />
-        <MemberDashboard profile={result.profile} people={[]} />
+        <MemberDashboard profile={result.profile} people={[]} photos={[]} />
       </>
     );
   }
@@ -48,7 +48,10 @@ export default async function DashboardPage() {
   // Known-ancestors/direct-descendants stat tiles are computed client-side
   // from the same /family-tree payload the "Your Family" page already
   // fetches -- no new backend endpoint needed for those counts.
-  const treeResult = await getFamilyTree(cookieHeader);
+  const [treeResult, photos] = await Promise.all([
+    getFamilyTree(cookieHeader),
+    getPersonPhotos(result.profile.person.id, cookieHeader),
+  ]);
   if (treeResult.kind === "unauthenticated") {
     redirect("/login");
   }
@@ -56,7 +59,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader title={t("title")} />
-      <MemberDashboard profile={result.profile} people={treeResult.tree.nodes} />
+      <MemberDashboard profile={result.profile} people={treeResult.tree.nodes} photos={photos} />
     </>
   );
 }

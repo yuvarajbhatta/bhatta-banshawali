@@ -2,16 +2,18 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/Button";
 import { Reveal } from "@/components/motion/Reveal";
-import type { MemberProfileDto, PersonSummaryDto, PersonTreeNodeDto } from "@/lib/api";
+import { PhotoAlbumSection } from "@/components/PhotoAlbumSection";
+import type { MemberProfileDto, PersonPhotoDto, PersonSummaryDto, PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, getAncestors, getDescendants } from "@/lib/familyGraph";
 import styles from "./MemberDashboard.module.css";
 
 interface MemberDashboardProps {
   profile: MemberProfileDto;
   people: PersonTreeNodeDto[];
+  photos: PersonPhotoDto[];
 }
 
-export async function MemberDashboard({ profile, people }: MemberDashboardProps) {
+export async function MemberDashboard({ profile, people, photos }: MemberDashboardProps) {
   const t = await getTranslations("dashboardPage.member");
 
   if (!profile.linked || !profile.person || !profile.family) {
@@ -69,7 +71,14 @@ export async function MemberDashboard({ profile, people }: MemberDashboardProps)
         <div className={styles.statsRow}>
           <StatTile value={ancestorCount} label={t("knownAncestors")} />
           <StatTile value={descendantCount} label={t("directDescendants")} />
+          <StatTile value={photos.length} label={t("photos")} />
           <StatTile value={pendingCorrectionCount} label={t("pendingCorrections")} />
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.15}>
+        <div className={styles.albumPanel}>
+          <PhotoAlbumSection personId={person.id} initialPhotos={photos} />
         </div>
       </Reveal>
 

@@ -12,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.regex.Pattern;
 
 /**
  * Throttles endpoints a caller can hit repeatedly to do damage: signup
@@ -27,7 +28,9 @@ import java.time.Duration;
  * typeahead in admin forms) so normal use never trips them. Also throttles
  * password-reset-request (inbox-spamming a target) and the two token-confirm
  * endpoints (password-reset and email-verify, sharing one bucket -- cheap
- * defense-in-depth against brute-forcing, see TokenService). Keyed by
+ * defense-in-depth against brute-forcing, see TokenService). Also photo
+ * upload (PersonPhotoController) -- real per-request work (image decode/
+ * re-encode, disk write) with no admin review queue in front of it. Keyed by
  * client IP via X-Forwarded-For (set by nginx; see the
  * banshawali.yrbhatta.com vhost), falling back to the socket address for
  * direct/local calls.
@@ -52,6 +55,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
     static final Duration PASSWORD_RESET_REQUEST_PERIOD = Duration.ofHours(1);
     static final int TOKEN_CONFIRM_CAPACITY = 10;
     static final Duration TOKEN_CONFIRM_PERIOD = Duration.ofMinutes(15);
+    // Photo upload does real work per request (image decode/re-encode,
+    // disk write) and ships with no admin review queue -- capped tighter
+    // than the read-only endpoints above so a scripted loop can't cheaply
+    // fill /srv/data/familytree with junk faster than a real user could
+    // ever upload actual family photos.
+    static final int PHOTO_UPLOAD_CAPACITY = 10;
+    static final Duration PHOTO_UPLOAD_PERIOD = Duration.ofMinutes(15);
+
+    private static final Pattern PHOTO_UPLOAD_PATH = Pattern.compile("/api/v1/persons/\\d+/photos");
 
     private final RateLimiter rateLimiter;
     // A plain instance, not the application's configured ObjectMapper bean:
@@ -78,6 +90,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean isTokenConfirm = "POST".equals(request.getMethod())
                 && ("/api/v1/password-reset/confirm".equals(request.getRequestURI())
                         || "/api/v1/verify-email/confirm".equals(request.getRequestURI()));
+        boolean isPhotoUpload = "POST".equals(request.getMethod()) && PHOTO_UPLOAD_PATH.matcher(request.getRequestURI()).matches();
 
         if (isSignup && !rateLimiter.tryConsume("signup", clientIp, SIGNUP_CAPACITY, SIGNUP_PERIOD)) {
             respondTooManyRequests(response, request.getRequestURI().startsWith("/api/"));
@@ -101,6 +114,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         if (isTokenConfirm && !rateLimiter.tryConsume("token-confirm", clientIp, TOKEN_CONFIRM_CAPACITY, TOKEN_CONFIRM_PERIOD)) {
+            respondTooManyRequests(response, true);
+            return;
+        }
+        if (isPhotoUpload && !rateLimiter.tryConsume("photo-upload", clientIp, PHOTO_UPLOAD_CAPACITY, PHOTO_UPLOAD_PERIOD)) {
             respondTooManyRequests(response, true);
             return;
         }

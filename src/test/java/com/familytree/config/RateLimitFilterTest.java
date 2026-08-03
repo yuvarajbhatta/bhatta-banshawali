@@ -235,6 +235,55 @@ class RateLimitFilterTest {
         assertThat(confirmResponse.getStatus()).isEqualTo(200);
     }
 
+    @Test
+    void allowsPhotoUploadRequestsUpToTheLimitThenBlocks() throws Exception {
+        for (int i = 0; i < RateLimitFilter.PHOTO_UPLOAD_CAPACITY; i++) {
+            MockHttpServletRequest request = photoUploadRequest("203.0.113.90", 42);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(photoUploadRequest("203.0.113.90", 42), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void photoUploadLimitAppliesRegardlessOfWhichPersonIdIsInThePath() throws Exception {
+        // One bucket per client IP across every person, not one bucket per
+        // person -- otherwise a caller dodges the limit just by targeting a
+        // different personId on each request.
+        for (int i = 0; i < RateLimitFilter.PHOTO_UPLOAD_CAPACITY; i++) {
+            filter.doFilter(photoUploadRequest("203.0.113.91", 100 + i), new MockHttpServletResponse(), filterChain);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(photoUploadRequest("203.0.113.91", 999), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void listingPhotosIsNotThrottledAsUpload() throws Exception {
+        // Only POST (the actual upload) is throttled here -- GET (listing)
+        // and the file-serving endpoint are unrelated read paths.
+        for (int i = 0; i < RateLimitFilter.PHOTO_UPLOAD_CAPACITY + 5; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/persons/42/photos");
+            request.addHeader("X-Forwarded-For", "203.0.113.92");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+    }
+
+    private MockHttpServletRequest photoUploadRequest(String clientIp, long personId) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/persons/" + personId + "/photos");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
     private MockHttpServletRequest passwordResetRequestRequest(String clientIp) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/password-reset/request");
         request.addHeader("X-Forwarded-For", clientIp);

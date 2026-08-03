@@ -262,6 +262,77 @@ export async function getPersonDetail(id: string, cookieHeader: string): Promise
   return { kind: "ok", person: await response.json() };
 }
 
+// One photo in a person's picture album -- deliberately doesn't include
+// who uploaded it (see PersonPhotoDto's backend doc comment); canDelete
+// already answers what the current viewer needs to know.
+export interface PersonPhotoDto {
+  id: number;
+  caption: string | null;
+  uploadedAt: string;
+  canDelete: boolean;
+}
+
+// Server-to-server with the browser's session cookie forwarded, same
+// reasoning as getPersonDetail above.
+export async function getPersonPhotos(personId: number, cookieHeader: string): Promise<PersonPhotoDto[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/persons/${personId}/photos`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load photos for person ${personId}: ${response.status}`);
+  }
+  return response.json();
+}
+
+export class PhotoUploadError extends Error {}
+
+// Called directly from the browser (file input), same CSRF pattern as
+// submitCorrection below -- FormData, not JSON, so Content-Type is left
+// for the browser to set itself (it needs to include the multipart
+// boundary, which a hand-set header can't provide).
+export async function uploadPersonPhoto(personId: number, file: File, caption: string): Promise<PersonPhotoDto> {
+  const xsrfToken = readXsrfTokenCookie();
+  const formData = new FormData();
+  formData.append("file", file);
+  if (caption.trim()) {
+    formData.append("caption", caption.trim());
+  }
+
+  const response = await fetch(`/api/v1/persons/${personId}/photos`, {
+    method: "POST",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new PhotoUploadError(body?.message ?? "Failed to upload photo.");
+  }
+  return response.json();
+}
+
+export async function deletePersonPhoto(personId: number, photoId: number): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
+  const response = await fetch(`/api/v1/persons/${personId}/photos/${photoId}`, {
+    method: "DELETE",
+    headers: xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : undefined,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new PhotoUploadError(body?.message ?? "Failed to remove photo.");
+  }
+}
+
+// Same-origin relative URL -- authenticated GET, browser's session
+// cookie rides along automatically, same as any other /api/v1/** call
+// made directly from client code.
+export function personPhotoFileUrl(personId: number, photoId: number): string {
+  return `/api/v1/persons/${personId}/photos/${photoId}/file`;
+}
+
 export class UnauthenticatedError extends Error {}
 
 // Called directly from the browser as the user types -- a relative path

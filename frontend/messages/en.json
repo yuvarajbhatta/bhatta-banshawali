@@ -149,6 +149,20 @@
     },
     "notes": "Notes",
     "noNotes": "No notes added.",
+    "photos": {
+      "title": "Photos",
+      "empty": "No photos added yet.",
+      "addPhoto": "Add a photo",
+      "fileLabel": "Photo",
+      "captionLabel": "Caption (optional)",
+      "captionPlaceholder": "e.g. Family gathering, 1998",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "cancel": "Cancel",
+      "delete": "Remove photo",
+      "confirmDelete": "Remove this photo? This can't be undone.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
     "correction": {
       "title": "Suggest a Correction",
       "toggle": "Something wrong here?",
@@ -193,6 +207,7 @@
       "notRecorded": "Not recorded",
       "knownAncestors": "Known Ancestors",
       "directDescendants": "Direct Descendants",
+      "photos": "Photos",
       "pendingCorrections": "Pending Corrections",
       "viewYourFamily": "View Your Family",
       "viewFullTree": "View Full Tree",

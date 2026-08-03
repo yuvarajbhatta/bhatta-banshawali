@@ -4,7 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { CorrectionForm } from "@/components/CorrectionForm";
-import { getPersonDetail, type PersonSummaryDto } from "@/lib/api";
+import { PhotoAlbumSection } from "@/components/PhotoAlbumSection";
+import { getPersonDetail, getPersonPhotos, type PersonSummaryDto } from "@/lib/api";
 import styles from "./page.module.css";
 
 export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +19,8 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
   if (result.kind === "unauthenticated") {
     redirect("/login");
   }
+
+  const photos = result.kind === "ok" ? await getPersonPhotos(result.person.id, cookieHeader) : [];
 
   return (
     <>
@@ -68,6 +71,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <dt>{t("family.children")}</dt>
               <dd>{personLinks(result.person.family.children, t("family.none"))}</dd>
             </dl>
+          </div>
+
+          <div className={styles.card}>
+            <PhotoAlbumSection personId={result.person.id} initialPhotos={photos} />
           </div>
 
           <div className={styles.card}>
