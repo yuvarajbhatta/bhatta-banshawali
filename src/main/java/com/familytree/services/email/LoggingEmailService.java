@@ -28,13 +28,18 @@ public class LoggingEmailService implements EmailService {
     }
 
     @Override
-    public void sendVerificationEmail(String toEmail, String rawToken, String preferredLanguage) {
-        log.info("[DEV] Verification email for {}: {}", toEmail, buildLink("/verify-email", rawToken));
+    public void sendVerificationOtpEmail(String toEmail, String code, String preferredLanguage) {
+        log.info("[DEV] Email verification OTP for {}: {}", toEmail, code);
     }
 
     @Override
     public void sendPasswordResetEmail(String toEmail, String rawToken, String preferredLanguage) {
         log.info("[DEV] Password reset email for {}: {}", toEmail, buildLink("/reset-password", rawToken));
+    }
+
+    @Override
+    public void sendAdminAccessOtpEmail(String toEmail, String code, String preferredLanguage) {
+        log.info("[DEV] Admin access request OTP for {}: {}", toEmail, code);
     }
 
     private String buildLink(String path, String rawToken) {

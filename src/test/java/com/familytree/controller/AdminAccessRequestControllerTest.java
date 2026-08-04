@@ -1,5 +1,6 @@
 package com.familytree.controller;
 
+import com.familytree.dto.AdminAccessRequestConfirmDto;
 import com.familytree.dto.MyAdminAccessRequestStatusDto;
 import com.familytree.entity.UserAccount;
 import com.familytree.repository.UserAccountRepository;
@@ -61,6 +62,16 @@ class AdminAccessRequestControllerTest {
         controller().request(authentication);
 
         verify(adminAccessRequestService).request(6L);
+    }
+
+    @Test
+    void confirmDelegatesToServiceForTheCurrentAccount() {
+        when(authentication.getName()).thenReturn("member@example.com");
+        when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account(6L, "member@example.com")));
+
+        controller().confirm(authentication, new AdminAccessRequestConfirmDto("123456"));
+
+        verify(adminAccessRequestService).confirmRequest(6L, "123456");
     }
 
     @Test

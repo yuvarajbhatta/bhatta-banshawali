@@ -37,10 +37,9 @@ public class SesSmtpEmailService implements EmailService {
     }
 
     @Override
-    public void sendVerificationEmail(String toEmail, String rawToken, String preferredLanguage) {
-        String link = buildLink("/verify-email", rawToken);
+    public void sendVerificationOtpEmail(String toEmail, String code, String preferredLanguage) {
         String subject = "ne".equals(preferredLanguage) ? "आफ्नो इमेल पुष्टि गर्नुहोस्" : "Verify your email";
-        send(toEmail, subject, "email/verify-email", link, preferredLanguage);
+        sendOtp(toEmail, subject, "email/verify-email-otp", code, preferredLanguage);
     }
 
     @Override
@@ -50,12 +49,29 @@ public class SesSmtpEmailService implements EmailService {
         send(toEmail, subject, "email/password-reset", link, preferredLanguage);
     }
 
+    @Override
+    public void sendAdminAccessOtpEmail(String toEmail, String code, String preferredLanguage) {
+        String subject = "ne".equals(preferredLanguage) ? "प्रशासक पहुँच अनुरोध पुष्टि" : "Confirm your admin access request";
+        sendOtp(toEmail, subject, "email/admin-access-otp", code, preferredLanguage);
+    }
+
     private void send(String toEmail, String subject, String templateName, String actionLink, String preferredLanguage) {
         Context context = new Context();
         context.setVariable("actionLink", actionLink);
         context.setVariable("locale", preferredLanguage);
         String html = templateEngine.process(templateName, context);
+        deliver(toEmail, subject, html);
+    }
 
+    private void sendOtp(String toEmail, String subject, String templateName, String code, String preferredLanguage) {
+        Context context = new Context();
+        context.setVariable("code", code);
+        context.setVariable("locale", preferredLanguage);
+        String html = templateEngine.process(templateName, context);
+        deliver(toEmail, subject, html);
+    }
+
+    private void deliver(String toEmail, String subject, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());

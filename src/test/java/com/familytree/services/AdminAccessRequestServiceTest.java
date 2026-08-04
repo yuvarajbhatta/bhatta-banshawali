@@ -4,12 +4,14 @@ import com.familytree.dto.AdminAccessRequestDto;
 import com.familytree.dto.MyAdminAccessRequestStatusDto;
 import com.familytree.entity.AdminAccessRequest;
 import com.familytree.entity.AdminAccessRequestStatus;
+import com.familytree.entity.OtpPurpose;
 import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
+import com.familytree.services.email.EmailService;
 import com.familytree.web.PersonDisplayHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,6 +48,12 @@ class AdminAccessRequestServiceTest {
 
     @Mock
     private RoleRepository roleRepository;
+
+    @Mock
+    private OtpService otpService;
+
+    @Mock
+    private EmailService emailService;
 
     @Mock
     private AuditLogService auditLogService;
@@ -70,20 +79,45 @@ class AdminAccessRequestServiceTest {
     }
 
     @Test
-    void requestCreatesPendingRequestAndLogsIt() {
+    void requestCreatesAwaitingOtpRequestAndEmailsACode() {
         UserAccount account = account(6L, "member@example.com");
         when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
         when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of());
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.empty());
+        when(otpService.generate(account, OtpPurpose.ADMIN_ACCESS_REQUEST)).thenReturn("123456");
 
         service.request(6L);
 
         ArgumentCaptor<AdminAccessRequest> captor = ArgumentCaptor.forClass(AdminAccessRequest.class);
         verify(adminAccessRequestRepository).save(captor.capture());
         assertThat(captor.getValue().getUserAccount()).isEqualTo(account);
-        assertThat(captor.getValue().getStatus()).isEqualTo(AdminAccessRequestStatus.PENDING);
+        assertThat(captor.getValue().getStatus()).isEqualTo(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
 
+        verify(emailService).sendAdminAccessOtpEmail("member@example.com", "123456", account.getPreferredLanguage());
         verify(auditLogService).record(AuditLogService.ACTION_ADMIN_ACCESS_REQUESTED, AuditLogService.ENTITY_USER_ACCOUNT,
                 6L, "member@example.com requested admin access", "member@example.com");
+    }
+
+    @Test
+    void requestingAgainWhileAwaitingOtpReissuesTheExistingRequestRatherThanCreatingANewOne() {
+        UserAccount account = account(6L, "member@example.com");
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of());
+        AdminAccessRequest existingAwaitingOtp = new AdminAccessRequest();
+        ReflectionTestUtils.setField(existingAwaitingOtp, "id", 10L);
+        existingAwaitingOtp.setUserAccount(account);
+        existingAwaitingOtp.setStatus(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.of(existingAwaitingOtp));
+        when(otpService.generate(account, OtpPurpose.ADMIN_ACCESS_REQUEST)).thenReturn("654321");
+
+        service.request(6L);
+
+        ArgumentCaptor<AdminAccessRequest> captor = ArgumentCaptor.forClass(AdminAccessRequest.class);
+        verify(adminAccessRequestRepository).save(captor.capture());
+        assertThat(captor.getValue()).isSameAs(existingAwaitingOtp);
+        verify(emailService).sendAdminAccessOtpEmail("member@example.com", "654321", account.getPreferredLanguage());
     }
 
     @Test
@@ -94,7 +128,7 @@ class AdminAccessRequestServiceTest {
 
         assertThatThrownBy(() -> service.request(6L)).isInstanceOf(IllegalArgumentException.class);
 
-        verify(adminAccessRequestRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(adminAccessRequestRepository, never()).save(any());
     }
 
     @Test
@@ -108,7 +142,54 @@ class AdminAccessRequestServiceTest {
 
         assertThatThrownBy(() -> service.request(6L)).isInstanceOf(IllegalArgumentException.class);
 
-        verify(adminAccessRequestRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(adminAccessRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmRequestMovesAnAwaitingOtpRequestToPending() {
+        UserAccount account = account(6L, "member@example.com");
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        AdminAccessRequest request = new AdminAccessRequest();
+        request.setUserAccount(account);
+        request.setStatus(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.of(request));
+        when(otpService.verify(account, OtpPurpose.ADMIN_ACCESS_REQUEST, "123456")).thenReturn(OtpVerifyResult.OK);
+
+        service.confirmRequest(6L, "123456");
+
+        assertThat(request.getStatus()).isEqualTo(AdminAccessRequestStatus.PENDING);
+        verify(adminAccessRequestRepository).save(request);
+    }
+
+    @Test
+    void confirmRequestThrowsForAnInvalidCode() {
+        UserAccount account = account(6L, "member@example.com");
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        AdminAccessRequest request = new AdminAccessRequest();
+        request.setUserAccount(account);
+        request.setStatus(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.of(request));
+        when(otpService.verify(account, OtpPurpose.ADMIN_ACCESS_REQUEST, "000000")).thenReturn(OtpVerifyResult.INVALID_CODE);
+
+        assertThatThrownBy(() -> service.confirmRequest(6L, "000000"))
+                .isInstanceOf(InvalidOrExpiredTokenException.class);
+
+        assertThat(request.getStatus()).isEqualTo(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
+    }
+
+    @Test
+    void confirmRequestThrowsWhenNoRequestIsAwaitingConfirmation() {
+        UserAccount account = account(6L, "member@example.com");
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.confirmRequest(6L, "123456"))
+                .isInstanceOf(InvalidOrExpiredTokenException.class);
+
+        verify(otpService, never()).verify(any(), any(), any());
     }
 
     @Test
@@ -155,7 +236,7 @@ class AdminAccessRequestServiceTest {
 
         assertThat(account.getRoles()).isEmpty();
         assertThat(request.getStatus()).isEqualTo(AdminAccessRequestStatus.DENIED);
-        verify(userAccountRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(userAccountRepository, never()).save(any());
         verify(auditLogService).record(AuditLogService.ACTION_ADMIN_ACCESS_DENIED, AuditLogService.ENTITY_USER_ACCOUNT,
                 6L, "Denied admin access for member@example.com", "admin@example.com");
     }
@@ -187,9 +268,23 @@ class AdminAccessRequestServiceTest {
     }
 
     @Test
+    void myStatusReportsAwaitingOtpWhenARequestIsAwaitingConfirmation() {
+        UserAccount account = account(6L, "member@example.com");
+        when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        AdminAccessRequest request = new AdminAccessRequest();
+        request.setStatus(AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION);
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.of(request));
+
+        assertThat(service.myStatus(6L)).isEqualTo(MyAdminAccessRequestStatusDto.awaitingOtp());
+    }
+
+    @Test
     void myStatusReportsPendingWhenARequestIsPending() {
         UserAccount account = account(6L, "member@example.com");
         when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.empty());
         AdminAccessRequest request = new AdminAccessRequest();
         request.setStatus(AdminAccessRequestStatus.PENDING);
         when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of(request));
@@ -201,6 +296,8 @@ class AdminAccessRequestServiceTest {
     void myStatusReportsNoneWhenNothingOnFile() {
         UserAccount account = account(6L, "member@example.com");
         when(userAccountRepository.findById(6L)).thenReturn(Optional.of(account));
+        when(adminAccessRequestRepository.findFirstByUserAccountIdAndStatusOrderByRequestedAtDesc(
+                6L, AdminAccessRequestStatus.AWAITING_OTP_CONFIRMATION)).thenReturn(Optional.empty());
         when(adminAccessRequestRepository.findByUserAccountId(6L)).thenReturn(List.of());
 
         assertThat(service.myStatus(6L)).isEqualTo(MyAdminAccessRequestStatusDto.none());

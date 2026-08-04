@@ -50,6 +50,13 @@
       "requestAdminAccess": "Request Admin Access",
       "requestPending": "Admin Access Requested",
       "requestError": "Could not submit the request. Please try again.",
+      "otpHint": "Enter the code we emailed you to confirm this request.",
+      "otpCodeLabel": "Confirmation code",
+      "confirmCode": "Confirm",
+      "confirming": "Confirming…",
+      "confirmError": "Could not confirm the code. Please try again.",
+      "codeRequired": "Enter the 6-digit code.",
+      "resendCode": "Resend code",
       "logOut": "Log Out"
     },
     "role": {
@@ -846,14 +853,20 @@
   },
   "verifyEmail": {
     "title": "Verify Email",
-    "subtitle": "Click below to confirm your email address.",
+    "subtitle": "Enter the 6-digit code we emailed to {email}.",
+    "codeLabel": "Verification code",
     "confirmButton": "Verify My Email",
     "verifying": "Verifying…",
     "successMessage": "Your email has been verified.",
     "loginLink": "Go to Login",
-    "missingToken": "This verification link is missing its token.",
+    "missingEmail": "We couldn't find the email to verify. Please sign up again.",
+    "resendButton": "Resend code",
+    "resending": "Sending…",
+    "resendSuccess": "A new code has been sent.",
+    "resendCooldown": "Resend available in {seconds}s",
     "errors": {
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "codeRequired": "Enter the 6-digit code."
     }
   },
   "login": {
@@ -1078,11 +1091,6 @@
     "agreeToTerms": "I agree to the <terms>Membership Guidelines</terms> and <privacy>Privacy Policy</privacy>.",
     "submit": "Submit Application",
     "submitting": "Submitting…",
-    "success": {
-      "title": "Application Submitted",
-      "body": "Thank you. Your application is pending review by a family administrator. You'll be able to log in once it's approved.",
-      "backHome": "Back to Home"
-    },
     "errors": {
       "fullNameRequired": "Full name is required.",
       "emailRequired": "Email is required.",

@@ -1,18 +1,18 @@
 import { getTranslations } from "next-intl/server";
 import { PageShell } from "@/components/PageShell";
-import { VerifyEmailAction } from "@/components/VerifyEmailAction";
+import { VerifyEmailOtpForm } from "@/components/VerifyEmailOtpForm";
 
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ email?: string }>;
 }) {
   const t = await getTranslations("verifyEmail");
-  const { token } = await searchParams;
+  const { email } = await searchParams;
 
   return (
     <PageShell title={t("title")}>
-      {token ? <VerifyEmailAction token={token} /> : <p>{t("missingToken")}</p>}
+      {email ? <VerifyEmailOtpForm email={email} /> : <p>{t("missingEmail")}</p>}
     </PageShell>
   );
 }

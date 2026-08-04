@@ -53,11 +53,11 @@ class TokenServiceTest {
         UserAccount account = new UserAccount();
         UserAccountToken existingLiveToken = new UserAccountToken();
         existingLiveToken.setUserAccount(account);
-        existingLiveToken.setPurpose(TokenPurpose.EMAIL_VERIFICATION);
-        when(userAccountTokenRepository.findByUserAccountIdAndPurposeAndConsumedAtIsNull(any(), eq(TokenPurpose.EMAIL_VERIFICATION)))
+        existingLiveToken.setPurpose(TokenPurpose.PASSWORD_RESET);
+        when(userAccountTokenRepository.findByUserAccountIdAndPurposeAndConsumedAtIsNull(any(), eq(TokenPurpose.PASSWORD_RESET)))
                 .thenReturn(List.of(existingLiveToken));
 
-        tokenService.issueToken(account, TokenPurpose.EMAIL_VERIFICATION);
+        tokenService.issueToken(account, TokenPurpose.PASSWORD_RESET);
 
         assertThat(existingLiveToken.getConsumedAt()).isNotNull();
         verify(userAccountTokenRepository).saveAll(List.of(existingLiveToken));
@@ -86,12 +86,12 @@ class TokenServiceTest {
     void consumeTokenFailsWhenExpired() {
         UserAccountToken token = new UserAccountToken();
         token.setUserAccount(new UserAccount());
-        token.setPurpose(TokenPurpose.EMAIL_VERIFICATION);
+        token.setPurpose(TokenPurpose.PASSWORD_RESET);
         token.setExpiresAt(LocalDateTime.now().minusMinutes(1));
-        when(userAccountTokenRepository.findByTokenHashAndPurpose(any(), eq(TokenPurpose.EMAIL_VERIFICATION)))
+        when(userAccountTokenRepository.findByTokenHashAndPurpose(any(), eq(TokenPurpose.PASSWORD_RESET)))
                 .thenReturn(Optional.of(token));
 
-        Optional<UserAccount> result = tokenService.consumeToken("raw-token", TokenPurpose.EMAIL_VERIFICATION);
+        Optional<UserAccount> result = tokenService.consumeToken("raw-token", TokenPurpose.PASSWORD_RESET);
 
         assertThat(result).isEmpty();
     }

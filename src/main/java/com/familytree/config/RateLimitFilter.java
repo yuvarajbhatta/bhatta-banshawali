@@ -26,11 +26,14 @@ import java.util.regex.Pattern;
  * expansion is pure client-side slicing, no re-fetch, see
  * useTreeWindow.ts -- and /api/v1/persons search is live-typing
  * typeahead in admin forms) so normal use never trips them. Also throttles
- * password-reset-request (inbox-spamming a target) and the two token-confirm
- * endpoints (password-reset and email-verify, sharing one bucket -- cheap
- * defense-in-depth against brute-forcing, see TokenService). Also photo
- * upload (PersonPhotoController) -- real per-request work (image decode/
- * re-encode, disk write) with no admin review queue in front of it. Keyed by
+ * password-reset-request (inbox-spamming a target) and the three token/OTP
+ * confirm endpoints (password-reset, email-verify, admin-access-request,
+ * sharing one bucket -- cheap defense-in-depth against brute-forcing, see
+ * TokenService/OtpService). Also photo upload (PersonPhotoController) --
+ * real per-request work (image decode/re-encode, disk write) with no admin
+ * review queue in front of it. Also throttles the email-verify resend and
+ * admin-access-request endpoints (inbox-spamming a target with OTP emails,
+ * same shape as password-reset-request). Keyed by
  * client IP via X-Forwarded-For (set by nginx; see the
  * banshawali.yrbhatta.com vhost), falling back to the socket address for
  * direct/local calls.
@@ -55,6 +58,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     static final Duration PASSWORD_RESET_REQUEST_PERIOD = Duration.ofHours(1);
     static final int TOKEN_CONFIRM_CAPACITY = 10;
     static final Duration TOKEN_CONFIRM_PERIOD = Duration.ofMinutes(15);
+    // Same shape/risk as password-reset-request: issuing a fresh OTP sends
+    // an email, so an unthrottled caller could inbox-spam any address.
+    static final int OTP_REQUEST_CAPACITY = 5;
+    static final Duration OTP_REQUEST_PERIOD = Duration.ofHours(1);
     // Photo upload does real work per request (image decode/re-encode,
     // disk write) and ships with no admin review queue -- capped tighter
     // than the read-only endpoints above so a scripted loop can't cheaply
@@ -89,8 +96,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 && "/api/v1/password-reset/request".equals(request.getRequestURI());
         boolean isTokenConfirm = "POST".equals(request.getMethod())
                 && ("/api/v1/password-reset/confirm".equals(request.getRequestURI())
-                        || "/api/v1/verify-email/confirm".equals(request.getRequestURI()));
+                        || "/api/v1/verify-email/confirm".equals(request.getRequestURI())
+                        || "/api/v1/me/admin-access-request/confirm".equals(request.getRequestURI()));
         boolean isPhotoUpload = "POST".equals(request.getMethod()) && PHOTO_UPLOAD_PATH.matcher(request.getRequestURI()).matches();
+        boolean isOtpRequest = "POST".equals(request.getMethod())
+                && ("/api/v1/verify-email/resend".equals(request.getRequestURI())
+                        || "/api/v1/me/admin-access-request".equals(request.getRequestURI()));
 
         if (isSignup && !rateLimiter.tryConsume("signup", clientIp, SIGNUP_CAPACITY, SIGNUP_PERIOD)) {
             respondTooManyRequests(response, request.getRequestURI().startsWith("/api/"));
@@ -118,6 +129,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         if (isPhotoUpload && !rateLimiter.tryConsume("photo-upload", clientIp, PHOTO_UPLOAD_CAPACITY, PHOTO_UPLOAD_PERIOD)) {
+            respondTooManyRequests(response, true);
+            return;
+        }
+        if (isOtpRequest && !rateLimiter.tryConsume("otp-request", clientIp, OTP_REQUEST_CAPACITY, OTP_REQUEST_PERIOD)) {
             respondTooManyRequests(response, true);
             return;
         }

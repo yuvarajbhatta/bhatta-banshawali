@@ -128,16 +128,30 @@ export async function confirmPasswordReset(
 
 export class EmailVerificationError extends Error {}
 
-export async function confirmEmailVerification(token: string): Promise<{ status: string }> {
+export async function confirmEmailVerification(email: string, code: string): Promise<{ status: string }> {
   const response = await fetch("/api/v1/verify-email/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ email, code }),
   });
 
   const body = await response.json();
   if (!response.ok) {
     throw new EmailVerificationError(body.message ?? "Email verification failed.");
+  }
+  return body;
+}
+
+export async function resendEmailVerification(email: string): Promise<{ status: string }> {
+  const response = await fetch("/api/v1/verify-email/resend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new EmailVerificationError(body.message ?? "Could not resend the code.");
   }
   return body;
 }
@@ -460,7 +474,7 @@ export async function submitCorrection(personId: number, request: CorrectionRequ
 }
 
 // Mirrors com.familytree.dto.MyAdminAccessRequestStatusDto.
-export type MyAdminAccessRequestStatus = "NONE" | "PENDING" | "ALREADY_ADMIN";
+export type MyAdminAccessRequestStatus = "NONE" | "AWAITING_OTP" | "PENDING" | "ALREADY_ADMIN";
 
 export type MyAdminAccessRequestStatusResult =
   | { kind: "ok"; status: MyAdminAccessRequestStatus }
@@ -503,6 +517,25 @@ export async function requestAdminAccess(): Promise<void> {
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new AdminAccessRequestError(body?.message ?? "Could not submit the request.");
+  }
+}
+
+// Confirms the OTP emailed by requestAdminAccess() -- moves the request
+// from AWAITING_OTP to PENDING so it becomes visible to admin reviewers.
+export async function confirmAdminAccessRequest(code: string): Promise<void> {
+  const xsrfToken = readXsrfTokenCookie();
+  const response = await fetch("/api/v1/me/admin-access-request/confirm", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new AdminAccessRequestError(body?.message ?? "Could not confirm the request.");
   }
 }
 

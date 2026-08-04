@@ -236,6 +236,43 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void adminAccessRequestConfirmSharesTheTokenConfirmBucket() throws Exception {
+        for (int i = 0; i < RateLimitFilter.TOKEN_CONFIRM_CAPACITY; i++) {
+            filter.doFilter(passwordResetConfirmRequest("203.0.113.83"), new MockHttpServletResponse(), filterChain);
+        }
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(adminAccessRequestConfirmRequest("203.0.113.83"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void allowsOtpRequestsUpToTheLimitThenBlocks() throws Exception {
+        for (int i = 0; i < RateLimitFilter.OTP_REQUEST_CAPACITY; i++) {
+            MockHttpServletRequest request = verifyEmailResendRequest("203.0.113.84");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, filterChain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(verifyEmailResendRequest("203.0.113.84"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void verifyEmailResendAndAdminAccessRequestShareOneOtpRequestBucket() throws Exception {
+        for (int i = 0; i < RateLimitFilter.OTP_REQUEST_CAPACITY; i++) {
+            filter.doFilter(verifyEmailResendRequest("203.0.113.85"), new MockHttpServletResponse(), filterChain);
+        }
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(adminAccessRequestRequest("203.0.113.85"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
     void allowsPhotoUploadRequestsUpToTheLimitThenBlocks() throws Exception {
         for (int i = 0; i < RateLimitFilter.PHOTO_UPLOAD_CAPACITY; i++) {
             MockHttpServletRequest request = photoUploadRequest("203.0.113.90", 42);
@@ -298,6 +335,24 @@ class RateLimitFilterTest {
 
     private MockHttpServletRequest verifyEmailConfirmRequest(String clientIp) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/verify-email/confirm");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest verifyEmailResendRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/verify-email/resend");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest adminAccessRequestRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/me/admin-access-request");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest adminAccessRequestConfirmRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/me/admin-access-request/confirm");
         request.addHeader("X-Forwarded-For", clientIp);
         return request;
     }

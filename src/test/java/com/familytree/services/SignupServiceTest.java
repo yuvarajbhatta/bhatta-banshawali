@@ -2,8 +2,8 @@ package com.familytree.services;
 
 import com.familytree.dto.SignupRequestDto;
 import com.familytree.entity.MatchConfidence;
+import com.familytree.entity.OtpPurpose;
 import com.familytree.entity.Person;
-import com.familytree.entity.TokenPurpose;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
@@ -46,7 +46,7 @@ class SignupServiceTest {
     private FamilyMatchService familyMatchService;
 
     @Mock
-    private TokenService tokenService;
+    private OtpService otpService;
 
     @Mock
     private EmailService emailService;
@@ -134,17 +134,17 @@ class SignupServiceTest {
     }
 
     @Test
-    void issuesEmailVerificationTokenAndSendsVerificationEmail() {
+    void issuesEmailVerificationOtpAndSendsVerificationEmail() {
         SignupRequestDto request = validRequest();
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
-        when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
+        when(otpService.generate(any(), eq(OtpPurpose.EMAIL_VERIFICATION))).thenReturn("123456");
 
         signupService.submitSignup(request);
 
-        verify(tokenService).issueToken(any(UserAccount.class), eq(TokenPurpose.EMAIL_VERIFICATION));
-        verify(emailService).sendVerificationEmail("yuva@example.com", "raw-token", "en");
+        verify(otpService).generate(any(UserAccount.class), eq(OtpPurpose.EMAIL_VERIFICATION));
+        verify(emailService).sendVerificationOtpEmail("yuva@example.com", "123456", "en");
     }
 
     @Test
@@ -153,9 +153,9 @@ class SignupServiceTest {
         when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
         when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
-        when(tokenService.issueToken(any(), eq(TokenPurpose.EMAIL_VERIFICATION))).thenReturn("raw-token");
+        when(otpService.generate(any(), eq(OtpPurpose.EMAIL_VERIFICATION))).thenReturn("123456");
         doThrow(new RuntimeException("SMTP down")).when(emailService)
-                .sendVerificationEmail(any(), any(), any());
+                .sendVerificationOtpEmail(any(), any(), any());
 
         signupService.submitSignup(request);
 

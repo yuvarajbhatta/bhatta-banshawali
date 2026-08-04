@@ -20,20 +20,17 @@ import java.util.Optional;
 
 /**
  * Generates, hashes, and consumes single-use expiring tokens for password
- * reset and email verification (see TokenPurpose). The raw token is only
- * ever held in memory long enough to put in an email link -- only its
- * SHA-256 hash is persisted, so a stolen database dump can't be used to
- * reset anyone's password or fake an email verification directly.
- *
- * There was no existing token/expiry convention anywhere in this codebase
- * to reuse (AdminAccessRequest/VerificationRequest are approved by numeric
- * ID + role check, no secret token involved) -- this is a new pattern.
+ * reset (see TokenPurpose). The raw token is only ever held in memory long
+ * enough to put in an email link -- only its SHA-256 hash is persisted, so
+ * a stolen database dump can't be used to reset anyone's password
+ * directly. Email verification used to share this table/purpose but now
+ * uses OtpService/UserAccountOtp instead, since a code the user types is a
+ * better fit than a link for that flow.
  */
 @Service
 public class TokenService {
 
     private static final Duration PASSWORD_RESET_TTL = Duration.ofMinutes(30);
-    private static final Duration EMAIL_VERIFICATION_TTL = Duration.ofHours(24);
     private static final int RAW_TOKEN_BYTES = 32;
 
     private final UserAccountTokenRepository userAccountTokenRepository;
@@ -70,7 +67,7 @@ public class TokenService {
         token.setPurpose(purpose);
         token.setTokenHash(hash(rawToken));
         token.setCreatedAt(now);
-        token.setExpiresAt(now.plus(ttlFor(purpose)));
+        token.setExpiresAt(now.plus(PASSWORD_RESET_TTL));
         userAccountTokenRepository.save(token);
 
         return rawToken;
@@ -98,10 +95,6 @@ public class TokenService {
         token.setConsumedAt(now);
         userAccountTokenRepository.save(token);
         return Optional.of(token.getUserAccount());
-    }
-
-    private Duration ttlFor(TokenPurpose purpose) {
-        return purpose == TokenPurpose.PASSWORD_RESET ? PASSWORD_RESET_TTL : EMAIL_VERIFICATION_TTL;
     }
 
     private String hash(String rawToken) {

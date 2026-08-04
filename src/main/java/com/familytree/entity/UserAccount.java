@@ -56,10 +56,9 @@ public class UserAccount {
 
     private LocalDateTime lastLoginAt;
 
-    // Set once the applicant clicks their verification email link (see
-    // EmailVerificationService) -- deliberately independent of `status`
-    // above: it's an admin-review signal and a place for password-reset
-    // to land, not a login gate. See TokenPurpose.EMAIL_VERIFICATION.
+    // Set once the applicant confirms the OTP sent to their email (see
+    // EmailVerificationService/OtpService) -- deliberately independent of
+    // `status` above: it's an admin-review signal, not a login gate.
     private LocalDateTime emailVerifiedAt;
 
     // Watermark for the News & Alerts unread badge (see AnnouncementService)

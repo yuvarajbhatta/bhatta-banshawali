@@ -88,11 +88,11 @@ class AnonymousAuthEndpointsSecurityTest {
     }
 
     @Test
-    void verifyEmailConfirmWithGarbageTokenReturns400() throws Exception {
+    void verifyEmailConfirmWithGarbageCodeReturns400() throws Exception {
         mockMvc.perform(post("/api/v1/verify-email/confirm")
                         .header("X-Forwarded-For", "203.0.113.105")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"token\":\"garbage\"}"))
+                        .content("{\"email\":\"nobody@example.com\",\"code\":\"000000\"}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -103,7 +103,19 @@ class AnonymousAuthEndpointsSecurityTest {
         mockMvc.perform(post("/api/v1/verify-email/confirm")
                         .header("X-Forwarded-For", "203.0.113.106")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"token\":\"garbage\"}"))
+                        .content("{\"email\":\"nobody@example.com\",\"code\":\"000000\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void verifyEmailResendNeedsNoCsrfTokenAndSilentlyNoOpsForAnUnknownEmail() throws Exception {
+        // Zero CSRF token, a 200 (not 403) proves the exemption took
+        // effect; silently no-op-ing (not 404) for an unknown email stops
+        // this endpoint being used to probe which emails have accounts.
+        mockMvc.perform(post("/api/v1/verify-email/resend")
+                        .header("X-Forwarded-For", "203.0.113.107")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"email\":\"nobody@example.com\"}"))
+                .andExpect(status().isOk());
     }
 }

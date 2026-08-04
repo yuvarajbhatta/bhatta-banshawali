@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { Button } from "@/components/Button";
 import { convertAdToBs, convertBsToAd, submitSignup, SignupError, type SignupRequest } from "@/lib/api";
@@ -76,12 +76,12 @@ export function SignupForm() {
   const tLanguage = useTranslations("language");
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [form, setForm] = useState<FormState>(() => ({ ...EMPTY_FORM, ...loadDraft() }));
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
   const [dobBsError, setDobBsError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -206,27 +206,14 @@ export function SignupForm() {
     setSubmitting(true);
     try {
       await submitSignup(request);
-      setSubmitted(true);
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       }
+      router.push(`/verify-email?email=${encodeURIComponent(request.email)}`);
     } catch (error) {
       setServerError(error instanceof SignupError ? error.message : t("errors.generic"));
-    } finally {
       setSubmitting(false);
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className={styles.success}>
-        <h2>{t("success.title")}</h2>
-        <p>{t("success.body")}</p>
-        <Link href="/" className={styles.backHomeLink}>
-          {t("success.backHome")}
-        </Link>
-      </div>
-    );
   }
 
   return (

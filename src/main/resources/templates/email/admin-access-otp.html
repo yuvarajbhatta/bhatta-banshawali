@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bhatta Banshawali</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #111827; max-width: 480px; margin: 0 auto;">
+    <h1 style="font-size: 20px;">Bhatta Banshawali</h1>
+
+    <div th:if="${locale == 'ne'}">
+        <p>तपाईंले प्रशासक पहुँचको अनुरोध गर्नुभयो। यो अनुरोध पुष्टि गर्न यो कोड प्रयोग गर्नुहोस्:</p>
+        <p style="font-size: 32px; font-weight: bold; letter-spacing: 6px;" th:text="${code}">123456</p>
+        <p style="color: #6b7280; font-size: 13px;">यो कोड १० मिनेटमा समाप्त हुनेछ। पुष्टि भएपछि मात्र तपाईंको अनुरोध हेर्न पाइनेछ। यदि तपाईंले यो अनुरोध गर्नुभएको छैन भने, यो इमेल बेवास्ता गर्नुहोस्।</p>
+    </div>
+    <div th:unless="${locale == 'ne'}">
+        <p>You requested admin access. Use this code to confirm the request:</p>
+        <p style="font-size: 32px; font-weight: bold; letter-spacing: 6px;" th:text="${code}">123456</p>
+        <p style="color: #6b7280; font-size: 13px;">This code expires in 10 minutes. Your request is only visible to reviewers after you confirm it. If you didn't request this, you can safely ignore this email.</p>
+    </div>
+</body>
+</html>

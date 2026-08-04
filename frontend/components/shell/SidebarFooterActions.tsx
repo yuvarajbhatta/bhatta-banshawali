@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { LogOut, ShieldPlus } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
-import { requestAdminAccess, signOut, AdminAccessRequestError } from "@/lib/api";
+import { requestAdminAccess, confirmAdminAccessRequest, signOut, AdminAccessRequestError } from "@/lib/api";
 import styles from "./SidebarFooterActions.module.css";
 
 interface SidebarFooterActionsProps {
-  /** null hides the button entirely (already admin, or a legacy admin login with nothing to request). */
-  adminAccessRequestStatus: "NONE" | "PENDING" | null;
+  /** null hides the section entirely (already admin, or a legacy admin login with nothing to request). */
+  adminAccessRequestStatus: "NONE" | "AWAITING_OTP" | "PENDING" | null;
 }
 
 export function SidebarFooterActions({ adminAccessRequestStatus }: SidebarFooterActionsProps) {
@@ -17,6 +17,8 @@ export function SidebarFooterActions({ adminAccessRequestStatus }: SidebarFooter
   const router = useRouter();
   const [status, setStatus] = useState(adminAccessRequestStatus);
   const [requesting, setRequesting] = useState(false);
+  const [code, setCode] = useState("");
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -25,11 +27,29 @@ export function SidebarFooterActions({ adminAccessRequestStatus }: SidebarFooter
     setError(null);
     try {
       await requestAdminAccess();
-      setStatus("PENDING");
+      setStatus("AWAITING_OTP");
     } catch (requestError) {
       setError(requestError instanceof AdminAccessRequestError ? requestError.message : t("requestError"));
     } finally {
       setRequesting(false);
+    }
+  }
+
+  async function handleConfirm(event: FormEvent) {
+    event.preventDefault();
+    if (!code.trim()) {
+      setError(t("codeRequired"));
+      return;
+    }
+    setConfirming(true);
+    setError(null);
+    try {
+      await confirmAdminAccessRequest(code.trim());
+      setStatus("PENDING");
+    } catch (confirmError) {
+      setError(confirmError instanceof AdminAccessRequestError ? confirmError.message : t("confirmError"));
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -47,7 +67,33 @@ export function SidebarFooterActions({ adminAccessRequestStatus }: SidebarFooter
 
   return (
     <div className={styles.wrapper}>
-      {status ? (
+      {status === "AWAITING_OTP" ? (
+        <form className={styles.otpForm} onSubmit={handleConfirm}>
+          <span className={styles.otpHint}>{t("otpHint")}</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
+            className={styles.otpInput}
+            aria-label={t("otpCodeLabel")}
+          />
+          <button type="submit" className={styles.actionButton} disabled={confirming}>
+            <ShieldPlus size={16} aria-hidden="true" />
+            {confirming ? t("confirming") : t("confirmCode")}
+          </button>
+          <button
+            type="button"
+            className={styles.resendLink}
+            onClick={handleRequestAdminAccess}
+            disabled={requesting}
+          >
+            {t("resendCode")}
+          </button>
+        </form>
+      ) : status ? (
         <button
           type="button"
           className={styles.actionButton}

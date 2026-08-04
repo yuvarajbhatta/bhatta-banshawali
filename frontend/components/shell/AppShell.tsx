@@ -17,7 +17,7 @@ interface AppShellProps {
   displayName: string;
   roleLabel: string;
   email: string | null;
-  adminAccessRequestStatus: "NONE" | "PENDING" | null;
+  adminAccessRequestStatus: "NONE" | "AWAITING_OTP" | "PENDING" | null;
   adminCounts?: AdminNavCounts | null;
   announcementUnreadCount?: number;
   children: ReactNode;

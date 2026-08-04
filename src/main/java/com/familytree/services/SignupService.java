@@ -3,7 +3,7 @@ package com.familytree.services;
 import com.familytree.calendar.BikramSambatConverter;
 import com.familytree.calendar.BikramSambatDate;
 import com.familytree.dto.SignupRequestDto;
-import com.familytree.entity.TokenPurpose;
+import com.familytree.entity.OtpPurpose;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
@@ -37,20 +37,20 @@ public class SignupService {
     private final VerificationRequestRepository verificationRequestRepository;
     private final PasswordEncoder passwordEncoder;
     private final FamilyMatchService familyMatchService;
-    private final TokenService tokenService;
+    private final OtpService otpService;
     private final EmailService emailService;
 
     public SignupService(UserAccountRepository userAccountRepository,
                          VerificationRequestRepository verificationRequestRepository,
                          PasswordEncoder passwordEncoder,
                          FamilyMatchService familyMatchService,
-                         TokenService tokenService,
+                         OtpService otpService,
                          EmailService emailService) {
         this.userAccountRepository = userAccountRepository;
         this.verificationRequestRepository = verificationRequestRepository;
         this.passwordEncoder = passwordEncoder;
         this.familyMatchService = familyMatchService;
-        this.tokenService = tokenService;
+        this.otpService = otpService;
         this.emailService = emailService;
     }
 
@@ -72,9 +72,9 @@ public class SignupService {
         account.setPreferredLanguage(request.getPreferredLanguage());
         account = userAccountRepository.save(account);
 
-        String rawToken = tokenService.issueToken(account, TokenPurpose.EMAIL_VERIFICATION);
+        String code = otpService.generate(account, OtpPurpose.EMAIL_VERIFICATION);
         try {
-            emailService.sendVerificationEmail(account.getEmail(), rawToken, account.getPreferredLanguage());
+            emailService.sendVerificationOtpEmail(account.getEmail(), code, account.getPreferredLanguage());
         } catch (Exception e) {
             // Best-effort: a transient SMTP failure must never roll back
             // the signup itself.

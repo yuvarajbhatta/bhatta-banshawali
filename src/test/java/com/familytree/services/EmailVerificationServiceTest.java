@@ -1,8 +1,9 @@
 package com.familytree.services;
 
-import com.familytree.entity.TokenPurpose;
+import com.familytree.entity.OtpPurpose;
 import com.familytree.entity.UserAccount;
 import com.familytree.repository.UserAccountRepository;
+import com.familytree.services.email.EmailService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +26,10 @@ class EmailVerificationServiceTest {
     private UserAccountRepository userAccountRepository;
 
     @Mock
-    private TokenService tokenService;
+    private OtpService otpService;
+
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private EmailVerificationService emailVerificationService;
@@ -33,21 +37,71 @@ class EmailVerificationServiceTest {
     @Test
     void confirmVerificationSetsEmailVerifiedAt() {
         UserAccount account = new UserAccount();
-        when(tokenService.consumeToken("raw-token", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.of(account));
+        account.setEmail("member@example.com");
+        when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account));
+        when(otpService.verify(account, OtpPurpose.EMAIL_VERIFICATION, "123456")).thenReturn(OtpVerifyResult.OK);
 
-        emailVerificationService.confirmVerification("raw-token");
+        emailVerificationService.confirmVerification("member@example.com", "123456");
 
         assertThat(account.getEmailVerifiedAt()).isNotNull();
         verify(userAccountRepository).save(account);
     }
 
     @Test
-    void confirmVerificationThrowsForAnInvalidOrExpiredToken() {
-        when(tokenService.consumeToken("garbage", TokenPurpose.EMAIL_VERIFICATION)).thenReturn(Optional.empty());
+    void confirmVerificationThrowsForAnInvalidCode() {
+        UserAccount account = new UserAccount();
+        account.setEmail("member@example.com");
+        when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account));
+        when(otpService.verify(account, OtpPurpose.EMAIL_VERIFICATION, "000000")).thenReturn(OtpVerifyResult.INVALID_CODE);
 
-        assertThatThrownBy(() -> emailVerificationService.confirmVerification("garbage"))
+        assertThatThrownBy(() -> emailVerificationService.confirmVerification("member@example.com", "000000"))
                 .isInstanceOf(InvalidOrExpiredTokenException.class);
 
         verify(userAccountRepository, never()).save(any());
+    }
+
+    @Test
+    void confirmVerificationThrowsForAnUnknownEmail() {
+        when(userAccountRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> emailVerificationService.confirmVerification("nobody@example.com", "123456"))
+                .isInstanceOf(InvalidOrExpiredTokenException.class);
+
+        verify(otpService, never()).verify(any(), any(), any());
+    }
+
+    @Test
+    void resendVerificationIssuesAFreshOtpForAnUnverifiedAccount() {
+        UserAccount account = new UserAccount();
+        account.setEmail("member@example.com");
+        account.setPreferredLanguage("en");
+        when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account));
+        when(otpService.generate(account, OtpPurpose.EMAIL_VERIFICATION)).thenReturn("654321");
+
+        emailVerificationService.resendVerification("member@example.com");
+
+        verify(emailService).sendVerificationOtpEmail("member@example.com", "654321", "en");
+    }
+
+    @Test
+    void resendVerificationNoOpsWhenTheEmailIsAlreadyVerified() {
+        UserAccount account = new UserAccount();
+        account.setEmail("member@example.com");
+        account.setEmailVerifiedAt(java.time.LocalDateTime.now());
+        when(userAccountRepository.findByEmail("member@example.com")).thenReturn(Optional.of(account));
+
+        emailVerificationService.resendVerification("member@example.com");
+
+        verify(otpService, never()).generate(any(), any());
+        verify(emailService, never()).sendVerificationOtpEmail(any(), any(), any());
+    }
+
+    @Test
+    void resendVerificationNoOpsForAnUnknownEmail() {
+        when(userAccountRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+
+        emailVerificationService.resendVerification("nobody@example.com");
+
+        verify(otpService, never()).generate(any(), any());
     }
 }
