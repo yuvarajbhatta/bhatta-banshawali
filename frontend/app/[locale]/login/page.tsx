@@ -61,9 +61,6 @@ export default async function LoginPage({
 
       <section className={styles.formPanel}>
         <Reveal className={styles.card} delay={0.1}>
-          <h2 className={styles.heading}>{t("heading")}</h2>
-          <p className={styles.subtitle}>{t("subtitle")}</p>
-
           {params.error !== undefined ? (
             <div className={styles.notice} data-variant="error">
               {t("invalid")}
