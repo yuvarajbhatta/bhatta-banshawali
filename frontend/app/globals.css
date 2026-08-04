@@ -109,6 +109,13 @@
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  /* Was missing entirely -- every "padding: var(--space-5)" across the
+     app (11 files: ContentManager, AnnouncementManager, MemberDashboard,
+     the About/Help pages, etc.) was silently computing to 0 (an
+     undefined custom property with no var() fallback resolves to the
+     property's initial value, not to a sane default), which is why
+     several cards read as having no padding at all. */
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;

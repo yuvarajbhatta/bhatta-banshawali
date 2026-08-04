@@ -17,7 +17,7 @@ export default async function AdminContentPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} />
       {result.kind === "forbidden" ? <p>{t("forbidden")}</p> : <ContentManager initialItems={result.items} />}
     </>
   );

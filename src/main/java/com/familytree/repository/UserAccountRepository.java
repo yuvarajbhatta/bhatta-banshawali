@@ -4,6 +4,7 @@ import com.familytree.entity.UserAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
@@ -17,4 +18,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
      */
     @Query("select ua from UserAccount ua left join fetch ua.roles where ua.email = :email")
     Optional<UserAccount> findByEmailWithRoles(String email);
+
+    /** Used by AdminContactService -- the Help & Contact page's "who to reach" section. */
+    @Query("select distinct ua from UserAccount ua join ua.roles r where r.name in :roleNames")
+    List<UserAccount> findByRoles_NameIn(List<String> roleNames);
 }

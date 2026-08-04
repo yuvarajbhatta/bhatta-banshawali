@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Paragraphs } from "@/components/Paragraphs";
-import { getMemberProfile, getPublishedArticle } from "@/lib/api";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
+import { ContactTeaser } from "@/components/help/ContactTeaser";
+import { getAdminContacts, getMemberProfile, getPublishedArticle } from "@/lib/api";
 import { localizeArticle } from "@/lib/localize-article";
 import styles from "./page.module.css";
 
@@ -20,6 +22,7 @@ export default async function HelpPage() {
 
   const verificationArticle = await getPublishedArticle("membership-verification");
   const verification = verificationArticle ? localizeArticle(verificationArticle, locale) : null;
+  const adminContacts = await getAdminContacts(cookieHeader);
 
   const faqKeys = ["joinRequirements", "correctInfo", "addPhotos", "whoCanSee", "reachAdmin"] as const;
 
@@ -29,16 +32,14 @@ export default async function HelpPage() {
 
       <div className={styles.stack}>
         {verification ? (
-          <section className={styles.card}>
-            <h2 className={styles.sectionTitle}>{verification.title}</h2>
+          <CollapsibleSection title={verification.title}>
             <div className={styles.body}>
               <Paragraphs text={verification.body} />
             </div>
-          </section>
+          </CollapsibleSection>
         ) : null}
 
-        <section className={styles.card}>
-          <h2 className={styles.sectionTitle}>{t("faq.title")}</h2>
+        <CollapsibleSection title={t("faq.title")}>
           <dl className={styles.faqList}>
             {faqKeys.map((key) => (
               <div key={key} className={styles.faqItem}>
@@ -47,13 +48,22 @@ export default async function HelpPage() {
               </div>
             ))}
           </dl>
-        </section>
+        </CollapsibleSection>
 
-        <section className={styles.card}>
-          <h2 className={styles.sectionTitle}>{t("contact.title")}</h2>
-          <p className={styles.body}>{t("contact.body")}</p>
-        </section>
+        <ContactTeaser label={t("contact.teaser")} />
       </div>
+
+      <section id="contact-section" className={styles.contactSection}>
+        <h2 className={styles.sectionTitle}>{t("contact.title")}</h2>
+        <p className={styles.body}>{t("contact.body")}</p>
+        {adminContacts.length > 0 ? (
+          <ul className={styles.adminList}>
+            {adminContacts.map((admin, index) => (
+              <li key={index}>{admin.email ? <a href={`mailto:${admin.email}`}>{admin.displayName}</a> : admin.displayName}</li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
     </>
   );
 }

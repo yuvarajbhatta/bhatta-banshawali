@@ -17,7 +17,7 @@ export default async function AdminNewsPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} />
       {result.kind === "forbidden" ? <p>{t("forbidden")}</p> : <AnnouncementManager initialItems={result.items} />}
     </>
   );

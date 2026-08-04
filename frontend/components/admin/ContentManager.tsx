@@ -189,32 +189,48 @@ export function ContentManager({ initialItems }: { initialItems: AdminArticleDto
                   <div className={styles.actionsRow}>
                     <Button
                       variant="secondary"
+                      size="sm"
                       onClick={() => setRow(article, { editing: true, form: formFor(article), status: "idle" })}
                       disabled={saving}
                     >
                       {t("edit")}
                     </Button>
                     {article.status === "DRAFT" ? (
-                      <Button variant="secondary" onClick={() => handleTransition(article, submitArticleForReview)} disabled={saving}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleTransition(article, submitArticleForReview)}
+                        disabled={saving}
+                      >
                         {t("submitForReview")}
                       </Button>
                     ) : null}
                     {article.status !== "PUBLISHED" ? (
-                      <Button variant="primary" onClick={() => handleTransition(article, publishArticle)} disabled={saving}>
+                      <Button variant="primary" size="sm" onClick={() => handleTransition(article, publishArticle)} disabled={saving}>
                         {t("publish")}
                       </Button>
                     ) : null}
                     {article.status === "PUBLISHED" ? (
-                      <Button variant="secondary" onClick={() => handleTransition(article, unpublishArticle)} disabled={saving}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleTransition(article, unpublishArticle)}
+                        disabled={saving}
+                      >
                         {t("unpublish")}
                       </Button>
                     ) : null}
                     {article.status !== "DRAFT" ? (
-                      <Button variant="secondary" onClick={() => handleTransition(article, revertArticleToDraft)} disabled={saving}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleTransition(article, revertArticleToDraft)}
+                        disabled={saving}
+                      >
                         {t("revertToDraft")}
                       </Button>
                     ) : null}
-                    <Button variant="destructive" onClick={() => handleDelete(article)} disabled={saving}>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(article)} disabled={saving}>
                       {t("delete")}
                     </Button>
                   </div>

@@ -147,11 +147,13 @@ export function AnnouncementManager({ initialItems }: { initialItems: AdminAnnou
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.toolbar}>
-        <Button variant="primary" onClick={() => setCreating((current) => !current)}>
-          {creating ? t("cancel") : t("newAnnouncement")}
-        </Button>
-      </div>
+      {!creating ? (
+        <div className={styles.toolbar}>
+          <Button variant="primary" onClick={() => setCreating(true)}>
+            {t("newAnnouncement")}
+          </Button>
+        </div>
+      ) : null}
 
       {creating ? (
         <div className={styles.card}>
@@ -282,11 +284,11 @@ function AnnouncementFields({
       <div className={styles.formRow}>
         <label>
           {t("fields.bodyEn")}
-          <textarea rows={6} value={form.bodyEn} onChange={(event) => onChange({ ...form, bodyEn: event.target.value })} />
+          <BodyTextarea value={form.bodyEn} onChange={(value) => onChange({ ...form, bodyEn: value })} t={t} />
         </label>
         <label>
           {t("fields.bodyNe")}
-          <textarea rows={6} value={form.bodyNe} onChange={(event) => onChange({ ...form, bodyNe: event.target.value })} />
+          <BodyTextarea value={form.bodyNe} onChange={(value) => onChange({ ...form, bodyNe: value })} t={t} />
         </label>
       </div>
       <label className={styles.checkboxLabel}>
@@ -294,6 +296,44 @@ function AnnouncementFields({
         {t("fields.pinned")}
       </label>
       <p className={styles.hint}>{t("bodyHint")}</p>
+    </div>
+  );
+}
+
+function BodyTextarea({
+  value,
+  onChange,
+  t,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  // Only offered while the field is empty -- once there's real content,
+  // an overlay button sitting in the middle of the text would just get
+  // in the way. Clipboard read requires a secure context and can be
+  // denied by the browser; failing silently just leaves the field empty
+  // for the admin to paste into manually (long-press / Ctrl+V still work).
+  async function handlePaste() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        onChange(text);
+      }
+    } catch {
+      // See comment above -- no user-facing error for a denied/unavailable
+      // clipboard permission.
+    }
+  }
+
+  return (
+    <div className={styles.textareaWrapper}>
+      <textarea rows={12} value={value} onChange={(event) => onChange(event.target.value)} />
+      {!value ? (
+        <button type="button" className={styles.pasteButton} onClick={handlePaste}>
+          {t("clickToPaste")}
+        </button>
+      ) : null}
     </div>
   );
 }

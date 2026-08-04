@@ -1138,6 +1138,26 @@ export async function getAnnouncements(cookieHeader: string): Promise<Announceme
   return response.json();
 }
 
+// Mirrors com.familytree.dto.AdminContactDto -- who to reach for help,
+// shown on the Help & Contact page's Contact section. Any authenticated
+// member can read this (not admin-gated), same as getAnnouncements above.
+export interface AdminContactDto {
+  displayName: string;
+  email: string | null;
+}
+
+export async function getAdminContacts(cookieHeader: string): Promise<AdminContactDto[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin-contacts`, {
+    headers: { Cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load admin contacts: ${response.status}`);
+  }
+  return response.json();
+}
+
 // Cheap enough to call on every authenticated page load, same reasoning
 // as getAdminSummary -- feeds the News & Alerts nav badge. Resolves to 0
 // rather than throwing on any non-ok response so a hiccup here never

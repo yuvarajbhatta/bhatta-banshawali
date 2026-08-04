@@ -109,6 +109,35 @@
   font-family: inherit;
 }
 
+.textareaWrapper {
+  position: relative;
+}
+
+.textareaWrapper textarea {
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+.pasteButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: color-mix(in srgb, var(--color-primary-600) 15%, transparent);
+  border: 1px dashed var(--color-primary-500);
+  border-radius: var(--radius-md);
+  color: var(--color-primary-700-text);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.pasteButton:hover {
+  background: color-mix(in srgb, var(--color-primary-600) 25%, transparent);
+}
+
 .formRow {
   display: flex;
   gap: var(--space-3);

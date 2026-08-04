@@ -276,6 +276,7 @@
     },
     "contact": {
       "title": "Contact",
+      "teaser": "Need to reach an admin?",
       "body": "If you have a question about the family tree, a correction to suggest, or a membership request, please reach out to a family administrator directly, or use the correction tools available once you're signed in."
     }
   },
@@ -637,10 +638,10 @@
   },
   "adminNewsPage": {
     "title": "News & Alerts",
-    "subtitle": "Post app updates, family news, celebrations, obituaries, or help requests -- write it, add photos if you like, then publish when it's ready.",
     "empty": "No announcements yet.",
     "forbidden": "You don't have permission to view this.",
     "newAnnouncement": "New Announcement",
+    "clickToPaste": "Click to Paste",
     "create": "Create",
     "save": "Save",
     "cancel": "Cancel",

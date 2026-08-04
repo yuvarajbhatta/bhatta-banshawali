@@ -1,8 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  AlertTriangle,
+  // AlertTriangle, -- re-add if "/admin/data-quality" comes back to the nav
   Bell,
-  Copy,
+  // Copy, -- re-add if "/admin/duplicates" comes back to the nav
   FileCheck,
   FileText,
   GitFork,
@@ -99,8 +99,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   // person/relationship tables (O(n^2) for duplicates, full-graph DFS for
   // data quality). Wiring a live count would mean running that on every
   // page view instead of only when the report is actually opened.
-  { href: "/admin/duplicates", labelKey: "duplicatePeople", icon: Copy },
-  { href: "/admin/data-quality", labelKey: "dataQualityReports", icon: AlertTriangle },
+  // Hidden from the nav for now (not needed day-to-day) -- the pages
+  // still work at their URLs, just commented out here rather than
+  // removed, so restoring them later is a one-line uncomment.
+  // { href: "/admin/duplicates", labelKey: "duplicatePeople", icon: Copy },
+  // { href: "/admin/data-quality", labelKey: "dataQualityReports", icon: AlertTriangle },
   { href: "/admin/content", labelKey: "content", icon: FileText },
   { href: "/admin/news", labelKey: "newsManager", icon: Bell },
   { href: "/admin/lineage", labelKey: "lineageBuilder", icon: Sprout },
