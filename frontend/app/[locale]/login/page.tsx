@@ -10,6 +10,25 @@ import { getMemberProfile, getPublishedArticle } from "@/lib/api";
 import { localizeArticle } from "@/lib/localize-article";
 import styles from "./page.module.css";
 
+// Mirrors LoginFailureHandler's reason codes -- pending_review/disabled/
+// locked are only ever appended once the password has already been
+// verified correct (see UserAccountPrincipal/UserAccountStatusChecker),
+// so it's safe to be this specific. A bare "?error" (wrong password,
+// unknown email, or a reason this frontend doesn't recognize) always
+// falls back to the generic message.
+function loginErrorMessage(t: (key: string) => string, reason: string): string {
+  switch (reason) {
+    case "pending_review":
+      return t("pendingReview");
+    case "disabled":
+      return t("accountDisabled");
+    case "locked":
+      return t("accountLocked");
+    default:
+      return t("invalid");
+  }
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -63,7 +82,7 @@ export default async function LoginPage({
         <Reveal className={styles.card} delay={0.1}>
           {params.error !== undefined ? (
             <div className={styles.notice} data-variant="error">
-              {t("invalid")}
+              {loginErrorMessage(t, params.error)}
             </div>
           ) : null}
           {params.logout !== undefined ? (

@@ -134,27 +134,37 @@ class BridgingUserDetailsServiceTest {
     }
 
     @Test
-    void pendingUserAccountIsTreatedAsNotFound() {
+    void pendingUserAccountIsFoundWithItsStatusCarriedOnThePrincipal() {
+        // No longer filtered out here (that used to throw
+        // UsernameNotFoundException) -- the status gate now happens later,
+        // in UserAccountStatusChecker, after the password is verified. See
+        // that class and UserAccountPrincipal for why.
         when(appUserRepository.findByUsername("pending@example.com")).thenReturn(Optional.empty());
         UserAccount account = new UserAccount();
         account.setEmail("pending@example.com");
+        account.setPasswordHash("{bcrypt}hash");
         account.setStatus(UserAccountStatus.PENDING_EMAIL_VERIFICATION);
         when(userAccountRepository.findByEmailWithRoles("pending@example.com")).thenReturn(Optional.of(account));
 
-        assertThatThrownBy(() -> bridgingUserDetailsService.loadUserByUsername("pending@example.com"))
-                .isInstanceOf(UsernameNotFoundException.class);
+        UserDetails userDetails = bridgingUserDetailsService.loadUserByUsername("pending@example.com");
+
+        assertThat(userDetails).isInstanceOf(UserAccountPrincipal.class);
+        assertThat(((UserAccountPrincipal) userDetails).getStatus()).isEqualTo(UserAccountStatus.PENDING_EMAIL_VERIFICATION);
     }
 
     @Test
-    void disabledUserAccountIsTreatedAsNotFound() {
+    void disabledUserAccountIsFoundWithItsStatusCarriedOnThePrincipal() {
         when(appUserRepository.findByUsername("disabled@example.com")).thenReturn(Optional.empty());
         UserAccount account = new UserAccount();
         account.setEmail("disabled@example.com");
+        account.setPasswordHash("{bcrypt}hash");
         account.setStatus(UserAccountStatus.DISABLED);
         when(userAccountRepository.findByEmailWithRoles("disabled@example.com")).thenReturn(Optional.of(account));
 
-        assertThatThrownBy(() -> bridgingUserDetailsService.loadUserByUsername("disabled@example.com"))
-                .isInstanceOf(UsernameNotFoundException.class);
+        UserDetails userDetails = bridgingUserDetailsService.loadUserByUsername("disabled@example.com");
+
+        assertThat(userDetails).isInstanceOf(UserAccountPrincipal.class);
+        assertThat(((UserAccountPrincipal) userDetails).getStatus()).isEqualTo(UserAccountStatus.DISABLED);
     }
 
     @Test

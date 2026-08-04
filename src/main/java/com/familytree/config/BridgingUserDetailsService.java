@@ -2,7 +2,6 @@ package com.familytree.config;
 
 import com.familytree.entity.AppUser;
 import com.familytree.entity.UserAccount;
-import com.familytree.entity.UserAccountStatus;
 import com.familytree.repository.AppUserRepository;
 import com.familytree.repository.UserAccountRepository;
 import org.springframework.security.core.userdetails.User;
@@ -19,18 +18,24 @@ import java.util.Optional;
  * ROLE_ADMIN or ROLE_USER) or the new UserAccount table (email/password,
  * Role entities) -- introduced alongside AppUser per the Phase 1 plan,
  * not replacing it. AppUser is checked first since every account there
- * already works today; UserAccount is the fallback for anyone whose
- * signup has been approved.
+ * already works today; UserAccount is the fallback for anyone who's
+ * signed up.
  *
  * A UserAccount authenticates by email in the same "username" field the
  * login form already has -- there's no second form or field, the login
  * page label just says "Username or Email" now.
  *
- * Deliberately does not distinguish "no such account" from "account
- * exists but isn't ACTIVE yet" in the exception thrown -- both produce
- * the same generic UsernameNotFoundException, so a pending or rejected
- * applicant's login attempt looks identical to a wrong email, matching
- * the anti-enumeration requirement in docs/05-auth-and-verification.md.
+ * Deliberately does NOT filter UserAccount lookups by status anymore
+ * (that used to happen here, throwing UsernameNotFoundException for
+ * anything but ACTIVE) -- the status is carried on the returned
+ * UserAccountPrincipal instead, and gated later by
+ * UserAccountStatusChecker as DaoAuthenticationProvider's
+ * postAuthenticationChecks, which only runs after the password has
+ * already been verified. That's what lets a pending/disabled account
+ * with the *correct* password get a specific, helpful login error while
+ * a wrong email or wrong password for any account still gets the same
+ * generic "invalid credentials" either way -- see
+ * docs/05-auth-and-verification.md's anti-enumeration guarantees.
  */
 public class BridgingUserDetailsService implements UserDetailsService {
 
@@ -46,14 +51,13 @@ public class BridgingUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         return appUserRepository.findByUsername(usernameOrEmail)
                 .map(this::toUserDetails)
-                .or(() -> findActiveUserAccount(usernameOrEmail).map(this::toUserDetails))
+                .or(() -> findUserAccount(usernameOrEmail).map(this::toUserDetails))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + usernameOrEmail));
     }
 
-    private Optional<UserAccount> findActiveUserAccount(String usernameOrEmail) {
+    private Optional<UserAccount> findUserAccount(String usernameOrEmail) {
         String normalizedEmail = usernameOrEmail == null ? "" : usernameOrEmail.trim().toLowerCase();
-        return userAccountRepository.findByEmailWithRoles(normalizedEmail)
-                .filter(account -> account.getStatus() == UserAccountStatus.ACTIVE);
+        return userAccountRepository.findByEmailWithRoles(normalizedEmail);
     }
 
     // The legacy AppUser table predates the whole UserAccount/Role/verification
@@ -86,9 +90,6 @@ public class BridgingUserDetailsService implements UserDetailsService {
             roles.add("USER");
         }
 
-        return User.withUsername(account.getEmail())
-                .password(account.getPasswordHash())
-                .roles(roles.toArray(new String[0]))
-                .build();
+        return new UserAccountPrincipal(account.getEmail(), account.getPasswordHash(), account.getStatus(), roles);
     }
 }

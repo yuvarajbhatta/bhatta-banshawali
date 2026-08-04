@@ -90,7 +90,7 @@ class UserAccountLoginTest {
     }
 
     @Test
-    void pendingAccountCannotLogIn() throws Exception {
+    void pendingAccountWithCorrectPasswordGetsAPendingReviewReasonNotGenericInvalid() throws Exception {
         UserAccount account = new UserAccount();
         account.setEmail("pending-applicant@example.com");
         account.setPasswordHash(passwordEncoder.encode("password123"));
@@ -102,11 +102,11 @@ class UserAccountLoginTest {
                         .param("password", "password123")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?error"));
+                .andExpect(redirectedUrl("/login?error=pending_review"));
     }
 
     @Test
-    void disabledAccountCannotLogIn() throws Exception {
+    void disabledAccountWithCorrectPasswordGetsADisabledReasonNotGenericInvalid() throws Exception {
         UserAccount account = new UserAccount();
         account.setEmail("disabled-applicant@example.com");
         account.setPasswordHash(passwordEncoder.encode("password123"));
@@ -116,6 +116,26 @@ class UserAccountLoginTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .param("username", "disabled-applicant@example.com")
                         .param("password", "password123")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?error=disabled"));
+    }
+
+    @Test
+    void pendingAccountWithWrongPasswordStillGetsTheGenericErrorNotPendingReview() throws Exception {
+        // The whole anti-enumeration point: a specific reason is only ever
+        // revealed once the password is proven correct. A wrong guess
+        // against a pending account must look identical to a wrong guess
+        // against an unknown email.
+        UserAccount account = new UserAccount();
+        account.setEmail("pending-wrong-password@example.com");
+        account.setPasswordHash(passwordEncoder.encode("password123"));
+        account.setStatus(UserAccountStatus.PENDING_EMAIL_VERIFICATION);
+        userAccountRepository.save(account);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .param("username", "pending-wrong-password@example.com")
+                        .param("password", "not-the-right-password")
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login?error"));

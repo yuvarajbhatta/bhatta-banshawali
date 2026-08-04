@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -34,6 +36,20 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(AppUserRepository appUserRepository,
                                                   UserAccountRepository userAccountRepository) {
         return new BridgingUserDetailsService(appUserRepository, userAccountRepository);
+    }
+
+    // Explicit, rather than letting Spring Boot auto-build a
+    // DaoAuthenticationProvider from the UserDetailsService/PasswordEncoder
+    // beans above, specifically to install UserAccountStatusChecker as
+    // postAuthenticationChecks -- see its javadoc and UserAccountPrincipal
+    // for why that ordering (after password verification, not before) is
+    // what makes a pending/disabled account's status safe to reveal.
+    @Bean
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setPostAuthenticationChecks(new UserAccountStatusChecker());
+        return provider;
     }
 
     // docs/09-security-threat-model.md item 6 (XSS), for defense-in-depth on
@@ -213,6 +229,12 @@ public class SecurityConfig {
                         // being redirected here from a protected page) when
                         // one exists.
                         .defaultSuccessUrl("/dashboard", false)
+                        // See LoginFailureHandler -- same generic "/login?error"
+                        // as Spring Security's own default failure handler,
+                        // except with a specific reason appended when the
+                        // password was actually correct but the account isn't
+                        // ACTIVE yet.
+                        .failureHandler(new LoginFailureHandler())
                         .permitAll()
                 )
                 .logout(logout -> logout

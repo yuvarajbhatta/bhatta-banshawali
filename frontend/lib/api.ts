@@ -74,12 +74,29 @@ export class SignupError extends Error {}
 // relative path -- nginx proxies /api/ to the backend on the same origin
 // in production (see banshawali.yrbhatta.com vhost), same as the live
 // AD/BS conversion below.
+//
+// A bounded timeout matters here specifically: a plain fetch() with no
+// signal hangs forever if the backend accepts the TCP connection but
+// never answers (seen in production -- a wedged Tomcat that still passed
+// health/port checks left signup stuck on "Submitting..." with no error,
+// since the awaited promise just never settled). Bounding it means a
+// hung backend always surfaces as a catchable error instead.
 export async function submitSignup(request: SignupRequest): Promise<SignupResponse> {
-  const response = await fetch("/api/v1/signup", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
+  let response: Response;
+  try {
+    response = await fetch("/api/v1/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+      signal: AbortSignal.timeout(20000),
+    });
+  } catch (error) {
+    throw new SignupError(
+      error instanceof DOMException && error.name === "TimeoutError"
+        ? "The server took too long to respond. Please try again in a moment."
+        : "Could not reach the server. Check your connection and try again.",
+    );
+  }
 
   const body = await response.json();
   if (!response.ok) {
