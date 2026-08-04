@@ -13,4 +13,6 @@ public interface UserAccountOtpRepository extends JpaRepository<UserAccountOtp, 
 
     Optional<UserAccountOtp> findFirstByUserAccountIdAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(
             Long userAccountId, OtpPurpose purpose);
+
+    List<UserAccountOtp> findByUserAccountId(Long userAccountId);
 }

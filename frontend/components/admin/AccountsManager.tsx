@@ -302,28 +302,35 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
               <div className={styles.actionsRow}>
                 <Button
                   variant="secondary"
+                  size="xs"
                   onClick={() => setRow(account, { mode: "editInfo", status: "idle" })}
                   disabled={saving || !hasSignupRecord}
                 >
                   {t("editInfo")}
                 </Button>
                 {isLinked ? (
-                  <Button variant="secondary" onClick={() => handleUnlink(account)} disabled={saving}>
+                  <Button variant="secondary" size="xs" onClick={() => handleUnlink(account)} disabled={saving}>
                     {t("unlink")}
                   </Button>
                 ) : (
-                  <Button variant="secondary" onClick={() => setRow(account, { mode: "link", status: "idle" })} disabled={saving}>
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    onClick={() => setRow(account, { mode: "link", status: "idle" })}
+                    disabled={saving}
+                  >
                     {t("link")}
                   </Button>
                 )}
                 {isLinked && hasSignupRecord ? (
-                  <Button variant="secondary" onClick={() => handleApplyToPerson(account)} disabled={saving}>
+                  <Button variant="secondary" size="xs" onClick={() => handleApplyToPerson(account)} disabled={saving}>
                     {t("applyToPerson")}
                   </Button>
                 ) : null}
                 {account.isAdmin ? (
                   <Button
                     variant="destructive"
+                    size="xs"
                     onClick={() => handleRevokeAdmin(account)}
                     disabled={saving || isSelf}
                     title={isSelf ? t("cannotActOnOwnAccount") : undefined}
@@ -333,6 +340,7 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
                 ) : null}
                 <Button
                   variant={isDisabled ? "secondary" : "destructive"}
+                  size="xs"
                   onClick={() => handleToggleStatus(account)}
                   disabled={saving || (isSelf && !isDisabled)}
                   title={isSelf && !isDisabled ? t("cannotActOnOwnAccount") : undefined}
@@ -341,6 +349,7 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
                 </Button>
                 <Button
                   variant="destructive"
+                  size="xs"
                   onClick={() => handleDelete(account)}
                   disabled={saving || account.isAdmin}
                   title={account.isAdmin ? t("deleteBlockedForAdmin") : undefined}

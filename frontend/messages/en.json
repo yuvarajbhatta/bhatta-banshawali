@@ -554,7 +554,6 @@
   },
   "adminAccountsPage": {
     "title": "Manage User Accounts",
-    "subtitle": "Every member account -- link or unlink a family record, correct their submitted signup info, disable/enable access, or delete the account entirely.",
     "empty": "No accounts yet.",
     "forbidden": "You don't have permission to view this.",
     "noLinkedPerson": "Not linked to a family record",

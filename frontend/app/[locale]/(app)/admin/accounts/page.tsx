@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { AccountsManager } from "@/components/admin/AccountsManager";
 import { getAdminAccounts, getMemberProfile } from "@/lib/api";
+import styles from "./page.module.css";
 
 export default async function AdminAccountsPage() {
   const t = await getTranslations("adminAccountsPage");
@@ -25,7 +26,7 @@ export default async function AdminAccountsPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} titleClassName={styles.compactTitle} />
       {result.kind === "forbidden" ? (
         <p>{t("forbidden")}</p>
       ) : (

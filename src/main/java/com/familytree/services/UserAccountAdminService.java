@@ -12,6 +12,7 @@ import com.familytree.entity.VerificationRequest;
 import com.familytree.repository.AdminAccessRequestRepository;
 import com.familytree.repository.PersonCorrectionRequestRepository;
 import com.familytree.repository.PersonRepository;
+import com.familytree.repository.UserAccountOtpRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserAccountTokenRepository;
 import com.familytree.repository.UserPersonLinkRepository;
@@ -51,6 +52,7 @@ public class UserAccountAdminService {
     private final PersonDisplayHelper personDisplay;
     private final UserPersonLinkService userPersonLinkService;
     private final UserAccountTokenRepository userAccountTokenRepository;
+    private final UserAccountOtpRepository userAccountOtpRepository;
 
     public UserAccountAdminService(UserAccountRepository userAccountRepository,
                                    UserPersonLinkRepository userPersonLinkRepository,
@@ -61,7 +63,8 @@ public class UserAccountAdminService {
                                    AuditLogService auditLogService,
                                    PersonDisplayHelper personDisplay,
                                    UserPersonLinkService userPersonLinkService,
-                                   UserAccountTokenRepository userAccountTokenRepository) {
+                                   UserAccountTokenRepository userAccountTokenRepository,
+                                   UserAccountOtpRepository userAccountOtpRepository) {
         this.userAccountRepository = userAccountRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.verificationRequestRepository = verificationRequestRepository;
@@ -72,6 +75,7 @@ public class UserAccountAdminService {
         this.personDisplay = personDisplay;
         this.userPersonLinkService = userPersonLinkService;
         this.userAccountTokenRepository = userAccountTokenRepository;
+        this.userAccountOtpRepository = userAccountOtpRepository;
     }
 
     public List<AdminUserAccountDto> listAll() {
@@ -234,7 +238,11 @@ public class UserAccountAdminService {
      * acted as a reviewer/verifier of someone else's request are nulled
      * out (those columns are nullable and the reviewer's username is
      * already preserved separately as a string), not deleted, so other
-     * people's review history survives.
+     * people's review history survives. Also clears password-reset
+     * tokens and email-verification/admin-access-request OTPs (see
+     * TokenService/OtpService) -- both have a user_account_id foreign
+     * key with no cascade, so leaving them behind would fail the delete
+     * outright.
      *
      * @throws IllegalArgumentException if the acting admin tries to delete their own
      *          account, or the target account currently has admin access (revoke it
@@ -260,6 +268,7 @@ public class UserAccountAdminService {
         adminAccessRequestRepository.deleteAll(adminAccessRequestRepository.findByUserAccountId(userAccountId));
         verificationRequestRepository.deleteAll(verificationRequestRepository.findByUserAccountId(userAccountId));
         userAccountTokenRepository.deleteAll(userAccountTokenRepository.findByUserAccountId(userAccountId));
+        userAccountOtpRepository.deleteAll(userAccountOtpRepository.findByUserAccountId(userAccountId));
         userAccountRepository.delete(account);
 
         auditLogService.record(AuditLogService.ACTION_ACCOUNT_DELETED, AuditLogService.ENTITY_USER_ACCOUNT,
