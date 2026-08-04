@@ -1,9 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { GitFork } from "lucide-react";
 import { LoginForm } from "@/components/LoginForm";
-import { HeroScene } from "@/components/landing/HeroScene";
+import { FamilyTreeWatermark } from "@/components/landing/FamilyTreeWatermark";
 import { Reveal } from "@/components/motion/Reveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Paragraphs } from "@/components/Paragraphs";
@@ -43,14 +42,15 @@ export default async function LoginPage({
 
   return (
     <main className={styles.page}>
+      <div className={styles.languageSwitcherRow}>
+        <LanguageSwitcher />
+      </div>
+
       <section className={`${styles.branding} stage`}>
-        <HeroScene />
+        <FamilyTreeWatermark />
         <div className={styles.brandingOverlay} />
         <div className={styles.brandingContent}>
           <Reveal>
-            <span className={styles.brandMark} aria-hidden="true">
-              <GitFork size={22} />
-            </span>
             <h1 className={styles.brandTitle}>{t("brandTitle")}</h1>
             {about ? (
               <div className={styles.brandAbout}>
@@ -64,10 +64,6 @@ export default async function LoginPage({
       </section>
 
       <section className={styles.formPanel}>
-        <div className={styles.languageSwitcherRow}>
-          <LanguageSwitcher />
-        </div>
-
         <Reveal className={styles.card} delay={0.1}>
           <h2 className={styles.heading}>{t("heading")}</h2>
           <p className={styles.subtitle}>{t("subtitle")}</p>

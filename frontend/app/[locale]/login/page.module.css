@@ -1,7 +1,15 @@
 .page {
+  position: relative;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
+}
+
+.languageSwitcherRow {
+  position: fixed;
+  top: var(--space-6);
+  right: var(--space-6);
+  z-index: var(--z-modal);
 }
 
 @media (max-width: 900px) {
@@ -31,9 +39,9 @@
   }
 }
 
-/* Sits between the HeroScene canvas (z-canvas, absolute/inset:0) and
-   the text content -- keeps the tagline readable over the 3D scene
-   without hiding it entirely. */
+/* Sits between the watermark SVG (z-canvas, absolute/inset:0) and the
+   text content -- keeps the copy readable over the linework without
+   hiding it entirely. */
 .brandingOverlay {
   position: absolute;
   inset: 0;
@@ -45,19 +53,6 @@
 .brandingContent {
   position: relative;
   z-index: var(--z-canvas-overlay);
-}
-
-.brandMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
-  background: rgba(240, 253, 244, 0.12);
-  border: 1px solid rgba(240, 253, 244, 0.25);
-  color: var(--color-stage-text);
-  margin-bottom: var(--space-6);
 }
 
 .brandTitle {
@@ -99,13 +94,6 @@
   justify-content: center;
   gap: var(--space-6);
   padding: var(--space-8) var(--space-4) var(--space-16);
-  position: relative;
-}
-
-.languageSwitcherRow {
-  position: absolute;
-  top: var(--space-6);
-  right: var(--space-6);
 }
 
 .card {

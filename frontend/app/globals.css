@@ -240,9 +240,10 @@ body {
   line-height: var(--line-height-normal);
 }
 
-/* A dark "stage" backdrop for hero/3D sections -- opt-in per section,
-   not a theme switch. Always dark regardless of light/dark mode, since
-   the 3D scenes are lit and composed for a dark backdrop. */
+/* A dark "stage" backdrop for hero sections -- opt-in per section, not
+   a theme switch. Always dark regardless of light/dark mode, since
+   these sections (e.g. the login page's branding panel) are composed
+   for a dark backdrop specifically. */
 .stage {
   background: var(--color-stage);
   color: var(--color-stage-text);
