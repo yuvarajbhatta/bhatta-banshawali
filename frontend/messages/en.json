@@ -1060,7 +1060,6 @@
   },
   "signupPage": {
     "title": "Join the Bhatta Banshawali",
-    "subtitle": "Membership is limited to people connected to the Bhatta family. Your request will be reviewed by an administrator before you can log in.",
     "sections": {
       "personal": "Your Information",
       "family": "Family Connection",
@@ -1080,10 +1079,6 @@
       "grandfatherName": "Grandfather's Full Name",
       "motherName": "Mother's Full Name",
       "ancestralVillage": "Ancestral Village",
-      "familyBranch": "Family Branch",
-      "knownRelativeName": "Name of a Relative Already in the Records",
-      "invitationCode": "Invitation Code",
-      "invitationCodeHint": "Optional -- if a family member gave you one",
       "password": "Password",
       "confirmPassword": "Confirm Password",
       "applicantNote": "Anything else you'd like the reviewer to know"

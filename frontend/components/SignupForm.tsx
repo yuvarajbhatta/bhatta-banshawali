@@ -37,9 +37,6 @@ interface FormState {
   grandfatherName: string;
   motherName: string;
   ancestralVillage: string;
-  familyBranch: string;
-  knownRelativeName: string;
-  invitationCode: string;
   password: string;
   confirmPassword: string;
   applicantNote: string;
@@ -58,9 +55,6 @@ const EMPTY_FORM: FormState = {
   grandfatherName: "",
   motherName: "",
   ancestralVillage: "",
-  familyBranch: "",
-  knownRelativeName: "",
-  invitationCode: "",
   password: "",
   confirmPassword: "",
   applicantNote: "",
@@ -197,9 +191,6 @@ export function SignupForm() {
       motherName: form.motherName.trim() || undefined,
       placeOfBirth: form.placeOfBirth.trim() || undefined,
       ancestralVillage: form.ancestralVillage.trim() || undefined,
-      familyBranch: form.familyBranch.trim() || undefined,
-      knownRelativeName: form.knownRelativeName.trim() || undefined,
-      invitationCode: form.invitationCode.trim() || undefined,
       applicantNote: form.applicantNote.trim() || undefined,
     };
 
@@ -218,8 +209,6 @@ export function SignupForm() {
 
   return (
     <form className={styles.form} onSubmit={handleSubmit} noValidate>
-      <p className={styles.subtitle}>{t("subtitle")}</p>
-
       <div className={styles.languageRow}>
         <span className={styles.languageLabel}>{tLanguage("label")}</span>
         <div className={styles.languageOptions} role="group" aria-label={tLanguage("label")}>
@@ -244,6 +233,7 @@ export function SignupForm() {
 
         <Field
           label={t("fields.fullName")}
+          required
           error={errors.fullName}
           input={
             <input
@@ -257,6 +247,7 @@ export function SignupForm() {
 
         <Field
           label={t("fields.email")}
+          required
           error={errors.email}
           input={
             <input
@@ -335,6 +326,7 @@ export function SignupForm() {
 
         <Field
           label={t("fields.fatherName")}
+          required
           error={errors.fatherName}
           input={
             <input
@@ -348,6 +340,7 @@ export function SignupForm() {
 
         <Field
           label={t("fields.grandfatherName")}
+          required
           error={errors.grandfatherName}
           input={
             <input
@@ -377,40 +370,6 @@ export function SignupForm() {
               type="text"
               value={form.ancestralVillage}
               onChange={(event) => update("ancestralVillage", event.target.value)}
-            />
-          }
-        />
-
-        <Field
-          label={`${t("fields.familyBranch")} ${t("optional")}`}
-          input={
-            <input
-              type="text"
-              value={form.familyBranch}
-              onChange={(event) => update("familyBranch", event.target.value)}
-            />
-          }
-        />
-
-        <Field
-          label={`${t("fields.knownRelativeName")} ${t("optional")}`}
-          input={
-            <input
-              type="text"
-              value={form.knownRelativeName}
-              onChange={(event) => update("knownRelativeName", event.target.value)}
-            />
-          }
-        />
-
-        <Field
-          label={t("fields.invitationCode")}
-          hint={t("fields.invitationCodeHint")}
-          input={
-            <input
-              type="text"
-              value={form.invitationCode}
-              onChange={(event) => update("invitationCode", event.target.value)}
             />
           }
         />
@@ -490,11 +449,13 @@ export function SignupForm() {
 
 function Field({
   label,
+  required,
   error,
   hint,
   input,
 }: {
   label: string;
+  required?: boolean;
   error?: string;
   hint?: string;
   input: React.ReactNode;
@@ -502,7 +463,10 @@ function Field({
   return (
     <div className={styles.field}>
       <label className={styles.label}>
-        {label}
+        <span className={styles.labelText}>
+          {label}
+          {required ? <span className={styles.requiredMark}>*</span> : null}
+        </span>
         {input}
       </label>
       {hint && !error ? <div className={styles.hint}>{hint}</div> : null}
