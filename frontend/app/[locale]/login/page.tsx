@@ -42,10 +42,6 @@ export default async function LoginPage({
 
   return (
     <main className={styles.page}>
-      <div className={styles.languageSwitcherRow}>
-        <LanguageSwitcher />
-      </div>
-
       <section className={`${styles.branding} stage`}>
         <FamilyTreeWatermark />
         <div className={styles.brandingOverlay} />
@@ -87,6 +83,11 @@ export default async function LoginPage({
           <LoginForm />
         </Reveal>
       </section>
+
+      <footer className={styles.footer}>
+        <p className={styles.copyright}>{t("copyright", { year: new Date().getFullYear() })}</p>
+        <LanguageSwitcher />
+      </footer>
     </main>
   );
 }

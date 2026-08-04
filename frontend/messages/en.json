@@ -873,6 +873,7 @@
     "preparing": "Preparing secure connection…",
     "brandTitle": "Bhatta Banshawali",
     "brandTagline": "A living record of our family's history, preserved and verified.",
+    "copyright": "© {year} Bhatta Banshawali",
     "showPassword": "Show password",
     "hidePassword": "Hide password"
   },
