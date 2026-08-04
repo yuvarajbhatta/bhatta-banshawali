@@ -22,6 +22,7 @@
       "members": "Members",
       "news": "News & Alerts",
       "about": "About",
+      "help": "Help & Contact",
       "administration": "Administration",
       "signupReview": "Signup Review",
       "correctionReview": "Corrections",
@@ -242,6 +243,40 @@
       "noneWaiting": "Nothing waiting for review.",
       "familyMembers": "Documented Family Members",
       "generationsRecorded": "Documented Generations"
+    }
+  },
+  "aboutPage": {
+    "title": "About",
+    "empty": "Content coming soon."
+  },
+  "helpPage": {
+    "title": "Help & Contact",
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "joinRequirements": {
+        "question": "Who can join?",
+        "answer": "Membership is limited to people who can be reasonably connected to the Bhatta family. When you request membership, you'll be asked for your name, date of birth, and your father's and grandfather's names to check against existing records."
+      },
+      "correctInfo": {
+        "question": "Something about me or my family is wrong. How do I fix it?",
+        "answer": "Open \"Your Family\" or your profile page and use the \"Something wrong here?\" form to suggest a correction. An admin reviews it before it changes the record."
+      },
+      "addPhotos": {
+        "question": "Can I add photos?",
+        "answer": "Yes -- you can add photos of yourself or your immediate family from your Dashboard or profile page."
+      },
+      "whoCanSee": {
+        "question": "Who can see my information?",
+        "answer": "Only verified members can sign in and view the family tree. Sensitive fields like birth date and address are only visible to you and admins."
+      },
+      "reachAdmin": {
+        "question": "How do I reach an admin?",
+        "answer": "Use the Contact section below, or the correction form for anything specific to a family record."
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "If you have a question about the family tree, a correction to suggest, or a membership request, please reach out to a family administrator directly, or use the correction tools available once you're signed in."
     }
   },
   "newsPage": {

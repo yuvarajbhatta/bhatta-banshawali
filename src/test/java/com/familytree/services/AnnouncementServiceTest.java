@@ -5,9 +5,11 @@ import com.familytree.entity.AnnouncementCategory;
 import com.familytree.entity.AnnouncementPhoto;
 import com.familytree.entity.AnnouncementPost;
 import com.familytree.entity.AnnouncementStatus;
+import com.familytree.entity.AppUser;
 import com.familytree.entity.UserAccount;
 import com.familytree.repository.AnnouncementPhotoRepository;
 import com.familytree.repository.AnnouncementPostRepository;
+import com.familytree.repository.AppUserRepository;
 import com.familytree.repository.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,8 @@ class AnnouncementServiceTest {
     private AnnouncementPhotoRepository announcementPhotoRepository;
     @Mock
     private UserAccountRepository userAccountRepository;
+    @Mock
+    private AppUserRepository appUserRepository;
 
     @TempDir
     private Path storageDir;
@@ -49,7 +53,7 @@ class AnnouncementServiceTest {
     @BeforeEach
     void setUp() {
         service = new AnnouncementService(announcementPostRepository, announcementPhotoRepository,
-                userAccountRepository, storageDir.toString());
+                userAccountRepository, appUserRepository, storageDir.toString());
     }
 
     private AnnouncementPost post(long id, AnnouncementStatus status) {
@@ -110,10 +114,24 @@ class AnnouncementServiceTest {
     }
 
     @Test
-    void unreadCountIsZeroForAnAccountWithNoUserAccountRow() {
-        when(userAccountRepository.findByEmail("admin-legacy@example.com")).thenReturn(Optional.empty());
+    void unreadCountIsZeroWhenNeitherUserAccountNorAppUserMatches() {
+        when(userAccountRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+        when(appUserRepository.findByUsername("nobody@example.com")).thenReturn(Optional.empty());
 
-        assertThat(service.unreadCount("admin-legacy@example.com")).isZero();
+        assertThat(service.unreadCount("nobody@example.com")).isZero();
+    }
+
+    @Test
+    void unreadCountFallsBackToAppUserWhenNoUserAccountRow() {
+        // Today's admin logins are AppUser rows (no UserAccount at all) --
+        // this is the exact case that produced a "badge never shows" bug.
+        AppUser appUser = new AppUser();
+        appUser.setUsername("admin");
+        when(userAccountRepository.findByEmail("admin")).thenReturn(Optional.empty());
+        when(appUserRepository.findByUsername("admin")).thenReturn(Optional.of(appUser));
+        when(announcementPostRepository.countByStatus(AnnouncementStatus.PUBLISHED)).thenReturn(2L);
+
+        assertThat(service.unreadCount("admin")).isEqualTo(2);
     }
 
     @Test
@@ -130,12 +148,28 @@ class AnnouncementServiceTest {
     }
 
     @Test
-    void markSeenIsANoOpForAnAccountWithNoUserAccountRow() {
-        when(userAccountRepository.findByEmail("admin-legacy@example.com")).thenReturn(Optional.empty());
+    void markSeenIsANoOpWhenNeitherUserAccountNorAppUserMatches() {
+        when(userAccountRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+        when(appUserRepository.findByUsername("nobody@example.com")).thenReturn(Optional.empty());
 
-        service.markSeen("admin-legacy@example.com");
+        service.markSeen("nobody@example.com");
 
         verify(userAccountRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(appUserRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void markSeenFallsBackToAppUserWhenNoUserAccountRow() {
+        AppUser appUser = new AppUser();
+        appUser.setUsername("admin");
+        when(userAccountRepository.findByEmail("admin")).thenReturn(Optional.empty());
+        when(appUserRepository.findByUsername("admin")).thenReturn(Optional.of(appUser));
+
+        service.markSeen("admin");
+
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(appUserRepository).save(captor.capture());
+        assertThat(captor.getValue().getLastSeenAnnouncementsAt()).isNotNull();
     }
 
     @Test

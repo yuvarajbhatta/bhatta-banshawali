@@ -5,9 +5,11 @@ import com.familytree.dto.AnnouncementPhotoDto;
 import com.familytree.entity.AnnouncementPhoto;
 import com.familytree.entity.AnnouncementPost;
 import com.familytree.entity.AnnouncementStatus;
+import com.familytree.entity.AppUser;
 import com.familytree.entity.UserAccount;
 import com.familytree.repository.AnnouncementPhotoRepository;
 import com.familytree.repository.AnnouncementPostRepository;
+import com.familytree.repository.AppUserRepository;
 import com.familytree.repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Member-facing read side of News & Alerts -- published posts, the
@@ -32,15 +35,18 @@ public class AnnouncementService {
     private final AnnouncementPostRepository announcementPostRepository;
     private final AnnouncementPhotoRepository announcementPhotoRepository;
     private final UserAccountRepository userAccountRepository;
+    private final AppUserRepository appUserRepository;
     private final Path uploadsDirectory;
 
     public AnnouncementService(AnnouncementPostRepository announcementPostRepository,
                                AnnouncementPhotoRepository announcementPhotoRepository,
                                UserAccountRepository userAccountRepository,
+                               AppUserRepository appUserRepository,
                                @Value("${app.uploads.directory}") String uploadsDirectory) {
         this.announcementPostRepository = announcementPostRepository;
         this.announcementPhotoRepository = announcementPhotoRepository;
         this.userAccountRepository = userAccountRepository;
+        this.appUserRepository = appUserRepository;
         this.uploadsDirectory = Path.of(uploadsDirectory).normalize();
     }
 
@@ -51,27 +57,43 @@ public class AnnouncementService {
                 .toList();
     }
 
-    /** Accounts with no watermark yet (never opened the tab) see every published post as unread. */
+    /**
+     * Accounts with no watermark yet (never opened the tab) see every
+     * published post as unread. Checks UserAccount first, then AppUser --
+     * today's admin accounts are AppUser rows (see the legacy Thymeleaf
+     * login), which have no UserAccount at all, so without this fallback
+     * the badge could never track a watermark for them.
+     */
     public int unreadCount(String viewerEmail) {
-        return userAccountRepository.findByEmail(viewerEmail)
-                .map(account -> {
-                    LocalDateTime lastSeen = account.getLastSeenAnnouncementsAt();
-                    long count = lastSeen == null
-                            ? announcementPostRepository.countByStatus(AnnouncementStatus.PUBLISHED)
-                            : announcementPostRepository.countByStatusAndPublishedAtAfter(AnnouncementStatus.PUBLISHED, lastSeen);
-                    return (int) count;
-                })
-                .orElse(0);
+        Optional<UserAccount> userAccount = userAccountRepository.findByEmail(viewerEmail);
+        if (userAccount.isPresent()) {
+            return countUnreadSince(userAccount.get().getLastSeenAnnouncementsAt());
+        }
+        Optional<AppUser> appUser = appUserRepository.findByUsername(viewerEmail);
+        if (appUser.isPresent()) {
+            return countUnreadSince(appUser.get().getLastSeenAnnouncementsAt());
+        }
+        return 0;
     }
 
-    // Silently a no-op for callers with no UserAccount (legacy AppUser
-    // admin logins) -- there's nowhere to persist a watermark for them,
-    // and this is a passive UI action, not something worth failing loudly.
+    private int countUnreadSince(LocalDateTime lastSeen) {
+        long count = lastSeen == null
+                ? announcementPostRepository.countByStatus(AnnouncementStatus.PUBLISHED)
+                : announcementPostRepository.countByStatusAndPublishedAtAfter(AnnouncementStatus.PUBLISHED, lastSeen);
+        return (int) count;
+    }
+
     @Transactional
     public void markSeen(String viewerEmail) {
-        userAccountRepository.findByEmail(viewerEmail).ifPresent(account -> {
-            account.setLastSeenAnnouncementsAt(LocalDateTime.now());
-            userAccountRepository.save(account);
+        Optional<UserAccount> userAccount = userAccountRepository.findByEmail(viewerEmail);
+        if (userAccount.isPresent()) {
+            userAccount.get().setLastSeenAnnouncementsAt(LocalDateTime.now());
+            userAccountRepository.save(userAccount.get());
+            return;
+        }
+        appUserRepository.findByUsername(viewerEmail).ifPresent(appUser -> {
+            appUser.setLastSeenAnnouncementsAt(LocalDateTime.now());
+            appUserRepository.save(appUser);
         });
     }
 

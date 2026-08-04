@@ -1,12 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { GitFork } from "lucide-react";
 import { LoginForm } from "@/components/LoginForm";
 import { HeroScene } from "@/components/landing/HeroScene";
 import { Reveal } from "@/components/motion/Reveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { getMemberProfile } from "@/lib/api";
+import { Paragraphs } from "@/components/Paragraphs";
+import { getMemberProfile, getPublishedArticle } from "@/lib/api";
+import { localizeArticle } from "@/lib/localize-article";
 import styles from "./page.module.css";
 
 export default async function LoginPage({
@@ -16,6 +18,13 @@ export default async function LoginPage({
 }) {
   const t = await getTranslations("login");
   const params = await searchParams;
+  const locale = await getLocale();
+  // Admin-managed "About the Banshawali" content, shown here instead of
+  // on a separate /about page -- this is the one place an unauthenticated
+  // visitor lands, so it doubles as the site's about section. Falls back
+  // to the static tagline if the article is unpublished or missing.
+  const aboutArticle = await getPublishedArticle("about-banshawali");
+  const about = aboutArticle ? localizeArticle(aboutArticle, locale) : null;
 
   // A signed-in visitor landing here (a stale bookmark, browser back
   // button after logging in elsewhere, etc.) should see their
@@ -43,7 +52,13 @@ export default async function LoginPage({
               <GitFork size={22} />
             </span>
             <h1 className={styles.brandTitle}>{t("brandTitle")}</h1>
-            <p className={styles.brandTagline}>{t("brandTagline")}</p>
+            {about ? (
+              <div className={styles.brandAbout}>
+                <Paragraphs text={about.body} />
+              </div>
+            ) : (
+              <p className={styles.brandTagline}>{t("brandTagline")}</p>
+            )}
           </Reveal>
         </div>
       </section>

@@ -75,6 +75,23 @@
   margin: 0 auto;
 }
 
+.brandAbout {
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+  color: var(--color-neutral-200);
+  max-width: 46ch;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.brandAbout p {
+  margin: 0;
+}
+
 .formPanel {
   display: flex;
   flex-direction: column;

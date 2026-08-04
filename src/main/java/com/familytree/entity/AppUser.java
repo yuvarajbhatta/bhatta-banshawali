@@ -2,6 +2,8 @@ package com.familytree.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "app_users")
 public class AppUser {
@@ -18,6 +20,12 @@ public class AppUser {
 
     @Column(nullable = false)
     private String role;
+
+    // Watermark for the News & Alerts unread badge -- see UserAccount's
+    // identical field and AnnouncementService, which checks this table as
+    // a fallback since today's admin accounts are AppUser rows, not
+    // UserAccount.
+    private LocalDateTime lastSeenAnnouncementsAt;
 
     public Long getId() {
         return id;
@@ -41,5 +49,12 @@ public class AppUser {
     public void setRole(String role) {
         this.role = role;
     }
-    
+
+    public LocalDateTime getLastSeenAnnouncementsAt() {
+        return lastSeenAnnouncementsAt;
+    }
+
+    public void setLastSeenAnnouncementsAt(LocalDateTime lastSeenAnnouncementsAt) {
+        this.lastSeenAnnouncementsAt = lastSeenAnnouncementsAt;
+    }
 }
