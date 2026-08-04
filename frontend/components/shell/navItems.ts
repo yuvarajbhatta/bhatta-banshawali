@@ -7,6 +7,7 @@ import {
   FileText,
   GitFork,
   History,
+  Info,
   Layers,
   LayoutDashboard,
   Link2,
@@ -20,8 +21,8 @@ import {
 } from "lucide-react";
 
 export interface AppNavItem {
-  href: "/dashboard" | "/family" | "/tree" | "/directory" | "/news";
-  labelKey: "dashboard" | "yourFamily" | "familyTree" | "members" | "news";
+  href: "/dashboard" | "/family" | "/tree" | "/directory" | "/news" | "/about";
+  labelKey: "dashboard" | "yourFamily" | "familyTree" | "members" | "news" | "about";
   icon: LucideIcon;
   // Only "/news" carries a badge (the unread announcement count) -- a
   // single boolean flag rather than a countKey lookup table like
@@ -29,15 +30,19 @@ export interface AppNavItem {
   showUnreadBadge?: boolean;
 }
 
-// The five authenticated sections that actually exist (docs/08 Phases 4-5)
+// The six authenticated sections that actually exist (docs/08 Phases 4-5)
 // -- not the full brief's Photos/Events/Reports/etc. sidebar, which would
-// be dead links (see docs/frontend-redesign-plan.md).
+// be dead links (see docs/frontend-redesign-plan.md). "/about" is outside
+// the (app) route group (it's the same public, admin-managed-content page
+// linked from the pre-login site) -- listed last since it's a step outside
+// the app shell's own chrome, not another app/(dashboard) feature.
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/family", labelKey: "yourFamily", icon: Workflow },
   { href: "/tree", labelKey: "familyTree", icon: GitFork },
   { href: "/directory", labelKey: "members", icon: Users },
   { href: "/news", labelKey: "news", icon: Bell, showUnreadBadge: true },
+  { href: "/about", labelKey: "about", icon: Info },
 ];
 
 export interface AdminNavItem {

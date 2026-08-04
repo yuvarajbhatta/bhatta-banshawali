@@ -186,6 +186,21 @@
   --color-primary-600-text: var(--color-primary-300);
   --color-primary-700-text: var(--color-primary-300);
   --color-success-text: #4ade80;
+  /* --color-text-subtle (neutral-500, #8a968f) was left unscaled here --
+     against the dark surface/background above it computes to ~3.2:1
+     contrast, under the 4.5:1 AA minimum for body text (e.g. HeaderSearch's
+     placeholder/shortcut-hint/result-meta text, reported hard to read).
+     Lightened for dark mode the same way text/text-muted already are. */
+  --color-text-subtle: #a8b3ad;
+  /* --color-primary-50/100 are pale, near-white tints meant to sit on a
+     white surface (hover/active backgrounds for nav links, search
+     results, badges) -- unscaled, they stay near-white in dark mode too,
+     which can wash out light-colored text sitting on top of them (e.g.
+     an active/hovered row where the text is --color-primary-300/700-text).
+     color-mix keeps the same "subtle tint" effect but relative to
+     whatever surface it's actually drawn on. */
+  --color-primary-50: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+  --color-primary-100: color-mix(in srgb, var(--color-primary-500) 28%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -199,6 +214,11 @@
     --color-primary-600-text: var(--color-primary-300);
     --color-primary-700-text: var(--color-primary-300);
     --color-success-text: #4ade80;
+    /* See the [data-theme="dark"] block above for why these two are
+       overridden here too. */
+    --color-text-subtle: #a8b3ad;
+    --color-primary-50: color-mix(in srgb, var(--color-primary-500) 16%, transparent);
+    --color-primary-100: color-mix(in srgb, var(--color-primary-500) 28%, transparent);
   }
 }
 
