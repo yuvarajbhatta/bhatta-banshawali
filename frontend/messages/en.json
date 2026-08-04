@@ -858,7 +858,7 @@
   },
   "login": {
     "bottom": "Don't have an account?",
-    "signUp": "Request membership",
+    "signUp": "Sign up",
     "forgotPassword": "Forgot your password?",
     "invalid": "Invalid username or password.",
     "loggedOut": "You have been logged out successfully.",

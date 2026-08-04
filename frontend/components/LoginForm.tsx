@@ -106,7 +106,7 @@ export function LoginForm() {
         </Link>
       </div>
 
-      <Button type="submit" variant="primary" className={styles.submit} disabled={!csrfToken || submitting}>
+      <Button type="submit" variant="primary" size="sm" className={styles.submit} disabled={!csrfToken || submitting}>
         {!csrfToken ? t("preparing") : submitting ? t("submitting") : t("submit")}
       </Button>
 
