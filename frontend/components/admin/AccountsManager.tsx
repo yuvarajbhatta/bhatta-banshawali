@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/Button";
 import {
   applyAdminAccountSignupInfoToPerson,
@@ -30,6 +31,7 @@ interface EditForm {
 }
 
 interface RowState {
+  expanded: boolean;
   mode: Mode;
   status: "idle" | "saving" | "error";
   error?: string;
@@ -39,6 +41,7 @@ interface RowState {
 
 function emptyRowState(account: AdminUserAccountDto): RowState {
   return {
+    expanded: false,
     mode: "view",
     status: "idle",
     editForm: {
@@ -50,6 +53,14 @@ function emptyRowState(account: AdminUserAccountDto): RowState {
     },
     pickerPerson: null,
   };
+}
+
+// What to show as the account's name on the collapsed row -- the linked
+// family record's name if there is one, else whatever they typed at
+// signup, else just the email (in which case there's no separate email
+// line to show below it, since that'd just repeat the same string).
+function displayName(account: AdminUserAccountDto): string {
+  return account.linkedPersonName ?? account.submittedFullName ?? account.email;
 }
 
 interface AccountsManagerProps {
@@ -66,9 +77,30 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
   const t = useTranslations("adminAccountsPage");
   const [items, setItems] = useState(initialItems);
   const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
+  const [query, setQuery] = useState("");
+
+  // Filters the accounts already loaded for this page -- deliberately not
+  // the header's global /api/v1/persons search (that's the whole family
+  // tree, not "who has a login here"), and no extra request needed since
+  // listAll() already brought every account down at once.
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return items;
+    return items.filter((account) => {
+      const haystack = [account.email, account.submittedFullName, account.linkedPersonName]
+        .filter((value): value is string => Boolean(value))
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [items, query]);
 
   function rowState(account: AdminUserAccountDto): RowState {
     return rowStates[account.id] ?? emptyRowState(account);
+  }
+
+  function toggleExpanded(account: AdminUserAccountDto) {
+    setRow(account, { expanded: !rowState(account).expanded });
   }
 
   function setRow(account: AdminUserAccountDto, patch: Partial<RowState>) {
@@ -187,19 +219,56 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
 
   return (
     <div className={styles.list}>
-      {items.map((account) => {
+      <div className={styles.searchWrapper}>
+        <Search size={16} aria-hidden="true" />
+        <input
+          type="search"
+          className={styles.searchInput}
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchPlaceholder")}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
+
+      {visibleItems.length === 0 ? <div className={queueStyles.empty}>{t("noResults")}</div> : null}
+
+      {visibleItems.map((account) => {
         const state = rowState(account);
         const isDisabled = account.status === "DISABLED";
         const isLinked = account.linkedPersonId != null;
         const hasSignupRecord = account.submittedFullName != null;
         const saving = state.status === "saving";
         const isSelf = currentUserEmail != null && account.email.toLowerCase() === currentUserEmail.toLowerCase();
+        const name = displayName(account);
+        const showEmailLine = name !== account.email;
+        const expanded = state.expanded || state.mode !== "view";
 
         return (
           <div key={account.id} className={styles.card}>
-            <div className={styles.header}>
-              <div className={styles.info}>
-                <p className={styles.email}>{account.email}</p>
+            <button
+              type="button"
+              className={styles.cardHeader}
+              onClick={() => toggleExpanded(account)}
+              aria-expanded={expanded}
+            >
+              <div className={styles.identity}>
+                <p className={styles.name}>{name}</p>
+                {showEmailLine ? <p className={styles.emailSmall}>{account.email}</p> : null}
+              </div>
+              <div className={styles.headerRight}>
+                <div className={styles.badges}>
+                  {account.isAdmin ? <span className={styles.adminBadge}>{t("adminBadge")}</span> : null}
+                  <span className={isDisabled ? `${styles.statusBadge} ${styles.statusDisabled}` : styles.statusBadge}>
+                    {t(`status.${account.status}`)}
+                  </span>
+                </div>
+                <ChevronDown size={18} aria-hidden="true" className={expanded ? styles.chevronOpen : styles.chevron} />
+              </div>
+            </button>
+
+            {expanded ? (
+              <div className={styles.expandedContent}>
                 <p className={styles.meta}>
                   {isLinked ? t("linkedTo", { name: account.linkedPersonName ?? "" }) : t("noLinkedPerson")} ·{" "}
                   {t("joined", { date: formatDate(account.createdAt) })}
@@ -212,154 +281,154 @@ export function AccountsManager({ initialItems, currentUserEmail }: AccountsMana
                     {account.submittedGrandfatherName ? ` · ${t("grandfather")}: ${account.submittedGrandfatherName}` : ""}
                   </p>
                 ) : null}
-              </div>
-              <div className={styles.badges}>
-                {account.isAdmin ? <span className={styles.adminBadge}>{t("adminBadge")}</span> : null}
-                <span className={isDisabled ? `${styles.statusBadge} ${styles.statusDisabled}` : styles.statusBadge}>
-                  {t(`status.${account.status}`)}
-                </span>
-              </div>
-            </div>
 
-            {state.mode === "editInfo" ? (
-              <div className={styles.editForm}>
-                <label>
-                  {t("fields.fullName")}
-                  <input
-                    type="text"
-                    value={state.editForm.fullName}
-                    onChange={(event) => setRow(account, { editForm: { ...state.editForm, fullName: event.target.value } })}
-                  />
-                </label>
-                <label>
-                  {t("fields.fatherName")}
-                  <input
-                    type="text"
-                    value={state.editForm.fatherName}
-                    onChange={(event) => setRow(account, { editForm: { ...state.editForm, fatherName: event.target.value } })}
-                  />
-                </label>
-                <label>
-                  {t("fields.motherName")}
-                  <input
-                    type="text"
-                    value={state.editForm.motherName}
-                    onChange={(event) => setRow(account, { editForm: { ...state.editForm, motherName: event.target.value } })}
-                  />
-                </label>
-                <label>
-                  {t("fields.grandfatherName")}
-                  <input
-                    type="text"
-                    value={state.editForm.grandfatherName}
-                    onChange={(event) =>
-                      setRow(account, { editForm: { ...state.editForm, grandfatherName: event.target.value } })
-                    }
-                  />
-                </label>
-                <label>
-                  {t("fields.dobAd")}
-                  <input
-                    type="date"
-                    value={state.editForm.dobAd}
-                    onChange={(event) => setRow(account, { editForm: { ...state.editForm, dobAd: event.target.value } })}
-                  />
-                </label>
-                <div className={styles.actionsRow}>
-                  <Button variant="primary" onClick={() => handleSaveInfo(account)} disabled={saving}>
-                    {t("save")}
-                  </Button>
-                  <Button variant="ghost" onClick={() => setRow(account, { mode: "view", status: "idle" })} disabled={saving}>
-                    {t("cancel")}
-                  </Button>
-                </div>
-              </div>
-            ) : state.mode === "link" ? (
-              <div className={styles.linkArea}>
-                <div className={styles.picker}>
-                  <PersonPicker
-                    label={t("selectPerson")}
-                    placeholder={t("selectPersonPlaceholder")}
-                    clearLabel={t("clear")}
-                    selected={state.pickerPerson}
-                    onChange={(person) => setRow(account, { pickerPerson: person })}
-                  />
-                </div>
-                <div className={styles.actionsRow}>
-                  <Button variant="primary" onClick={() => handleLink(account)} disabled={!state.pickerPerson || saving}>
-                    {t("link")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setRow(account, { mode: "view", status: "idle", pickerPerson: null })}
-                    disabled={saving}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.actionsRow}>
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  onClick={() => setRow(account, { mode: "editInfo", status: "idle" })}
-                  disabled={saving || !hasSignupRecord}
-                >
-                  {t("editInfo")}
-                </Button>
-                {isLinked ? (
-                  <Button variant="secondary" size="xs" onClick={() => handleUnlink(account)} disabled={saving}>
-                    {t("unlink")}
-                  </Button>
+                {state.mode === "editInfo" ? (
+                  <div className={styles.editForm}>
+                    <label>
+                      {t("fields.fullName")}
+                      <input
+                        type="text"
+                        value={state.editForm.fullName}
+                        onChange={(event) =>
+                          setRow(account, { editForm: { ...state.editForm, fullName: event.target.value } })
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("fields.fatherName")}
+                      <input
+                        type="text"
+                        value={state.editForm.fatherName}
+                        onChange={(event) =>
+                          setRow(account, { editForm: { ...state.editForm, fatherName: event.target.value } })
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("fields.motherName")}
+                      <input
+                        type="text"
+                        value={state.editForm.motherName}
+                        onChange={(event) =>
+                          setRow(account, { editForm: { ...state.editForm, motherName: event.target.value } })
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("fields.grandfatherName")}
+                      <input
+                        type="text"
+                        value={state.editForm.grandfatherName}
+                        onChange={(event) =>
+                          setRow(account, { editForm: { ...state.editForm, grandfatherName: event.target.value } })
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("fields.dobAd")}
+                      <input
+                        type="date"
+                        value={state.editForm.dobAd}
+                        onChange={(event) => setRow(account, { editForm: { ...state.editForm, dobAd: event.target.value } })}
+                      />
+                    </label>
+                    <div className={styles.actionsRow}>
+                      <Button variant="primary" onClick={() => handleSaveInfo(account)} disabled={saving}>
+                        {t("save")}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setRow(account, { mode: "view", status: "idle" })} disabled={saving}>
+                        {t("cancel")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : state.mode === "link" ? (
+                  <div className={styles.linkArea}>
+                    <div className={styles.picker}>
+                      <PersonPicker
+                        label={t("selectPerson")}
+                        placeholder={t("selectPersonPlaceholder")}
+                        clearLabel={t("clear")}
+                        selected={state.pickerPerson}
+                        onChange={(person) => setRow(account, { pickerPerson: person })}
+                      />
+                    </div>
+                    <div className={styles.actionsRow}>
+                      <Button variant="primary" onClick={() => handleLink(account)} disabled={!state.pickerPerson || saving}>
+                        {t("link")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setRow(account, { mode: "view", status: "idle", pickerPerson: null })}
+                        disabled={saving}
+                      >
+                        {t("cancel")}
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    onClick={() => setRow(account, { mode: "link", status: "idle" })}
-                    disabled={saving}
-                  >
-                    {t("link")}
-                  </Button>
+                  <div className={styles.actionsRow}>
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      onClick={() => setRow(account, { mode: "editInfo", status: "idle" })}
+                      disabled={saving || !hasSignupRecord}
+                    >
+                      {t("editInfo")}
+                    </Button>
+                    {isLinked ? (
+                      <Button variant="secondary" size="xs" onClick={() => handleUnlink(account)} disabled={saving}>
+                        {t("unlink")}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => setRow(account, { mode: "link", status: "idle" })}
+                        disabled={saving}
+                      >
+                        {t("link")}
+                      </Button>
+                    )}
+                    {isLinked && hasSignupRecord ? (
+                      <Button variant="secondary" size="xs" onClick={() => handleApplyToPerson(account)} disabled={saving}>
+                        {t("applyToPerson")}
+                      </Button>
+                    ) : null}
+                    {account.isAdmin ? (
+                      <Button
+                        variant="destructive"
+                        size="xs"
+                        onClick={() => handleRevokeAdmin(account)}
+                        disabled={saving || isSelf}
+                        title={isSelf ? t("cannotActOnOwnAccount") : undefined}
+                      >
+                        {t("revokeAdmin")}
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant={isDisabled ? "secondary" : "destructive"}
+                      size="xs"
+                      onClick={() => handleToggleStatus(account)}
+                      disabled={saving || (isSelf && !isDisabled)}
+                      title={isSelf && !isDisabled ? t("cannotActOnOwnAccount") : undefined}
+                    >
+                      {isDisabled ? t("enable") : t("disable")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="xs"
+                      onClick={() => handleDelete(account)}
+                      disabled={saving || account.isAdmin}
+                      title={account.isAdmin ? t("deleteBlockedForAdmin") : undefined}
+                    >
+                      {t("delete")}
+                    </Button>
+                  </div>
                 )}
-                {isLinked && hasSignupRecord ? (
-                  <Button variant="secondary" size="xs" onClick={() => handleApplyToPerson(account)} disabled={saving}>
-                    {t("applyToPerson")}
-                  </Button>
-                ) : null}
-                {account.isAdmin ? (
-                  <Button
-                    variant="destructive"
-                    size="xs"
-                    onClick={() => handleRevokeAdmin(account)}
-                    disabled={saving || isSelf}
-                    title={isSelf ? t("cannotActOnOwnAccount") : undefined}
-                  >
-                    {t("revokeAdmin")}
-                  </Button>
-                ) : null}
-                <Button
-                  variant={isDisabled ? "secondary" : "destructive"}
-                  size="xs"
-                  onClick={() => handleToggleStatus(account)}
-                  disabled={saving || (isSelf && !isDisabled)}
-                  title={isSelf && !isDisabled ? t("cannotActOnOwnAccount") : undefined}
-                >
-                  {isDisabled ? t("enable") : t("disable")}
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="xs"
-                  onClick={() => handleDelete(account)}
-                  disabled={saving || account.isAdmin}
-                  title={account.isAdmin ? t("deleteBlockedForAdmin") : undefined}
-                >
-                  {t("delete")}
-                </Button>
-              </div>
-            )}
 
-            {state.status === "error" ? <span className={styles.error}>{state.error}</span> : null}
+                {state.status === "error" ? <span className={styles.error}>{state.error}</span> : null}
+              </div>
+            ) : null}
           </div>
         );
       })}

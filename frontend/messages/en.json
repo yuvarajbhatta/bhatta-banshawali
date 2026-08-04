@@ -555,6 +555,8 @@
   "adminAccountsPage": {
     "title": "Manage User Accounts",
     "empty": "No accounts yet.",
+    "searchPlaceholder": "Search by name or email...",
+    "noResults": "No accounts match your search.",
     "forbidden": "You don't have permission to view this.",
     "noLinkedPerson": "Not linked to a family record",
     "linkedTo": "Linked to {name}",
