@@ -11,7 +11,6 @@ import { TreeFilters } from "./TreeFilters";
 import { TreeFocusControls } from "./TreeFocusControls";
 import { MemberQuickView } from "./MemberQuickView";
 import { TreeFullscreenView } from "./TreeFullscreenView";
-import { useTreeWindow } from "./useTreeWindow";
 import { computeFocusSubgraphIds, DEFAULT_FOCUS_DEPTH, MAX_FOCUS_DEPTH } from "./useFocusDepthWindow";
 import { computeHighlightedPath, type HighlightedPath } from "./treeHighlight";
 import styles from "./TreeExplorer.module.css";
@@ -35,13 +34,6 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
   const [highlightPath, setHighlightPath] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
-  // Bounds what actually reaches Dagre/React Flow to a generation window --
-  // see useTreeWindow.ts and docs/08 Phase 5's performance-benchmark
-  // follow-up. `people` itself already holds the whole fetched graph; this
-  // only slices it, no extra network round-trip. Used when nobody's
-  // focused; once someone is, computeFocusSubgraphIds below takes over.
-  const treeWindow = useTreeWindow(people);
-
   const index = useMemo(() => buildGraphIndex(people), [people]);
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
 
@@ -61,36 +53,43 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
 
   const highlight = useMemo(() => (pathSteps ? computeHighlightedPath(pathSteps) : EMPTY_HIGHLIGHT), [pathSteps]);
 
-  const filteredPeople = useMemo(() => {
+  // Search finds and centers the view on a match rather than hiding
+  // everyone else -- the whole tree stays visible (see displayedPeople
+  // below), this just tells TreeCanvas who to pan/zoom to.
+  const searchMatchId = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    const basePeople = focusSubgraphIds ? people.filter((person) => focusSubgraphIds.has(person.id)) : treeWindow.windowedPeople;
+    if (!normalizedSearch) {
+      return null;
+    }
+    const match = people.find((person) => {
+      const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
+      return haystack.includes(normalizedSearch);
+    });
+    return match ? match.id : null;
+  }, [people, search]);
 
-    const filteredBase = normalizedSearch
-      ? basePeople.filter((person) => {
-          const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
-          return haystack.includes(normalizedSearch);
-        })
-      : basePeople;
+  const displayedPeople = useMemo(() => {
+    // Nobody focused -- show the whole tree by default (search narrows
+    // where the view centers, via searchMatchId, not what's rendered).
+    if (!focusSubgraphIds) {
+      return people;
+    }
 
+    const focusedPeople = people.filter((person) => focusSubgraphIds.has(person.id));
     if (!pathSteps) {
-      return filteredBase;
+      return focusedPeople;
     }
 
     // The highlighted path always renders in full, even if a step falls
-    // outside the current search/depth filters -- a path that's silently
-    // missing its middle is worse than one that ignores a filter.
-    const seen = new Set(filteredBase.map((person) => person.id));
+    // outside the current focus depth -- a path that's silently missing
+    // its middle is worse than one that ignores the depth setting.
+    const seen = new Set(focusedPeople.map((person) => person.id));
     const missingPathPeople = pathSteps.map((step) => step.person).filter((person) => !seen.has(person.id));
-    return [...filteredBase, ...missingPathPeople];
-  }, [focusSubgraphIds, treeWindow.windowedPeople, people, pathSteps, search]);
-
-  function handleReset() {
-    setSearch("");
-    treeWindow.resetToDefaultWindow();
-  }
+    return [...focusedPeople, ...missingPathPeople];
+  }, [focusSubgraphIds, people, pathSteps]);
 
   function handleResetView() {
-    handleReset();
+    setSearch("");
     setSelectedId(null);
     setFocusId(null);
     setAncestorDepth(DEFAULT_FOCUS_DEPTH.ancestorDepth);
@@ -151,14 +150,14 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
       />
 
       <div className={styles.canvasArea}>
-        {filteredPeople.length === 0 ? (
+        {displayedPeople.length === 0 ? (
           <div className={styles.empty}>{t("empty")}</div>
         ) : (
           <ReactFlowProvider>
             <TreeCanvas
-              people={filteredPeople}
+              people={displayedPeople}
               selectedId={selectedId}
-              focusId={focusId}
+              focusId={searchMatchId ?? focusId}
               onSelect={handleSelect}
               highlight={highlight}
             />

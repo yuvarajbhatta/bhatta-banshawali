@@ -12,11 +12,16 @@ import "@xyflow/react/dist/style.css";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { MemberNode } from "./MemberNode";
 import { TreeControls } from "./TreeControls";
-import { useFamilyTreeLayout } from "./useFamilyTreeLayout";
+import { NODE_HEIGHT, NODE_WIDTH, useFamilyTreeLayout } from "./useFamilyTreeLayout";
 import type { HighlightedPath } from "./treeHighlight";
 import styles from "./TreeCanvas.module.css";
 
 const NODE_TYPES: NodeTypes = { member: MemberNode };
+
+// How far past the outermost nodes panning is still allowed -- enough
+// room to comfortably center an edge node, not so much that panning
+// drifts off into empty canvas with nothing in view.
+const PAN_PADDING = 400;
 
 interface TreeCanvasProps {
   people: PersonTreeNodeDto[];
@@ -35,6 +40,21 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlight }:
     () => layoutNodes.map((node) => ({ ...node, data: { ...node.data, onSelect } })),
     [layoutNodes, onSelect],
   );
+
+  const translateExtent = useMemo<[[number, number], [number, number]]>(() => {
+    if (nodes.length === 0) {
+      return [
+        [-PAN_PADDING, -PAN_PADDING],
+        [PAN_PADDING, PAN_PADDING],
+      ];
+    }
+    const xs = nodes.map((node) => node.position.x);
+    const ys = nodes.map((node) => node.position.y);
+    return [
+      [Math.min(...xs) - PAN_PADDING, Math.min(...ys) - PAN_PADDING],
+      [Math.max(...xs) + NODE_WIDTH + PAN_PADDING, Math.max(...ys) + NODE_HEIGHT + PAN_PADDING],
+    ];
+  }, [nodes]);
 
   useEffect(() => {
     if (!focusId || lastFocusedIdRef.current === focusId) {
@@ -72,6 +92,7 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlight }:
         zoomOnScroll
         minZoom={0.15}
         maxZoom={1.5}
+        translateExtent={translateExtent}
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--color-border)" />

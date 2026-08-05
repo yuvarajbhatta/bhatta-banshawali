@@ -120,7 +120,7 @@ export function layoutFamilyTree(
         zIndex: onPath ? 10 : 0,
         style: onPath
           ? { stroke: "var(--color-warning)", strokeWidth: 3 }
-          : { stroke: "var(--color-gold-500)", strokeWidth: 2 },
+          : { stroke: "var(--color-neutral-300)", strokeWidth: 1.5 },
       });
     }
   }

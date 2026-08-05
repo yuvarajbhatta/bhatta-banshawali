@@ -1,10 +1,10 @@
 import { getAncestors, getDescendants, type FamilyGraphIndex } from "@/lib/familyGraph";
 
 // The neighborhood shown when a person is focused in the tree (selected
-// via search or click) -- self, spouses, and ancestors/descendants up to
-// the given depth (each with their own spouses so couples stay together).
-// Distinct from useTreeWindow's whole-dataset generation-number slice,
-// which is what's shown when nobody is focused.
+// via click) -- self, spouses, and ancestors/descendants up to the given
+// depth (each with their own spouses so couples stay together). When
+// nobody's focused, TreeExplorer shows the whole tree instead of this
+// subgraph.
 export interface FocusDepth {
   ancestorDepth: number;
   descendantDepth: number;
