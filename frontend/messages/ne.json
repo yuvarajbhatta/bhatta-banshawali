@@ -384,6 +384,8 @@
     "createThisChild": "सिर्जना गर्नुहोस्",
     "ancestorChain": "पुर्खाहरू",
     "ancestorChainUnknown": "कुनै पुर्खा रेकर्ड गरिएको छैन",
+    "matchedMotherNote": "रेकर्ड गरिएको पति/पत्नी पेश गरिएको आमाको नामसँग मेल खान्छ: {name}",
+    "linkMatchedMother": "{name} लाई पनि आमाको रूपमा जोड्नुहोस्",
     "decision": "निर्णय",
     "decisionNote": "निर्णय टिप्पणी (वैकल्पिक)",
     "approve": "स्वीकृत गर्नुहोस्",

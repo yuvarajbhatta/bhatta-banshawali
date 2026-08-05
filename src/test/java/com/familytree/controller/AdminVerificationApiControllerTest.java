@@ -11,6 +11,7 @@ import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.repository.VerificationRequestRepository;
+import com.familytree.services.FamilyMatchService;
 import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.RelationshipService;
 import com.familytree.services.VerificationReviewService;
@@ -58,11 +59,14 @@ class AdminVerificationApiControllerTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private FamilyMatchService familyMatchService;
+
     private AdminVerificationApiController controller() {
         PersonProfileAssembler assembler = new PersonProfileAssembler(relationshipService, new PersonDisplayHelper());
         ViewerContextResolver viewerContextResolver = new ViewerContextResolver(userAccountRepository, userPersonLinkRepository);
         return new AdminVerificationApiController(verificationRequestRepository, personRepository,
-                verificationReviewService, assembler, viewerContextResolver);
+                verificationReviewService, assembler, viewerContextResolver, familyMatchService);
     }
 
     private Authentication asAdmin() {
@@ -154,6 +158,34 @@ class AdminVerificationApiControllerTest {
 
         assertThat(detail.candidates()).extracting(c -> c.person().id()).containsExactly(1L);
         assertThat(detail.fatherCandidates()).extracting(c -> c.person().id()).containsExactly(2L);
+        assertThat(detail.fatherCandidates().get(0).matchedMother()).isNull();
+    }
+
+    @Test
+    void detailIncludesTheMatchedMotherOnAFatherCandidateWhenOneIsFound() {
+        VerificationRequest request = request(10L);
+        request.setMatchedFatherCandidatePersonIds("2");
+        request.setMotherName("Sita Bhatta");
+        when(verificationRequestRepository.findById(10L)).thenReturn(Optional.of(request));
+        when(personRepository.findAllById(List.of())).thenReturn(List.of());
+
+        Person fatherCandidate = new Person();
+        fatherCandidate.setId(2L);
+        fatherCandidate.setFirstName("Bhoj");
+        fatherCandidate.setLastName("Bhatta");
+        when(personRepository.findAllById(List.of(2L))).thenReturn(List.of(fatherCandidate));
+
+        Person mother = new Person();
+        mother.setId(741L);
+        mother.setFirstName("Sita");
+        mother.setLastName("Bhatta");
+        when(familyMatchService.findSpouseMatchingName(fatherCandidate, "Sita Bhatta")).thenReturn(Optional.of(mother));
+
+        AdminSignupDetailDto detail = controller().detail(10L, asAdmin());
+
+        assertThat(detail.fatherCandidates()).hasSize(1);
+        assertThat(detail.fatherCandidates().get(0).matchedMother()).isNotNull();
+        assertThat(detail.fatherCandidates().get(0).matchedMother().englishFullName()).isEqualTo("Sita Bhatta");
     }
 
     @Test
@@ -176,7 +208,7 @@ class AdminVerificationApiControllerTest {
 
         controller().approve(7L, body, asAdmin());
 
-        verify(verificationReviewService).approve(7L, "admin@example.com", "Looks right", 42L, null);
+        verify(verificationReviewService).approve(7L, "admin@example.com", "Looks right", 42L, null, null);
     }
 
     @Test
@@ -186,7 +218,7 @@ class AdminVerificationApiControllerTest {
 
         controller().approve(7L, null, asAdmin());
 
-        verify(verificationReviewService).approve(7L, "admin@example.com", null, null, null);
+        verify(verificationReviewService).approve(7L, "admin@example.com", null, null, null, null);
     }
 
     @Test
@@ -200,7 +232,21 @@ class AdminVerificationApiControllerTest {
 
         controller().approve(7L, body, asAdmin());
 
-        verify(verificationReviewService).approve(7L, "admin@example.com", "Confirmed via grandfather match", null, 99L);
+        verify(verificationReviewService).approve(7L, "admin@example.com", "Confirmed via grandfather match", null, 99L, null);
+    }
+
+    @Test
+    void approveDelegatesToServiceWithLinkMatchedMotherFlag() {
+        VerificationRequest request = request(7L);
+        when(verificationRequestRepository.findById(7L)).thenReturn(Optional.of(request));
+
+        AdminSignupDecisionRequestDto body = new AdminSignupDecisionRequestDto();
+        body.setCreateAsChildOfFatherId(99L);
+        body.setLinkMatchedMother(false);
+
+        controller().approve(7L, body, asAdmin());
+
+        verify(verificationReviewService).approve(7L, "admin@example.com", null, null, 99L, false);
     }
 
     @Test

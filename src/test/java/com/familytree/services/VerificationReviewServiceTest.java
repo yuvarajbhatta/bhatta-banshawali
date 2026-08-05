@@ -57,6 +57,9 @@ class VerificationReviewServiceTest {
     @Mock
     private AuditLogService auditLogService;
 
+    @Mock
+    private FamilyMatchService familyMatchService;
+
     @InjectMocks
     private VerificationReviewService verificationReviewService;
 
@@ -68,7 +71,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(1L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(1L, "admin", "looks good", null, null);
+        verificationReviewService.approve(1L, "admin", "looks good", null, null, null);
 
         assertThat(request.getStatus()).isEqualTo(VerificationStatus.APPROVED);
         assertThat(request.getReviewedByUsername()).isEqualTo("admin");
@@ -91,7 +94,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(10L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(10L, "admin", null, null, null);
+        verificationReviewService.approve(10L, "admin", null, null, null, null);
 
         assertThat(account.getRoles()).contains(verifiedMember);
     }
@@ -104,7 +107,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(11L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(11L, "admin", null, null, null);
+        verificationReviewService.approve(11L, "admin", null, null, null, null);
 
         assertThat(account.getStatus()).isEqualTo(UserAccountStatus.ACTIVE);
         assertThat(account.getRoles()).isEmpty();
@@ -121,7 +124,7 @@ class VerificationReviewServiceTest {
         person.setId(77L);
         when(personRepository.findById(77L)).thenReturn(Optional.of(person));
 
-        verificationReviewService.approve(20L, "admin", null, 77L, null);
+        verificationReviewService.approve(20L, "admin", null, 77L, null, null);
 
         verify(userPersonLinkService).createVerifiedLink(account, person);
     }
@@ -143,7 +146,7 @@ class VerificationReviewServiceTest {
         person.setBirthDate(null);
         when(personRepository.findById(78L)).thenReturn(Optional.of(person));
 
-        verificationReviewService.approve(22L, "admin", null, 78L, null);
+        verificationReviewService.approve(22L, "admin", null, 78L, null, null);
 
         assertThat(person.getBirthDate()).isEqualTo(LocalDate.of(1995, 6, 15));
         verify(personRepository).save(person);
@@ -162,7 +165,7 @@ class VerificationReviewServiceTest {
         person.setBirthDate(LocalDate.of(1940, 1, 1));
         when(personRepository.findById(79L)).thenReturn(Optional.of(person));
 
-        verificationReviewService.approve(23L, "admin", null, 79L, null);
+        verificationReviewService.approve(23L, "admin", null, 79L, null, null);
 
         assertThat(person.getBirthDate()).isEqualTo(LocalDate.of(1940, 1, 1));
         verify(personRepository, never()).save(person);
@@ -175,7 +178,7 @@ class VerificationReviewServiceTest {
         request.setUserAccount(account);
         when(verificationRequestRepository.findById(21L)).thenReturn(Optional.of(request));
 
-        verificationReviewService.approve(21L, "admin", null, null, null);
+        verificationReviewService.approve(21L, "admin", null, null, null, null);
 
         verifyNoInteractions(userPersonLinkService);
     }
@@ -189,12 +192,12 @@ class VerificationReviewServiceTest {
         when(personRepository.findById(999L)).thenReturn(Optional.empty());
 
         org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> verificationReviewService.approve(22L, "admin", null, 999L, null));
+                () -> verificationReviewService.approve(22L, "admin", null, 999L, null, null));
     }
 
     @Test
     void approveThrowsWhenBothLinkedPersonIdAndCreateAsChildOfFatherIdProvided() {
-        assertThatThrownBy(() -> verificationReviewService.approve(1L, "admin", null, 5L, 6L))
+        assertThatThrownBy(() -> verificationReviewService.approve(1L, "admin", null, 5L, 6L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot both be provided");
     }
@@ -214,7 +217,7 @@ class VerificationReviewServiceTest {
         when(personRepository.findById(2L)).thenReturn(Optional.of(father));
         when(personRepository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        verificationReviewService.approve(30L, "admin", null, null, 2L);
+        verificationReviewService.approve(30L, "admin", null, null, 2L, null);
 
         ArgumentCaptor<Person> personCaptor = ArgumentCaptor.forClass(Person.class);
         verify(personRepository).save(personCaptor.capture());
@@ -240,7 +243,7 @@ class VerificationReviewServiceTest {
         when(personRepository.findById(3L)).thenReturn(Optional.of(father));
         when(personRepository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        verificationReviewService.approve(31L, "admin", null, null, 3L);
+        verificationReviewService.approve(31L, "admin", null, null, 3L, null);
 
         ArgumentCaptor<Person> personCaptor = ArgumentCaptor.forClass(Person.class);
         verify(personRepository).save(personCaptor.capture());
@@ -262,9 +265,81 @@ class VerificationReviewServiceTest {
         savedNewPerson.setId(500L);
         when(personRepository.save(any(Person.class))).thenReturn(savedNewPerson);
 
-        verificationReviewService.approve(32L, "admin", null, null, 4L);
+        verificationReviewService.approve(32L, "admin", null, null, 4L, null);
 
         verify(relationshipService).saveRelationshipWithAutoLinks(savedNewPerson, father, RelationshipType.FATHER);
+    }
+
+    @Test
+    void approveWithCreateAsChildOfFatherIdAlsoLinksTheMatchedMotherByDefault() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setSubmittedFullName("Yuva Bhatta");
+        request.setMotherName("Sita Bhatta");
+        when(verificationRequestRepository.findById(40L)).thenReturn(Optional.of(request));
+
+        Person father = new Person();
+        father.setId(6L);
+        when(personRepository.findById(6L)).thenReturn(Optional.of(father));
+        Person savedNewPerson = new Person();
+        savedNewPerson.setId(510L);
+        when(personRepository.save(any(Person.class))).thenReturn(savedNewPerson);
+
+        Person mother = new Person();
+        mother.setId(741L);
+        when(familyMatchService.findSpouseMatchingName(father, "Sita Bhatta")).thenReturn(Optional.of(mother));
+
+        // linkMatchedMother omitted (null) -- defaults to linking the match.
+        verificationReviewService.approve(40L, "admin", null, null, 6L, null);
+
+        verify(relationshipService).saveRelationshipWithAutoLinks(savedNewPerson, father, RelationshipType.FATHER);
+        verify(relationshipService).saveRelationshipWithAutoLinks(savedNewPerson, mother, RelationshipType.MOTHER);
+    }
+
+    @Test
+    void approveWithLinkMatchedMotherFalseSkipsTheMotherLinkEvenWhenAMatchExists() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setSubmittedFullName("Yuva Bhatta");
+        request.setMotherName("Sita Bhatta");
+        when(verificationRequestRepository.findById(41L)).thenReturn(Optional.of(request));
+
+        Person father = new Person();
+        father.setId(7L);
+        when(personRepository.findById(7L)).thenReturn(Optional.of(father));
+        Person savedNewPerson = new Person();
+        savedNewPerson.setId(511L);
+        when(personRepository.save(any(Person.class))).thenReturn(savedNewPerson);
+
+        verificationReviewService.approve(41L, "admin", null, null, 7L, false);
+
+        verify(relationshipService).saveRelationshipWithAutoLinks(savedNewPerson, father, RelationshipType.FATHER);
+        verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), org.mockito.ArgumentMatchers.eq(RelationshipType.MOTHER));
+        verifyNoInteractions(familyMatchService);
+    }
+
+    @Test
+    void approveWithCreateAsChildOfFatherIdSkipsTheMotherLinkWhenNoSpouseMatches() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setSubmittedFullName("Yuva Bhatta");
+        request.setMotherName("Sita Bhatta");
+        when(verificationRequestRepository.findById(42L)).thenReturn(Optional.of(request));
+
+        Person father = new Person();
+        father.setId(8L);
+        when(personRepository.findById(8L)).thenReturn(Optional.of(father));
+        Person savedNewPerson = new Person();
+        savedNewPerson.setId(512L);
+        when(personRepository.save(any(Person.class))).thenReturn(savedNewPerson);
+        when(familyMatchService.findSpouseMatchingName(father, "Sita Bhatta")).thenReturn(Optional.empty());
+
+        verificationReviewService.approve(42L, "admin", null, null, 8L, true);
+
+        verify(relationshipService, never()).saveRelationshipWithAutoLinks(any(), any(), org.mockito.ArgumentMatchers.eq(RelationshipType.MOTHER));
     }
 
     @Test
@@ -282,7 +357,7 @@ class VerificationReviewServiceTest {
         savedNewPerson.setId(501L);
         when(personRepository.save(any(Person.class))).thenReturn(savedNewPerson);
 
-        verificationReviewService.approve(33L, "admin", null, null, 5L);
+        verificationReviewService.approve(33L, "admin", null, null, 5L, null);
 
         verify(userPersonLinkService).createVerifiedLink(account, savedNewPerson);
     }
@@ -295,7 +370,7 @@ class VerificationReviewServiceTest {
         when(verificationRequestRepository.findById(34L)).thenReturn(Optional.of(request));
         when(personRepository.findById(9999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> verificationReviewService.approve(34L, "admin", null, null, 9999L))
+        assertThatThrownBy(() -> verificationReviewService.approve(34L, "admin", null, null, 9999L, null))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -312,7 +387,7 @@ class VerificationReviewServiceTest {
         when(userPersonLinkService.createVerifiedLink(account, person))
                 .thenThrow(new IllegalArgumentException("This account is already linked to a person. Unlink it first."));
 
-        assertThatThrownBy(() -> verificationReviewService.approve(35L, "admin", null, 78L, null))
+        assertThatThrownBy(() -> verificationReviewService.approve(35L, "admin", null, 78L, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("already linked to a person");
     }
@@ -350,7 +425,7 @@ class VerificationReviewServiceTest {
         when(verificationRequestRepository.findById(99L)).thenReturn(Optional.empty());
 
         org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> verificationReviewService.approve(99L, "admin", null, null, null));
+                () -> verificationReviewService.approve(99L, "admin", null, null, null, null));
     }
 
     @Test

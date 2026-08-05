@@ -668,6 +668,18 @@ export interface MatchCandidateDto {
   ancestorChain: PersonSummaryDto[];
 }
 
+// A father candidate specifically -- same shape as MatchCandidateDto plus
+// an optional corroborated mother match: this father's recorded spouse,
+// when her name matches the applicant's submitted mother's name.
+// Approving with this candidate selected also links her as the new
+// Person's mother, unless the confirmation checkbox is unchecked (see
+// AdminSignupDecisionRequest.linkMatchedMother).
+export interface FatherCandidateDto {
+  person: PersonSummaryDto;
+  ancestorChain: PersonSummaryDto[];
+  matchedMother: PersonSummaryDto | null;
+}
+
 export interface AdminSignupDetailDto {
   id: number;
   submittedFullName: string;
@@ -695,7 +707,7 @@ export interface AdminSignupDetailDto {
   // Existing Persons found by matching the submitted father's name --
   // selecting one creates a brand-new Person for this applicant as that
   // father's child, rather than linking to an existing record.
-  fatherCandidates: MatchCandidateDto[];
+  fatherCandidates: FatherCandidateDto[];
 }
 
 // Mirrors com.familytree.dto.AdminCorrectionSummaryDto.
@@ -773,6 +785,10 @@ export interface AdminSignupDecisionRequest {
   decisionNote?: string;
   linkedPersonId?: number;
   createAsChildOfFatherId?: number;
+  // Only meaningful alongside createAsChildOfFatherId, and only when that
+  // candidate has a matchedMother -- true also links her as the new
+  // Person's mother in the same approval (see FatherCandidateDto).
+  linkMatchedMother?: boolean;
 }
 
 export interface AdminDecisionRequest {

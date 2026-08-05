@@ -34,6 +34,7 @@ public class VerificationReviewService {
     private final UserPersonLinkService userPersonLinkService;
     private final PersonDisplayHelper personDisplay;
     private final AuditLogService auditLogService;
+    private final FamilyMatchService familyMatchService;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
@@ -42,7 +43,8 @@ public class VerificationReviewService {
                                      RelationshipService relationshipService,
                                      UserPersonLinkService userPersonLinkService,
                                      PersonDisplayHelper personDisplay,
-                                     AuditLogService auditLogService) {
+                                     AuditLogService auditLogService,
+                                     FamilyMatchService familyMatchService) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
@@ -51,6 +53,7 @@ public class VerificationReviewService {
         this.userPersonLinkService = userPersonLinkService;
         this.personDisplay = personDisplay;
         this.auditLogService = auditLogService;
+        this.familyMatchService = familyMatchService;
     }
 
     /**
@@ -64,13 +67,20 @@ public class VerificationReviewService {
      *                        Person for this applicant under, as a FATHER relationship --
      *                        for applicants who don't yet exist in the tree but whose father
      *                        does. Mutually exclusive with linkedPersonId.
+     * @param linkMatchedMother only relevant alongside createAsChildOfFatherId: when true (or
+     *                        null -- defaults on), and that father has a recorded spouse whose
+     *                        name matches the applicant's submitted mother's name
+     *                        (FamilyMatchService.findSpouseMatchingName, the same match the
+     *                        review UI showed as FatherCandidateDto.matchedMother), also links
+     *                        her as the new Person's MOTHER in this same approval. False skips
+     *                        that even if a match exists, e.g. the admin didn't trust it.
      * @throws IllegalArgumentException if both linkedPersonId and createAsChildOfFatherId are
      *          provided, or if UserPersonLinkService's guard rejects the resulting link (see
      *          its javadoc)
      */
     @Transactional
     public void approve(Long verificationRequestId, String reviewerUsername, String decisionNote,
-                        Long linkedPersonId, Long createAsChildOfFatherId) {
+                        Long linkedPersonId, Long createAsChildOfFatherId, Boolean linkMatchedMother) {
         if (linkedPersonId != null && createAsChildOfFatherId != null) {
             throw new IllegalArgumentException("linkedPersonId and createAsChildOfFatherId cannot both be provided.");
         }
@@ -87,7 +97,7 @@ public class VerificationReviewService {
         if (createAsChildOfFatherId != null) {
             Person father = personRepository.findById(createAsChildOfFatherId)
                     .orElseThrow(() -> new RuntimeException("Person not found with id: " + createAsChildOfFatherId));
-            personToLink = createNewPersonAsChildOf(father, request, reviewerUsername);
+            personToLink = createNewPersonAsChildOf(father, request, reviewerUsername, linkMatchedMother);
         } else if (linkedPersonId != null) {
             personToLink = personRepository.findById(linkedPersonId)
                     .orElseThrow(() -> new RuntimeException("Person not found with id: " + linkedPersonId));
@@ -109,9 +119,12 @@ public class VerificationReviewService {
      * derives generationNumber from the father's own (null-safe: left null if the father has
      * none recorded -- generationNumber is a plain nullable field everywhere else, and this
      * is the first place in the codebase deriving it from a relationship rather than an
-     * explicit admin value).
+     * explicit admin value). When linkMatchedMother isn't explicitly false and the father has
+     * a recorded spouse matching the submitted mother's name, also links her as MOTHER in the
+     * same call -- see FamilyMatchService.findSpouseMatchingName.
      */
-    private Person createNewPersonAsChildOf(Person father, VerificationRequest request, String reviewerUsername) {
+    private Person createNewPersonAsChildOf(Person father, VerificationRequest request, String reviewerUsername,
+                                            Boolean linkMatchedMother) {
         Person newPerson = new Person();
         FullNameParser.applyTo(newPerson, request.getSubmittedFullName());
         newPerson.setBirthDate(request.getSubmittedDobAd());
@@ -119,6 +132,12 @@ public class VerificationReviewService {
         newPerson = personRepository.save(newPerson);
 
         relationshipService.saveRelationshipWithAutoLinks(newPerson, father, RelationshipType.FATHER);
+
+        if (!Boolean.FALSE.equals(linkMatchedMother)) {
+            Person createdPerson = newPerson;
+            familyMatchService.findSpouseMatchingName(father, request.getMotherName())
+                    .ifPresent(mother -> relationshipService.saveRelationshipWithAutoLinks(createdPerson, mother, RelationshipType.MOTHER));
+        }
 
         auditLogService.record(AuditLogService.ACTION_PERSON_CREATED, AuditLogService.ENTITY_PERSON, newPerson.getId(),
                 "Created new person for signup \"" + request.getSubmittedFullName() + "\" as child of "

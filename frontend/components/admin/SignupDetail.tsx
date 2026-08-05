@@ -9,6 +9,7 @@ import {
   rejectSignup,
   requestMoreInfoSignup,
   type AdminSignupDetailDto,
+  type FatherCandidateDto,
   type MatchCandidateDto,
 } from "@/lib/api";
 import { Badge, matchConfidenceTone, verificationStatusTone } from "./Badge";
@@ -30,6 +31,10 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
   const t = useTranslations("adminSignupsPage");
   const [detail, setDetail] = useState(initialDetail);
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch>(null);
+  // Only consulted when selectedMatch is a "createChild" candidate that
+  // has a matchedMother -- defaults to on, so the corroborated match is
+  // linked unless the admin explicitly unchecks it.
+  const [linkMatchedMother, setLinkMatchedMother] = useState(true);
   const [decisionNote, setDecisionNote] = useState("");
   const [pendingAction, setPendingAction] = useState<Action>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +47,7 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
         decisionNote: decisionNote.trim() || undefined,
         linkedPersonId: selectedMatch?.type === "link" ? selectedMatch.personId : undefined,
         createAsChildOfFatherId: selectedMatch?.type === "createChild" ? selectedMatch.fatherId : undefined,
+        linkMatchedMother: selectedMatch?.type === "createChild" ? linkMatchedMother : undefined,
       };
       const updated =
         action === "approve"
@@ -179,21 +185,29 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
                 </tr>
               </thead>
               <tbody>
-                {detail.fatherCandidates.map((candidate) => (
-                  <CandidateRows
-                    key={candidate.person.id}
-                    candidate={candidate}
-                    columns={detail.status === "PENDING" ? 4 : 3}
-                    radio={
-                      detail.status === "PENDING"
-                        ? {
-                            checked: selectedMatch?.type === "createChild" && selectedMatch.fatherId === candidate.person.id,
-                            onChange: () => setSelectedMatch({ type: "createChild", fatherId: candidate.person.id }),
-                          }
-                        : null
-                    }
-                  />
-                ))}
+                {detail.fatherCandidates.map((candidate) => {
+                  const checked = selectedMatch?.type === "createChild" && selectedMatch.fatherId === candidate.person.id;
+                  return (
+                    <CandidateRows
+                      key={candidate.person.id}
+                      candidate={candidate}
+                      columns={detail.status === "PENDING" ? 4 : 3}
+                      radio={
+                        detail.status === "PENDING"
+                          ? {
+                              checked,
+                              onChange: () => setSelectedMatch({ type: "createChild", fatherId: candidate.person.id }),
+                            }
+                          : null
+                      }
+                      motherLink={
+                        detail.status === "PENDING" && checked && candidate.matchedMother
+                          ? { checked: linkMatchedMother, onChange: setLinkMatchedMother }
+                          : null
+                      }
+                    />
+                  );
+                })}
               </tbody>
             </table>
           </>
@@ -246,9 +260,13 @@ export function SignupDetail({ initialDetail }: SignupDetailProps) {
 }
 
 interface CandidateRowsProps {
-  candidate: MatchCandidateDto;
+  candidate: MatchCandidateDto | FatherCandidateDto;
   columns: number;
   radio: { checked: boolean; onChange: () => void } | null;
+  // Only ever set for a father candidate that has a matchedMother and is
+  // currently the selected radio -- lets the admin decline linking her
+  // even though the father candidate itself is confirmed.
+  motherLink?: { checked: boolean; onChange: (checked: boolean) => void } | null;
 }
 
 // A real family tree with a shared surname and a small pool of recurring
@@ -257,9 +275,10 @@ interface CandidateRowsProps {
 // beneath each candidate is what actually lets the admin recognize the
 // correct lineage, the same way they'd recognize their own family by
 // name rather than by an arbitrary database ID.
-function CandidateRows({ candidate, columns, radio }: CandidateRowsProps) {
+function CandidateRows({ candidate, columns, radio, motherLink }: CandidateRowsProps) {
   const t = useTranslations("adminSignupsPage");
   const { person, ancestorChain } = candidate;
+  const matchedMother = "matchedMother" in candidate ? candidate.matchedMother : null;
 
   return (
     <>
@@ -292,6 +311,24 @@ function CandidateRows({ candidate, columns, radio }: CandidateRowsProps) {
             : t("ancestorChainUnknown")}
         </td>
       </tr>
+      {matchedMother ? (
+        <tr>
+          <td colSpan={columns} className={styles.ancestorChainCell}>
+            {motherLink ? (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={motherLink.checked}
+                  onChange={(event) => motherLink.onChange(event.target.checked)}
+                />{" "}
+                {t("linkMatchedMother", { name: matchedMother.englishFullName })}
+              </label>
+            ) : (
+              t("matchedMotherNote", { name: matchedMother.englishFullName })
+            )}
+          </td>
+        </tr>
+      ) : null}
     </>
   );
 }

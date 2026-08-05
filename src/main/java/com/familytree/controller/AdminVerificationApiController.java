@@ -3,6 +3,7 @@ package com.familytree.controller;
 import com.familytree.dto.AdminSignupDecisionRequestDto;
 import com.familytree.dto.AdminSignupDetailDto;
 import com.familytree.dto.AdminSignupSummaryDto;
+import com.familytree.dto.FatherCandidateDto;
 import com.familytree.dto.MatchCandidateDto;
 import com.familytree.entity.Person;
 import com.familytree.entity.VerificationRequest;
@@ -10,6 +11,7 @@ import com.familytree.entity.VerificationStatus;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.VerificationRequestRepository;
 import com.familytree.services.CommaSeparatedIds;
+import com.familytree.services.FamilyMatchService;
 import com.familytree.services.PersonProfileAssembler;
 import com.familytree.services.VerificationReviewService;
 import com.familytree.services.ViewerContext;
@@ -45,17 +47,20 @@ public class AdminVerificationApiController {
     private final VerificationReviewService verificationReviewService;
     private final PersonProfileAssembler personProfileAssembler;
     private final ViewerContextResolver viewerContextResolver;
+    private final FamilyMatchService familyMatchService;
 
     public AdminVerificationApiController(VerificationRequestRepository verificationRequestRepository,
                                           PersonRepository personRepository,
                                           VerificationReviewService verificationReviewService,
                                           PersonProfileAssembler personProfileAssembler,
-                                          ViewerContextResolver viewerContextResolver) {
+                                          ViewerContextResolver viewerContextResolver,
+                                          FamilyMatchService familyMatchService) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.personRepository = personRepository;
         this.verificationReviewService = verificationReviewService;
         this.personProfileAssembler = personProfileAssembler;
         this.viewerContextResolver = viewerContextResolver;
+        this.familyMatchService = familyMatchService;
     }
 
     @GetMapping
@@ -72,8 +77,8 @@ public class AdminVerificationApiController {
         ViewerContext viewer = viewerContextResolver.resolve(authentication);
         List<MatchCandidateDto> candidates = toMatchCandidates(
                 resolveCandidatePersons(request.getMatchedCandidatePersonIds()), viewer);
-        List<MatchCandidateDto> fatherCandidates = toMatchCandidates(
-                resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()), viewer);
+        List<FatherCandidateDto> fatherCandidates = toFatherCandidates(
+                resolveCandidatePersons(request.getMatchedFatherCandidatePersonIds()), request, viewer);
         return toDetail(request, candidates, fatherCandidates);
     }
 
@@ -88,12 +93,26 @@ public class AdminVerificationApiController {
                 .toList();
     }
 
+    // Same as toMatchCandidates, plus a corroborated mother match (this
+    // father's recorded spouse, if her name matches the applicant's
+    // submitted mother's name) -- see FamilyMatchService.findSpouseMatchingName.
+    private List<FatherCandidateDto> toFatherCandidates(List<Person> fathers, VerificationRequest request, ViewerContext viewer) {
+        return fathers.stream()
+                .map(father -> new FatherCandidateDto(
+                        personProfileAssembler.summarize(father, viewer),
+                        personProfileAssembler.ancestorChain(father, viewer),
+                        familyMatchService.findSpouseMatchingName(father, request.getMotherName())
+                                .map(mother -> personProfileAssembler.summarize(mother, viewer))
+                                .orElse(null)))
+                .toList();
+    }
+
     @PostMapping("/{id}/approve")
     public AdminSignupDetailDto approve(@PathVariable Long id, @RequestBody(required = false) AdminSignupDecisionRequestDto body,
                                         Authentication authentication) {
         AdminSignupDecisionRequestDto decision = body != null ? body : new AdminSignupDecisionRequestDto();
         verificationReviewService.approve(id, authentication.getName(), decision.getDecisionNote(),
-                decision.getLinkedPersonId(), decision.getCreateAsChildOfFatherId());
+                decision.getLinkedPersonId(), decision.getCreateAsChildOfFatherId(), decision.getLinkMatchedMother());
         return detail(id, authentication);
     }
 
@@ -126,7 +145,7 @@ public class AdminVerificationApiController {
     }
 
     private AdminSignupDetailDto toDetail(VerificationRequest request, List<MatchCandidateDto> candidates,
-                                          List<MatchCandidateDto> fatherCandidates) {
+                                          List<FatherCandidateDto> fatherCandidates) {
         return new AdminSignupDetailDto(
                 request.getId(),
                 request.getSubmittedFullName(),

@@ -384,6 +384,8 @@
     "createThisChild": "Create",
     "ancestorChain": "Ancestors",
     "ancestorChainUnknown": "No ancestors recorded",
+    "matchedMotherNote": "Recorded spouse matches the submitted mother's name: {name}",
+    "linkMatchedMother": "Also link {name} as the mother",
     "decision": "Decision",
     "decisionNote": "Decision Note (optional)",
     "approve": "Approve",

@@ -65,7 +65,11 @@ public class AdminVerificationController {
                           @RequestParam(required = false) Long linkedPersonId,
                           @RequestParam(required = false) Long createAsChildOfFatherId,
                           Authentication authentication) {
-        verificationReviewService.approve(id, authentication.getName(), decisionNote, linkedPersonId, createAsChildOfFatherId);
+        // This legacy Thymeleaf page has no matched-mother confirmation UI
+        // (see AdminVerificationApiController/SignupDetail.tsx for that) --
+        // null defaults to linking a corroborated mother match when one
+        // exists, same as always having the confirmation checked.
+        verificationReviewService.approve(id, authentication.getName(), decisionNote, linkedPersonId, createAsChildOfFatherId, null);
         return "redirect:/admin/signups";
     }
 

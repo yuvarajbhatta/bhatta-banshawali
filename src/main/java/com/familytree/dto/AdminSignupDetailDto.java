@@ -43,6 +43,6 @@ public record AdminSignupDetailDto(
         String decisionNote,
         LocalDateTime createdAt,
         List<MatchCandidateDto> candidates,
-        List<MatchCandidateDto> fatherCandidates
+        List<FatherCandidateDto> fatherCandidates
 ) {
 }

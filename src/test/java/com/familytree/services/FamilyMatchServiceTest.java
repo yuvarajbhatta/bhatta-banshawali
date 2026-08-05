@@ -300,6 +300,63 @@ class FamilyMatchServiceTest {
         assertThat(result.confidence()).isEqualTo(MatchConfidence.HIGH);
     }
 
+    // --- findSpouseMatchingName: corroborating a submitted mother's name via a father's recorded spouse ---
+
+    @Test
+    void findSpouseMatchingNameReturnsTheSpouseOnAnExactMatch() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+        Person spouse = person(741L, "Sita", "Bhatta");
+        when(relationshipService.getSpousesForPerson(father)).thenReturn(List.of(spouse));
+
+        assertThat(familyMatchService().findSpouseMatchingName(father, "Sita Bhatta")).contains(spouse);
+    }
+
+    @Test
+    void findSpouseMatchingNameReturnsTheSpouseOnAFuzzyMatch() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+        Person spouse = person(741L, "Sita", "Bhatta");
+        when(relationshipService.getSpousesForPerson(father)).thenReturn(List.of(spouse));
+
+        // Single-character-insertion variant, same as the fuzzy cases above.
+        assertThat(familyMatchService().findSpouseMatchingName(father, "Sitaa Bhatta")).contains(spouse);
+    }
+
+    @Test
+    void findSpouseMatchingNameIsEmptyWhenTheFatherHasNoRecordedSpouse() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+        when(relationshipService.getSpousesForPerson(father)).thenReturn(List.of());
+
+        assertThat(familyMatchService().findSpouseMatchingName(father, "Sita Bhatta")).isEmpty();
+    }
+
+    @Test
+    void findSpouseMatchingNameIsEmptyWhenNoRecordedSpouseNameMatches() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+        Person unrelatedSpouse = person(741L, "Someone", "Else");
+        when(relationshipService.getSpousesForPerson(father)).thenReturn(List.of(unrelatedSpouse));
+
+        assertThat(familyMatchService().findSpouseMatchingName(father, "Sita Bhatta")).isEmpty();
+    }
+
+    @Test
+    void findSpouseMatchingNamePicksTheMatchingSpouseAmongMultiple() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+        Person firstWife = person(740L, "Radha", "Bhatta");
+        Person secondWife = person(741L, "Sita", "Bhatta");
+        when(relationshipService.getSpousesForPerson(father)).thenReturn(List.of(firstWife, secondWife));
+
+        assertThat(familyMatchService().findSpouseMatchingName(father, "Sita Bhatta")).contains(secondWife);
+    }
+
+    @Test
+    void findSpouseMatchingNameIsEmptyWhenNoMotherNameWasSubmitted() {
+        Person father = person(2L, "Bhoj", "Bhatta");
+
+        assertThat(familyMatchService().findSpouseMatchingName(father, null)).isEmpty();
+        assertThat(familyMatchService().findSpouseMatchingName(father, "  ")).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(relationshipService);
+    }
+
     private Person person(Long id, String firstName, String lastName) {
         Person person = new Person();
         person.setId(id);

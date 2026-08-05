@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -166,6 +167,28 @@ public class FamilyMatchService {
         boolean anyPartialMatch = existingPersonCandidates.stream().anyMatch(CandidateEvaluation::isPartialMatchWithoutConflict)
                 || !newPersonCandidates.isEmpty();
         return anyPartialMatch ? MatchConfidence.MEDIUM : MatchConfidence.LOW;
+    }
+
+    /**
+     * Looks for a recorded spouse of {@code person} whose name matches
+     * {@code submittedName} -- used by the signup-review "create as child
+     * of this father" flow to corroborate the applicant's submitted
+     * mother's name against that father's already-linked spouse, rather
+     * than running an independent, uncorroborated search over every
+     * Person for the mother's name (see FamilyMatchService's class
+     * javadoc reasoning for why grandfather-style corroboration keeps the
+     * father search from being noisy -- a mother-name-only search has no
+     * equivalent second hop to corroborate against, so this piggybacks on
+     * the father match instead). Handles multiple recorded spouses (e.g.
+     * remarriage) for free via the same EXACT-preferred/FUZZY-fallback
+     * logic {@link #findBestMatchingParent} already uses for parents.
+     */
+    public Optional<Person> findSpouseMatchingName(Person person, String submittedName) {
+        if (submittedName == null || submittedName.isBlank()) {
+            return Optional.empty();
+        }
+        ParentMatch match = findBestMatchingParent(relationshipService.getSpousesForPerson(person), submittedName);
+        return Optional.ofNullable(match).map(ParentMatch::person);
     }
 
     private record ParentMatch(Person person, NameMatchQuality quality) {

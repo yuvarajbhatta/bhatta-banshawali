@@ -119,7 +119,7 @@ class AdminVerificationControllerTest {
         String viewName = controller.approve(7L, "note", null, null, authentication);
 
         assertThat(viewName).isEqualTo("redirect:/admin/signups");
-        verify(verificationReviewService).approve(7L, "admin", "note", null, null);
+        verify(verificationReviewService).approve(7L, "admin", "note", null, null, null);
     }
 
     @Test
@@ -128,7 +128,7 @@ class AdminVerificationControllerTest {
 
         controller.approve(7L, "note", 42L, null, authentication);
 
-        verify(verificationReviewService).approve(7L, "admin", "note", 42L, null);
+        verify(verificationReviewService).approve(7L, "admin", "note", 42L, null, null);
     }
 
     @Test
@@ -137,7 +137,7 @@ class AdminVerificationControllerTest {
 
         controller.approve(7L, "note", null, 99L, authentication);
 
-        verify(verificationReviewService).approve(7L, "admin", "note", null, 99L);
+        verify(verificationReviewService).approve(7L, "admin", "note", null, 99L, null);
     }
 
     @Test
