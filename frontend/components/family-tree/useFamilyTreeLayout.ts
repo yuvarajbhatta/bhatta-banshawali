@@ -65,10 +65,58 @@ export function layoutFamilyTree(
   // here.
   dagre.layout(graph);
 
+  // Vertical position comes from the curated generationNumber, not
+  // Dagre's own rank, whenever every person being laid out has one. In a
+  // large historical dataset like this one, a child can have two
+  // incoming parent-child edges (father's and mother's) whose own
+  // ancestry chains reach different depths elsewhere in the graph --
+  // Dagre's rank algorithm pushes the child down to match whichever
+  // chain is deepest, landing them many rows below their real parents
+  // on screen. generationNumber is this app's single source of truth
+  // for "how far down the tree is this person" (see the admin
+  // Generations screen), so it decides the row here instead.
+  //
+  // Handing generationNumber to Dagre directly as a pinned rank (via
+  // ranker: "none") was tried and rejected: real data has occasional
+  // generationNumber/edge inconsistencies that violate assumptions
+  // Dagre's position/normalize pipeline depends on and crash the whole
+  // layout. Keeping Dagre's own rank assignment (always internally
+  // consistent with its edges, so it never crashes) for horizontal
+  // ordering only, and overriding just the row afterwards, gets the
+  // correctness without the risk.
+  const hasCompleteGenerations =
+    lineagePeople.length > 0 && lineagePeople.every((person) => person.generationNumber != null);
+
   const positionById = new Map<number, { x: number; y: number }>();
-  for (const person of lineagePeople) {
-    const dagreNode = graph.node(String(person.id));
-    positionById.set(person.id, { x: dagreNode.x, y: dagreNode.y });
+  if (hasCompleteGenerations) {
+    const minGeneration = Math.min(...lineagePeople.map((person) => person.generationNumber as number));
+    const rows = new Map<number, PersonTreeNodeDto[]>();
+    for (const person of lineagePeople) {
+      const row = (person.generationNumber as number) - minGeneration;
+      const people2 = rows.get(row);
+      if (people2) {
+        people2.push(person);
+      } else {
+        rows.set(row, [person]);
+      }
+    }
+    for (const [row, peopleInRow] of rows) {
+      // Preserve Dagre's own crossing-minimized left-to-right order
+      // within the row, just re-spaced evenly so people regrouped out
+      // of Dagre's own (possibly different) rank don't overlap.
+      peopleInRow.sort((a, b) => graph.node(String(a.id)).x - graph.node(String(b.id)).x);
+      peopleInRow.forEach((person, index) => {
+        positionById.set(person.id, {
+          x: index * (NODE_WIDTH + 40) + NODE_WIDTH / 2,
+          y: row * (NODE_HEIGHT + 88) + NODE_HEIGHT / 2,
+        });
+      });
+    }
+  } else {
+    for (const person of lineagePeople) {
+      const dagreNode = graph.node(String(person.id));
+      positionById.set(person.id, { x: dagreNode.x, y: dagreNode.y });
+    }
   }
 
   const nodes: Node<MemberNodeData>[] = lineagePeople.map((person) => {

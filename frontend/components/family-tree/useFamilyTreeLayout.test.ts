@@ -47,6 +47,27 @@ describe("layoutFamilyTree", () => {
     expect(childNode.position.y).toBeGreaterThan(parentNode.position.y);
   });
 
+  it("ranks by generationNumber, not just edge topology, once every person has one", () => {
+    // Two branches with no edge connecting them at all -- pure topology
+    // would default both to rank 0 (Dagre's fallback for an isolated
+    // root), hiding that they're several generations apart. This is the
+    // same failure mode that hit real data: a child whose two parents'
+    // own ancestry chains reach different depths elsewhere in the graph
+    // got ranked by whichever chain was deepest, landing far below their
+    // actual parent -- generationNumber is the fix in both cases.
+    const ancestor = person({ id: 1, childIds: [2], generationNumber: 0 });
+    const descendant = person({ id: 2, fatherId: 1, generationNumber: 1 });
+    const unrelatedDeepParent = person({ id: 3, childIds: [4], generationNumber: 5 });
+    const unrelatedDeepChild = person({ id: 4, fatherId: 3, generationNumber: 6 });
+
+    const { nodes } = layoutFamilyTree([ancestor, descendant, unrelatedDeepParent, unrelatedDeepChild], null);
+    const y = (id: string) => nodes.find((n) => n.id === id)!.position.y;
+
+    expect(y("2")).toBeGreaterThan(y("1"));
+    expect(y("3")).toBeGreaterThan(y("2"));
+    expect(y("4")).toBeGreaterThan(y("3"));
+  });
+
   it("draws a parent-child edge for every present child reference", () => {
     const parent = person({ id: 1, childIds: [2, 3] });
     const childA = person({ id: 2, fatherId: 1 });
