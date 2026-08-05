@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { TreeExplorer } from "@/components/family-tree/TreeExplorer";
 import { getFamilyTree, getMemberProfile } from "@/lib/api";
+import styles from "./page.module.css";
 
 export default async function FamilyTreePage({
   searchParams,
@@ -33,7 +34,7 @@ export default async function FamilyTreePage({
 
   return (
     <>
-      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} titleClassName={styles.compactTitle} />
       <TreeExplorer
         people={result.tree.nodes}
         initialFocusId={Number.isNaN(focusId as number) ? null : focusId}

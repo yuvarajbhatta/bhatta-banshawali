@@ -68,7 +68,7 @@
   "treePage": {
     "title": "Family Tree",
     "subtitle": "Explore the whole Bhatta family, generation by generation.",
-    "viewFullTreeCta": "View Full Tree",
+    "viewFullTreeCta": "View Full Chart",
     "loading": "Loading the family tree…",
     "error": "Could not load the family tree. Please try again.",
     "retry": "Retry",
@@ -82,34 +82,21 @@
     "filters": {
       "search": "Search",
       "searchPlaceholder": "Find a person in the tree...",
-      "generation": "Generation",
-      "generationFrom": "From generation",
-      "generationTo": "To generation",
-      "loadEarlier": "Load earlier generations",
-      "loadLater": "Load later generations",
-      "allGenerations": "All generations",
-      "confirmAllGenerations": "Show all {count} people? Click again to confirm",
-      "searchScopeHint": "Searches only the people currently shown -- reset the view or use \"All generations\" to search everyone.",
-      "living": "Living",
-      "deceased": "Deceased",
-      "allPeople": "Living & deceased",
-      "reset": "Reset filters",
-      "resultCount": "{count} of {total} people shown"
+      "clearSearch": "Clear search"
     },
     "focus": {
       "ancestors": "Ancestors",
       "descendants": "Descendants",
       "highlightPath": "Highlight path to me",
+      "highlightPathHint": "Tap a person first",
       "expandAll": "Expand all"
     },
-    "legend": {
-      "title": "Legend",
-      "parentChild": "Parent / child",
-      "spouse": "Spouse"
+    "fullscreen": {
+      "title": "Family Tree",
+      "close": "Close"
     },
     "node": {
-      "unknownName": "Unnamed",
-      "birthYearUnknown": "Birth year unknown"
+      "unknownName": "Unnamed"
     },
     "quickView": {
       "title": "Profile",

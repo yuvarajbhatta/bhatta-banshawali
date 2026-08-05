@@ -6,5 +6,3 @@ export interface MemberNodeData extends Record<string, unknown> {
   highlighted: boolean;
   onSelect?: (personId: number) => void;
 }
-
-export type LivingFilter = "all" | "living" | "deceased";

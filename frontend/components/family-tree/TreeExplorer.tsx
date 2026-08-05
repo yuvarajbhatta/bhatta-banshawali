@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Maximize } from "lucide-react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, findRelationshipPath } from "@/lib/familyGraph";
@@ -9,10 +10,10 @@ import { TreeCanvas } from "./TreeCanvas";
 import { TreeFilters } from "./TreeFilters";
 import { TreeFocusControls } from "./TreeFocusControls";
 import { MemberQuickView } from "./MemberQuickView";
-import { ALL_GENERATIONS_CONFIRM_THRESHOLD, useTreeWindow } from "./useTreeWindow";
+import { TreeFullscreenView } from "./TreeFullscreenView";
+import { useTreeWindow } from "./useTreeWindow";
 import { computeFocusSubgraphIds, DEFAULT_FOCUS_DEPTH, MAX_FOCUS_DEPTH } from "./useFocusDepthWindow";
 import { computeHighlightedPath, type HighlightedPath } from "./treeHighlight";
-import type { LivingFilter } from "./familyTree.types";
 import styles from "./TreeExplorer.module.css";
 
 const EMPTY_HIGHLIGHT: HighlightedPath = { nodeIds: new Set(), edgeIds: new Set() };
@@ -27,12 +28,12 @@ interface TreeExplorerProps {
 export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerProps) {
   const t = useTranslations("treePage");
   const [search, setSearch] = useState("");
-  const [living, setLiving] = useState<LivingFilter>("all");
   const [selectedId, setSelectedId] = useState<number | null>(initialFocusId);
   const [focusId, setFocusId] = useState<number | null>(initialFocusId);
   const [ancestorDepth, setAncestorDepth] = useState(DEFAULT_FOCUS_DEPTH.ancestorDepth);
   const [descendantDepth, setDescendantDepth] = useState(DEFAULT_FOCUS_DEPTH.descendantDepth);
   const [highlightPath, setHighlightPath] = useState(false);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
   // Bounds what actually reaches Dagre/React Flow to a generation window --
   // see useTreeWindow.ts and docs/08 Phase 5's performance-benchmark
@@ -43,14 +44,6 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
 
   const index = useMemo(() => buildGraphIndex(people), [people]);
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
-
-  const generationOptions = useMemo(
-    () =>
-      Array.from(new Set(people.map((person) => person.generationNumber).filter((gen): gen is number => gen != null))).sort(
-        (a, b) => a - b,
-      ),
-    [people],
-  );
 
   const focusSubgraphIds = useMemo(() => {
     if (selectedId == null) {
@@ -72,37 +65,27 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
     const normalizedSearch = search.trim().toLowerCase();
     const basePeople = focusSubgraphIds ? people.filter((person) => focusSubgraphIds.has(person.id)) : treeWindow.windowedPeople;
 
-    const filteredBase = basePeople.filter((person) => {
-      if (normalizedSearch) {
-        const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
-        if (!haystack.includes(normalizedSearch)) {
-          return false;
-        }
-      }
-      if (living === "living" && person.deathDate) {
-        return false;
-      }
-      if (living === "deceased" && !person.deathDate) {
-        return false;
-      }
-      return true;
-    });
+    const filteredBase = normalizedSearch
+      ? basePeople.filter((person) => {
+          const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
+          return haystack.includes(normalizedSearch);
+        })
+      : basePeople;
 
     if (!pathSteps) {
       return filteredBase;
     }
 
     // The highlighted path always renders in full, even if a step falls
-    // outside the current search/living/depth filters -- a path that's
-    // silently missing its middle is worse than one that ignores a filter.
+    // outside the current search/depth filters -- a path that's silently
+    // missing its middle is worse than one that ignores a filter.
     const seen = new Set(filteredBase.map((person) => person.id));
     const missingPathPeople = pathSteps.map((step) => step.person).filter((person) => !seen.has(person.id));
     return [...filteredBase, ...missingPathPeople];
-  }, [focusSubgraphIds, treeWindow.windowedPeople, people, pathSteps, search, living]);
+  }, [focusSubgraphIds, treeWindow.windowedPeople, people, pathSteps, search]);
 
   function handleReset() {
     setSearch("");
-    setLiving("all");
     treeWindow.resetToDefaultWindow();
   }
 
@@ -136,27 +119,23 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
 
   return (
     <div className={styles.wrapper}>
-      <TreeFilters
-        search={search}
-        onSearchChange={setSearch}
-        generationOptions={generationOptions}
-        living={living}
-        onLivingChange={setLiving}
-        onReset={handleReset}
-        visibleCount={filteredPeople.length}
-        totalCount={people.length}
-        minGeneration={treeWindow.minGeneration}
-        maxGeneration={treeWindow.maxGeneration}
-        onRangeChange={treeWindow.setRange}
-        canLoadEarlier={treeWindow.minGeneration > treeWindow.overallMinGeneration}
-        canLoadLater={treeWindow.maxGeneration < treeWindow.overallMaxGeneration}
-        onLoadEarlier={treeWindow.loadEarlier}
-        onLoadLater={treeWindow.loadLater}
-        isAllGenerations={treeWindow.isAllGenerations}
-        onShowAllGenerations={treeWindow.showAllGenerations}
-        allGenerationsNeedsConfirm={treeWindow.totalPeopleCount > ALL_GENERATIONS_CONFIRM_THRESHOLD}
-        searchScopeLimited={Boolean(search.trim()) && (focusSubgraphIds != null || !treeWindow.isAllGenerations)}
-      />
+      <div className={styles.toolbarRow}>
+        <div className={styles.searchColumn}>
+          <TreeFilters search={search} onSearchChange={setSearch} />
+        </div>
+        <button
+          type="button"
+          className={styles.fullscreenButton}
+          onClick={() => {
+            setSelectedId(null);
+            setIsFullscreenOpen(true);
+          }}
+          aria-label={t("viewFullTreeCta")}
+        >
+          <Maximize size={16} aria-hidden="true" />
+          <span aria-hidden="true">{t("viewFullTreeCta")}</span>
+        </button>
+      </div>
 
       <TreeFocusControls
         focused={selectedId != null}
@@ -194,6 +173,10 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
           onClose={() => setSelectedId(null)}
           onFocusPerson={handleFocusPerson}
         />
+      ) : null}
+
+      {isFullscreenOpen ? (
+        <TreeFullscreenView people={people} peopleById={peopleById} onClose={() => setIsFullscreenOpen(false)} />
       ) : null}
     </div>
   );

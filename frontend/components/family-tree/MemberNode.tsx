@@ -14,9 +14,6 @@ function MemberNodeComponent({ data }: NodeProps<MemberNodeType>) {
 
   const name = person.englishFullName.trim() || t("unknownName");
   const isDeceased = Boolean(person.deathDate);
-  const birthYear = person.birthDate ? new Date(person.birthDate).getFullYear() : null;
-  const deathYear = person.deathDate ? new Date(person.deathDate).getFullYear() : null;
-  const years = birthYear ? (isDeceased ? `${birthYear}–${deathYear}` : `b. ${birthYear}`) : t("birthYearUnknown");
 
   const initials = name
     .split(/\s+/)
@@ -45,7 +42,7 @@ function MemberNodeComponent({ data }: NodeProps<MemberNodeType>) {
         role="button"
         tabIndex={0}
         aria-pressed={selected}
-        aria-label={`${name}, ${years}`}
+        aria-label={name}
         className={[
           styles.card,
           selected ? styles.cardSelected : "",
@@ -62,7 +59,6 @@ function MemberNodeComponent({ data }: NodeProps<MemberNodeType>) {
         </span>
         <span className={styles.info}>
           <span className={styles.name}>{name}</span>
-          <span className={styles.years}>{years}</span>
         </span>
       </div>
     </>

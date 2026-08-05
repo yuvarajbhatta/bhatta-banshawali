@@ -1,15 +1,13 @@
 .bar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .searchWrapper {
   position: relative;
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .searchIcon {
@@ -23,7 +21,7 @@
 
 .searchInput {
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) * 2 + 16px);
+  padding: var(--space-2) calc(var(--space-3) * 2 + 16px) var(--space-2) calc(var(--space-3) * 2 + 16px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -36,46 +34,34 @@
   border-color: var(--color-primary-500);
 }
 
-.select {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-
-.resetButton {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+.clearButton {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-full);
   background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
   cursor: pointer;
 }
 
-.resetButton:hover {
+.clearButton:hover {
   background: var(--color-primary-50);
   color: var(--color-primary-700-text);
 }
 
-.resultCount {
-  font-size: var(--text-xs);
-  color: var(--color-text-subtle);
-  white-space: nowrap;
-}
+@media (max-width: 640px) {
+  .bar {
+    margin-bottom: var(--space-2);
+  }
 
-.rangeGroup {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.hintRow {
-  flex-basis: 100%;
-  font-size: var(--text-xs);
-  color: var(--color-text-subtle);
+  .searchInput {
+    font-size: 16px; /* prevents iOS Safari auto-zoom on focus */
+  }
 }

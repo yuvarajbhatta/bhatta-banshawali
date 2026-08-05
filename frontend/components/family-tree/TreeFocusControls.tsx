@@ -73,7 +73,7 @@ export function TreeFocusControls({
       </label>
 
       {highlightPathAvailable ? (
-        <label className={styles.toggle}>
+        <label className={focused ? styles.toggle : `${styles.toggle} ${styles.toggleDisabled}`}>
           <input
             type="checkbox"
             checked={highlightPath}
@@ -81,6 +81,7 @@ export function TreeFocusControls({
             onChange={(event) => onHighlightPathChange(event.target.checked)}
           />
           {t("highlightPath")}
+          {!focused ? <span className={styles.toggleHint}>{t("highlightPathHint")}</span> : null}
         </label>
       ) : null}
 

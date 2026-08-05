@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   Background,
   BackgroundVariant,
-  MiniMap,
   ReactFlow,
   useReactFlow,
   type NodeTypes,
@@ -13,7 +12,6 @@ import "@xyflow/react/dist/style.css";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { MemberNode } from "./MemberNode";
 import { TreeControls } from "./TreeControls";
-import { TreeLegend } from "./TreeLegend";
 import { useFamilyTreeLayout } from "./useFamilyTreeLayout";
 import type { HighlightedPath } from "./treeHighlight";
 import styles from "./TreeCanvas.module.css";
@@ -77,10 +75,8 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlight }:
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--color-border)" />
-        <MiniMap pannable zoomable nodeColor="var(--color-primary-300)" maskColor="rgba(240, 253, 244, 0.6)" />
       </ReactFlow>
       <TreeControls />
-      <TreeLegend />
     </div>
   );
 }

@@ -15,9 +15,3 @@
   background: transparent;
   color: var(--color-text-subtle);
 }
-
-.canvasWrapper :global(.react-flow__minimap) {
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-}

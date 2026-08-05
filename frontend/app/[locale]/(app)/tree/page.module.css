@@ -1,0 +1,7 @@
+/* Element+class beats PageHeader.module.css's plain `.title` class
+   regardless of which CSS module happens to load later in the bundle --
+   two single-class selectors tie on specificity and the later one wins,
+   which isn't reliable to depend on. */
+h1.compactTitle {
+  font-size: var(--text-lg);
+}
