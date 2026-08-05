@@ -34,8 +34,8 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
 
   // Always on (once the viewer has a linked person) so they can spot
   // themselves in the whole tree without having to search -- root ->
-  // self, in red. Distinct from selectedPath below (amber), which only
-  // appears once someone's tapped.
+  // self, in red. Distinct from selectedPath below (amber), which
+  // appears once someone's tapped or searched-and-matched.
   const rootPathSteps = useMemo(() => {
     if (rootPersonId == null || selfId == null || rootPersonId === selfId) {
       return null;
@@ -43,16 +43,6 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
     return findRelationshipPath(index, rootPersonId, selfId);
   }, [index, rootPersonId, selfId]);
   const rootPath = useMemo(() => computeHighlightedPath(rootPathSteps), [rootPathSteps]);
-
-  const selectedPathSteps = useMemo(() => {
-    if (selectedId == null || selfId == null || selectedId === selfId) {
-      return null;
-    }
-    return findRelationshipPath(index, selectedId, selfId);
-  }, [index, selectedId, selfId]);
-  const selectedPath = useMemo(() => computeHighlightedPath(selectedPathSteps), [selectedPathSteps]);
-
-  const highlights: TreeHighlights = useMemo(() => ({ rootPath, selectedPath }), [rootPath, selectedPath]);
 
   // Search finds and centers the view on a match rather than hiding
   // everyone else -- the whole tree always stays visible, this just
@@ -68,6 +58,21 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
     });
     return match ? match.id : null;
   }, [people, search]);
+
+  // A search match counts as "selected" for path-highlighting purposes
+  // too, not just for panning -- otherwise the amber line only appears
+  // after an extra click on the node the search just zoomed to.
+  const pathTargetId = searchMatchId ?? selectedId;
+
+  const selectedPathSteps = useMemo(() => {
+    if (pathTargetId == null || selfId == null || pathTargetId === selfId) {
+      return null;
+    }
+    return findRelationshipPath(index, pathTargetId, selfId);
+  }, [index, pathTargetId, selfId]);
+  const selectedPath = useMemo(() => computeHighlightedPath(selectedPathSteps), [selectedPathSteps]);
+
+  const highlights: TreeHighlights = useMemo(() => ({ rootPath, selectedPath }), [rootPath, selectedPath]);
 
   function handleResetView() {
     setSearch("");
