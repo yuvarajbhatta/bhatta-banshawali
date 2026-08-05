@@ -1,4 +1,3 @@
-import dagre from "@dagrejs/dagre";
 import { useMemo } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
@@ -7,6 +6,9 @@ import { EMPTY_TREE_HIGHLIGHTS, type TreeHighlights } from "./treeHighlight";
 
 export const NODE_WIDTH = 216;
 export const NODE_HEIGHT = 88;
+const SIBLING_GAP = 40;
+const ROW_HEIGHT = NODE_HEIGHT + 88;
+const ROOT_TREE_GAP = SIBLING_GAP * 4;
 
 export interface FamilyTreeLayout {
   nodes: Node<MemberNodeData>[];
@@ -14,113 +16,116 @@ export interface FamilyTreeLayout {
 }
 
 /**
- * Pure data transform: PersonTreeNodeDto[] -> Dagre-laid-out React Flow
- * nodes/edges (docs/frontend-redesign-plan.md "family-tree rendering
- * approach"). Kept dependency-free of React Flow's runtime state so it's
- * unit-testable on its own (see useFamilyTreeLayout.test.ts) -- the hook
- * below just memoizes it for TreeCanvas.
+ * Pure data transform: PersonTreeNodeDto[] -> React Flow nodes/edges,
+ * laid out as a classic patrilineal genealogy chart -- the way a
+ * Banshawali is traditionally drawn, not a generic directed-graph
+ * layout. Kept dependency-free of React Flow's runtime state so it's
+ * unit-testable on its own (see useFamilyTreeLayout.test.ts) -- the
+ * hook below just memoizes it for TreeCanvas.
  *
- * Lineage-only: no spouse/marriage connections are drawn, and a person
- * recorded solely as someone's spouse (no parents, no children of their
- * own) has nothing left to connect to, so they're dropped from the
- * rendered tree rather than shown as a disconnected floating card.
+ * Father-line only: each child has exactly one structural parent (their
+ * father), so every subtree has a single, well-defined center to fan
+ * out from -- a generic DAG layout (this used to run on Dagre) can't
+ * guarantee that once a child has two incoming edges (father's and
+ * mother's) that disagree on where they belong. Mothers/spouses still
+ * show in a person's own detail panel, just not as a tree branch (see
+ * the "no wife needed" redesign this followed).
  *
- * Only edges between two people both present in `people` are drawn, so
- * filtering the input list (search/generation/living filters) never
- * produces a dangling edge to a node that isn't rendered.
+ * Each subtree's width is computed bottom-up (post-order), then each
+ * parent is centered over the span of their own children (pre-order) --
+ * the standard tidy-tree construction. Rows come from generationNumber,
+ * the app's own curated "how far down the tree is this person" field
+ * (see the admin Generations screen), falling back to tree depth from
+ * each root when generationNumber isn't available for everyone (e.g.
+ * test fixtures).
  */
 export function layoutFamilyTree(
   people: PersonTreeNodeDto[],
   selectedId: number | null,
   highlights: TreeHighlights = EMPTY_TREE_HIGHLIGHTS,
 ): FamilyTreeLayout {
-  const lineagePeople = people.filter(
-    (person) => person.childIds.length > 0 || person.fatherId != null || person.motherId != null,
-  );
+  const peopleById = new Map(people.map((person) => [person.id, person]));
 
-  const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: "TB", nodesep: 40, ranksep: 88 });
-  graph.setDefaultEdgeLabel(() => ({}));
-
-  const idSet = new Set(lineagePeople.map((person) => person.id));
-
-  for (const person of lineagePeople) {
-    graph.setNode(String(person.id), { width: NODE_WIDTH, height: NODE_HEIGHT });
+  function isFather(parentId: number, childId: number): boolean {
+    return peopleById.get(childId)?.fatherId === parentId;
   }
 
-  const parentChildPairs: { parentId: number; childId: number }[] = [];
-  for (const person of lineagePeople) {
+  const childrenOf = new Map<number, number[]>();
+  for (const person of people) {
     for (const childId of person.childIds) {
-      if (idSet.has(childId)) {
-        parentChildPairs.push({ parentId: person.id, childId });
+      if (!peopleById.has(childId) || !isFather(person.id, childId)) {
+        continue;
+      }
+      const list = childrenOf.get(person.id);
+      if (list) {
+        list.push(childId);
+      } else {
+        childrenOf.set(person.id, [childId]);
       }
     }
   }
-  for (const pair of parentChildPairs) {
-    graph.setEdge(String(pair.parentId), String(pair.childId));
+
+  const lineagePeople = people.filter(
+    (person) => person.fatherId != null || (childrenOf.get(person.id)?.length ?? 0) > 0,
+  );
+  const lineageIds = new Set(lineagePeople.map((person) => person.id));
+  const roots = lineagePeople.filter((person) => person.fatherId == null || !lineageIds.has(person.fatherId));
+
+  function childrenIn(personId: number): number[] {
+    return childrenOf.get(personId) ?? [];
   }
 
-  // Isolated people (no parent/child edge at all) still need a rank --
-  // Dagre places unconnected nodes fine on its own, nothing extra needed
-  // here.
-  dagre.layout(graph);
+  const widthById = new Map<number, number>();
+  function subtreeWidth(personId: number): number {
+    const cached = widthById.get(personId);
+    if (cached != null) {
+      return cached;
+    }
+    const children = childrenIn(personId);
+    const width =
+      children.length === 0
+        ? NODE_WIDTH
+        : children.reduce((sum, id) => sum + subtreeWidth(id), 0) + SIBLING_GAP * (children.length - 1);
+    widthById.set(personId, width);
+    return width;
+  }
 
-  // Vertical position comes from the curated generationNumber, not
-  // Dagre's own rank, whenever every person being laid out has one. In a
-  // large historical dataset like this one, a child can have two
-  // incoming parent-child edges (father's and mother's) whose own
-  // ancestry chains reach different depths elsewhere in the graph --
-  // Dagre's rank algorithm pushes the child down to match whichever
-  // chain is deepest, landing them many rows below their real parents
-  // on screen. generationNumber is this app's single source of truth
-  // for "how far down the tree is this person" (see the admin
-  // Generations screen), so it decides the row here instead.
-  //
-  // Handing generationNumber to Dagre directly as a pinned rank (via
-  // ranker: "none") was tried and rejected: real data has occasional
-  // generationNumber/edge inconsistencies that violate assumptions
-  // Dagre's position/normalize pipeline depends on and crash the whole
-  // layout. Keeping Dagre's own rank assignment (always internally
-  // consistent with its edges, so it never crashes) for horizontal
-  // ordering only, and overriding just the row afterwards, gets the
-  // correctness without the risk.
   const hasCompleteGenerations =
     lineagePeople.length > 0 && lineagePeople.every((person) => person.generationNumber != null);
+  const minGeneration = hasCompleteGenerations
+    ? Math.min(...lineagePeople.map((person) => person.generationNumber as number))
+    : 0;
 
-  const positionById = new Map<number, { x: number; y: number }>();
-  if (hasCompleteGenerations) {
-    const minGeneration = Math.min(...lineagePeople.map((person) => person.generationNumber as number));
-    const rows = new Map<number, PersonTreeNodeDto[]>();
-    for (const person of lineagePeople) {
-      const row = (person.generationNumber as number) - minGeneration;
-      const people2 = rows.get(row);
-      if (people2) {
-        people2.push(person);
-      } else {
-        rows.set(row, [person]);
-      }
+  const xById = new Map<number, number>();
+  const rowById = new Map<number, number>();
+  function assignPositions(personId: number, leftEdge: number, depth: number): void {
+    const person = peopleById.get(personId);
+    rowById.set(personId, hasCompleteGenerations ? (person?.generationNumber as number) - minGeneration : depth);
+
+    const children = childrenIn(personId);
+    if (children.length === 0) {
+      xById.set(personId, leftEdge + NODE_WIDTH / 2);
+      return;
     }
-    for (const [row, peopleInRow] of rows) {
-      // Preserve Dagre's own crossing-minimized left-to-right order
-      // within the row, just re-spaced evenly so people regrouped out
-      // of Dagre's own (possibly different) rank don't overlap.
-      peopleInRow.sort((a, b) => graph.node(String(a.id)).x - graph.node(String(b.id)).x);
-      peopleInRow.forEach((person, index) => {
-        positionById.set(person.id, {
-          x: index * (NODE_WIDTH + 40) + NODE_WIDTH / 2,
-          y: row * (NODE_HEIGHT + 88) + NODE_HEIGHT / 2,
-        });
-      });
+    let cursor = leftEdge;
+    for (const childId of children) {
+      assignPositions(childId, cursor, depth + 1);
+      cursor += subtreeWidth(childId) + SIBLING_GAP;
     }
-  } else {
-    for (const person of lineagePeople) {
-      const dagreNode = graph.node(String(person.id));
-      positionById.set(person.id, { x: dagreNode.x, y: dagreNode.y });
-    }
+    const firstChildX = xById.get(children[0] as number) as number;
+    const lastChildX = xById.get(children[children.length - 1] as number) as number;
+    xById.set(personId, (firstChildX + lastChildX) / 2);
+  }
+
+  let cursor = 0;
+  for (const root of roots) {
+    assignPositions(root.id, cursor, 0);
+    cursor += subtreeWidth(root.id) + ROOT_TREE_GAP;
   }
 
   const nodes: Node<MemberNodeData>[] = lineagePeople.map((person) => {
-    const position = positionById.get(person.id) ?? { x: 0, y: 0 };
+    const x = xById.get(person.id) ?? 0;
+    const row = rowById.get(person.id) ?? 0;
     const pathHighlight: TreePathHighlight = highlights.selectedPath.nodeIds.has(person.id)
       ? "selected"
       : highlights.rootPath.nodeIds.has(person.id)
@@ -129,30 +134,33 @@ export function layoutFamilyTree(
     return {
       id: String(person.id),
       type: "member",
-      position: { x: position.x - NODE_WIDTH / 2, y: position.y - NODE_HEIGHT / 2 },
+      position: { x: x - NODE_WIDTH / 2, y: row * ROW_HEIGHT },
       data: { person, selected: person.id === selectedId, pathHighlight },
     };
   });
 
-  const edges: Edge[] = parentChildPairs.map((pair) => {
-    const id = `pc-${pair.parentId}-${pair.childId}`;
-    const onSelectedPath = highlights.selectedPath.edgeIds.has(id);
-    const onRootPath = highlights.rootPath.edgeIds.has(id);
-    return {
-      id,
-      source: String(pair.parentId),
-      target: String(pair.childId),
-      sourceHandle: "bottom-source",
-      targetHandle: "top-target",
-      type: "smoothstep",
-      zIndex: onSelectedPath || onRootPath ? 10 : 0,
-      style: onSelectedPath
-        ? { stroke: "var(--color-warning)", strokeWidth: 3 }
-        : onRootPath
-          ? { stroke: "var(--color-error)", strokeWidth: 3 }
-          : { stroke: "var(--color-neutral-300)", strokeWidth: 1.5 },
-    };
-  });
+  const edges: Edge[] = [];
+  for (const [parentId, childIds] of childrenOf) {
+    for (const childId of childIds) {
+      const id = `pc-${parentId}-${childId}`;
+      const onSelectedPath = highlights.selectedPath.edgeIds.has(id);
+      const onRootPath = highlights.rootPath.edgeIds.has(id);
+      edges.push({
+        id,
+        source: String(parentId),
+        target: String(childId),
+        sourceHandle: "bottom-source",
+        targetHandle: "top-target",
+        type: "smoothstep",
+        zIndex: onSelectedPath || onRootPath ? 10 : 0,
+        style: onSelectedPath
+          ? { stroke: "var(--color-warning)", strokeWidth: 3 }
+          : onRootPath
+            ? { stroke: "var(--color-error)", strokeWidth: 3 }
+            : { stroke: "var(--color-neutral-300)", strokeWidth: 1.5 },
+      });
+    }
+  }
 
   return { nodes, edges };
 }
