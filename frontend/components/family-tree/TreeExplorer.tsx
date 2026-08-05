@@ -2,64 +2,61 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Maximize } from "lucide-react";
+import { Maximize, RotateCcw } from "lucide-react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, findRelationshipPath } from "@/lib/familyGraph";
 import { TreeCanvas } from "./TreeCanvas";
 import { TreeFilters } from "./TreeFilters";
-import { TreeFocusControls } from "./TreeFocusControls";
 import { MemberQuickView } from "./MemberQuickView";
 import { TreeFullscreenView } from "./TreeFullscreenView";
-import { computeFocusSubgraphIds, DEFAULT_FOCUS_DEPTH, MAX_FOCUS_DEPTH } from "./useFocusDepthWindow";
-import { computeHighlightedPath, type HighlightedPath } from "./treeHighlight";
+import { computeHighlightedPath, type TreeHighlights } from "./treeHighlight";
 import styles from "./TreeExplorer.module.css";
-
-const EMPTY_HIGHLIGHT: HighlightedPath = { nodeIds: new Set(), edgeIds: new Set() };
 
 interface TreeExplorerProps {
   people: PersonTreeNodeDto[];
   initialFocusId: number | null;
-  /** The logged-in member's own person id, if any -- powers "highlight path to me". Null for admins/unlinked accounts, who just don't get that toggle. */
+  /** The tree's designated founder/root person, if any -- the start of the always-on "path to you" highlight. */
+  rootPersonId: number | null;
+  /** The logged-in member's own person id, if any -- powers the "path to you" highlight. Null for admins/unlinked accounts, who just don't get it. */
   selfId: number | null;
 }
 
-export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerProps) {
+export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: TreeExplorerProps) {
   const t = useTranslations("treePage");
   const [search, setSearch] = useState("");
-  // No explicit ?focus= link -- default to centering on the viewer's own
-  // person, if they have one, rather than the whole (zoomed-way-out,
-  // hard-to-read) tree. Admins/unlinked accounts have no "me" to center
-  // on, so they still get the whole tree.
-  const [selectedId, setSelectedId] = useState<number | null>(initialFocusId ?? selfId);
-  const [focusId, setFocusId] = useState<number | null>(initialFocusId ?? selfId);
-  const [ancestorDepth, setAncestorDepth] = useState(DEFAULT_FOCUS_DEPTH.ancestorDepth);
-  const [descendantDepth, setDescendantDepth] = useState(DEFAULT_FOCUS_DEPTH.descendantDepth);
-  const [highlightPath, setHighlightPath] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(initialFocusId);
+  const [focusId, setFocusId] = useState<number | null>(initialFocusId);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
   const index = useMemo(() => buildGraphIndex(people), [people]);
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
 
-  const focusSubgraphIds = useMemo(() => {
-    if (selectedId == null) {
+  // Always on (once the viewer has a linked person) so they can spot
+  // themselves in the whole tree without having to search -- root ->
+  // self, in red. Distinct from selectedPath below (amber), which only
+  // appears once someone's tapped.
+  const rootPathSteps = useMemo(() => {
+    if (rootPersonId == null || selfId == null || rootPersonId === selfId) {
       return null;
     }
-    return computeFocusSubgraphIds(index, selectedId, { ancestorDepth, descendantDepth });
-  }, [index, selectedId, ancestorDepth, descendantDepth]);
+    return findRelationshipPath(index, rootPersonId, selfId);
+  }, [index, rootPersonId, selfId]);
+  const rootPath = useMemo(() => computeHighlightedPath(rootPathSteps), [rootPathSteps]);
 
-  const pathSteps = useMemo(() => {
-    if (!highlightPath || selectedId == null || selfId == null || selectedId === selfId) {
+  const selectedPathSteps = useMemo(() => {
+    if (selectedId == null || selfId == null || selectedId === selfId) {
       return null;
     }
     return findRelationshipPath(index, selectedId, selfId);
-  }, [index, highlightPath, selectedId, selfId]);
+  }, [index, selectedId, selfId]);
+  const selectedPath = useMemo(() => computeHighlightedPath(selectedPathSteps), [selectedPathSteps]);
 
-  const highlight = useMemo(() => (pathSteps ? computeHighlightedPath(pathSteps) : EMPTY_HIGHLIGHT), [pathSteps]);
+  const highlights: TreeHighlights = useMemo(() => ({ rootPath, selectedPath }), [rootPath, selectedPath]);
 
   // Search finds and centers the view on a match rather than hiding
-  // everyone else -- the whole tree stays visible (see displayedPeople
-  // below), this just tells TreeCanvas who to pan/zoom to.
+  // everyone else -- the whole tree always stays visible, this just
+  // tells TreeCanvas who to pan/zoom to.
   const searchMatchId = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     if (!normalizedSearch) {
@@ -72,41 +69,10 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
     return match ? match.id : null;
   }, [people, search]);
 
-  const displayedPeople = useMemo(() => {
-    // Nobody focused -- show the whole tree by default (search narrows
-    // where the view centers, via searchMatchId, not what's rendered).
-    if (!focusSubgraphIds) {
-      return people;
-    }
-
-    const focusedPeople = people.filter((person) => focusSubgraphIds.has(person.id));
-    if (!pathSteps) {
-      return focusedPeople;
-    }
-
-    // The highlighted path always renders in full, even if a step falls
-    // outside the current focus depth -- a path that's silently missing
-    // its middle is worse than one that ignores the depth setting.
-    const seen = new Set(focusedPeople.map((person) => person.id));
-    const missingPathPeople = pathSteps.map((step) => step.person).filter((person) => !seen.has(person.id));
-    return [...focusedPeople, ...missingPathPeople];
-  }, [focusSubgraphIds, people, pathSteps]);
-
   function handleResetView() {
     setSearch("");
     setSelectedId(null);
     setFocusId(null);
-    setAncestorDepth(DEFAULT_FOCUS_DEPTH.ancestorDepth);
-    setDescendantDepth(DEFAULT_FOCUS_DEPTH.descendantDepth);
-    setHighlightPath(false);
-  }
-
-  function handleExpandAll() {
-    if (selectedId == null) {
-      return;
-    }
-    setAncestorDepth(MAX_FOCUS_DEPTH);
-    setDescendantDepth(MAX_FOCUS_DEPTH);
   }
 
   function handleSelect(personId: number) {
@@ -126,9 +92,13 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
         <div className={styles.searchColumn}>
           <TreeFilters search={search} onSearchChange={setSearch} />
         </div>
+        <button type="button" className={styles.toolbarButton} onClick={handleResetView} aria-label={t("controls.resetView")}>
+          <RotateCcw size={16} aria-hidden="true" />
+          <span aria-hidden="true">{t("controls.resetView")}</span>
+        </button>
         <button
           type="button"
-          className={styles.fullscreenButton}
+          className={styles.toolbarButton}
           onClick={() => {
             setSelectedId(null);
             setIsFullscreenOpen(true);
@@ -140,30 +110,17 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
         </button>
       </div>
 
-      <TreeFocusControls
-        focused={selectedId != null}
-        ancestorDepth={ancestorDepth}
-        descendantDepth={descendantDepth}
-        onAncestorDepthChange={setAncestorDepth}
-        onDescendantDepthChange={setDescendantDepth}
-        highlightPathAvailable={selfId != null}
-        highlightPath={highlightPath}
-        onHighlightPathChange={setHighlightPath}
-        onExpandAll={handleExpandAll}
-        onResetView={handleResetView}
-      />
-
       <div className={styles.canvasArea}>
-        {displayedPeople.length === 0 ? (
+        {people.length === 0 ? (
           <div className={styles.empty}>{t("empty")}</div>
         ) : (
           <ReactFlowProvider>
             <TreeCanvas
-              people={displayedPeople}
+              people={people}
               selectedId={selectedId}
               focusId={searchMatchId ?? focusId}
               onSelect={handleSelect}
-              highlight={highlight}
+              highlights={highlights}
             />
           </ReactFlowProvider>
         )}
@@ -179,7 +136,12 @@ export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerPro
       ) : null}
 
       {isFullscreenOpen ? (
-        <TreeFullscreenView people={people} peopleById={peopleById} onClose={() => setIsFullscreenOpen(false)} />
+        <TreeFullscreenView
+          people={people}
+          peopleById={peopleById}
+          rootPath={rootPath}
+          onClose={() => setIsFullscreenOpen(false)}
+        />
       ) : null}
     </div>
   );

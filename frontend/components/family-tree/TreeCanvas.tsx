@@ -13,7 +13,7 @@ import type { PersonTreeNodeDto } from "@/lib/api";
 import { MemberNode } from "./MemberNode";
 import { TreeControls } from "./TreeControls";
 import { NODE_HEIGHT, NODE_WIDTH, useFamilyTreeLayout } from "./useFamilyTreeLayout";
-import type { HighlightedPath } from "./treeHighlight";
+import type { TreeHighlights } from "./treeHighlight";
 import styles from "./TreeCanvas.module.css";
 
 const NODE_TYPES: NodeTypes = { member: MemberNode };
@@ -28,11 +28,11 @@ interface TreeCanvasProps {
   selectedId: number | null;
   focusId: number | null;
   onSelect: (personId: number) => void;
-  highlight?: HighlightedPath;
+  highlights?: TreeHighlights;
 }
 
-export function TreeCanvas({ people, selectedId, focusId, onSelect, highlight }: TreeCanvasProps) {
-  const { nodes: layoutNodes, edges } = useFamilyTreeLayout(people, selectedId, highlight);
+export function TreeCanvas({ people, selectedId, focusId, onSelect, highlights }: TreeCanvasProps) {
+  const { nodes: layoutNodes, edges } = useFamilyTreeLayout(people, selectedId, highlights);
   const { setCenter, fitView } = useReactFlow();
   const lastFocusedIdRef = useRef<number | null>(null);
 

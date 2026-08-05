@@ -7,15 +7,18 @@ import { ReactFlowProvider } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { TreeCanvas } from "./TreeCanvas";
 import { MemberQuickView } from "./MemberQuickView";
+import { EMPTY_HIGHLIGHTED_PATH, type HighlightedPath } from "./treeHighlight";
 import styles from "./TreeFullscreenView.module.css";
 
 interface TreeFullscreenViewProps {
   people: PersonTreeNodeDto[];
   peopleById: Map<number, PersonTreeNodeDto>;
+  /** Root -> viewer's own person, in red -- same always-on highlight as the compact view. */
+  rootPath?: HighlightedPath;
   onClose: () => void;
 }
 
-export function TreeFullscreenView({ people, peopleById, onClose }: TreeFullscreenViewProps) {
+export function TreeFullscreenView({ people, peopleById, rootPath = EMPTY_HIGHLIGHTED_PATH, onClose }: TreeFullscreenViewProps) {
   const t = useTranslations("treePage.fullscreen");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,13 @@ export function TreeFullscreenView({ people, peopleById, onClose }: TreeFullscre
       </div>
       <div className={styles.canvasArea}>
         <ReactFlowProvider>
-          <TreeCanvas people={people} selectedId={selectedId} focusId={null} onSelect={setSelectedId} />
+          <TreeCanvas
+            people={people}
+            selectedId={selectedId}
+            focusId={null}
+            onSelect={setSelectedId}
+            highlights={{ rootPath, selectedPath: EMPTY_HIGHLIGHTED_PATH }}
+          />
         </ReactFlowProvider>
       </div>
       {selectedPerson ? (

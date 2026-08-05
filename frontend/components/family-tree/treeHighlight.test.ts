@@ -67,9 +67,14 @@ describe("computeHighlightedPath", () => {
     expect(edgeIds).toEqual(new Set(["pc-3-5", "pc-3-6"]));
   });
 
-  it("produces a spouse edge id matching layoutFamilyTree's own format for a path crossing a marriage", () => {
+  it("still produces a spouse edge id for a path crossing a marriage, even though the tree no longer renders one", () => {
     // motherId deliberately unset on 12, so the only path to 11 is via
     // the father-then-spouse hop, not a direct mother edge.
+    // computeHighlightedPath describes the abstract relationship path
+    // and isn't aware layoutFamilyTree has since stopped drawing
+    // marriage lines -- a path that happens to cross one just won't have
+    // a line for that segment on screen, which is the accepted tradeoff
+    // of dropping spouse connections from the tree.
     const spouseFixture: PersonTreeNodeDto[] = [
       person({ id: 10, spouseIds: [11], childIds: [12] }),
       person({ id: 11, spouseIds: [10] }),
@@ -79,12 +84,9 @@ describe("computeHighlightedPath", () => {
     const steps = findRelationshipPath(index, 12, 11);
     const { edgeIds } = computeHighlightedPath(steps);
 
-    const { edges } = layoutFamilyTree(spouseFixture, null);
-    const realEdgeIds = new Set(edges.map((e) => e.id));
-
-    for (const id of edgeIds) {
-      expect(realEdgeIds.has(id)).toBe(true);
-    }
     expect(edgeIds).toEqual(new Set(["pc-10-12", "sp-10-11"]));
+
+    const { edges } = layoutFamilyTree(spouseFixture, null);
+    expect(edges.some((e) => e.id === "sp-10-11")).toBe(false);
   });
 });

@@ -5,6 +5,19 @@ export interface HighlightedPath {
   edgeIds: Set<string>;
 }
 
+export interface TreeHighlights {
+  /** Root -> viewer's own person, always on when the viewer has a linked person -- red, so they can spot themselves in the whole tree. */
+  rootPath: HighlightedPath;
+  /** Selected/searched person -> viewer, amber, shown once someone's tapped. */
+  selectedPath: HighlightedPath;
+}
+
+export const EMPTY_HIGHLIGHTED_PATH: HighlightedPath = { nodeIds: new Set(), edgeIds: new Set() };
+export const EMPTY_TREE_HIGHLIGHTS: TreeHighlights = {
+  rootPath: EMPTY_HIGHLIGHTED_PATH,
+  selectedPath: EMPTY_HIGHLIGHTED_PATH,
+};
+
 /**
  * Turns findRelationshipPath's step list into the node/edge id sets
  * TreeCanvas needs to draw it -- edge ids must match the "pc-{parent}-

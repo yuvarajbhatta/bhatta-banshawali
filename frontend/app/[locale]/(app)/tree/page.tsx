@@ -25,8 +25,8 @@ export default async function FamilyTreePage({
   const focusId = focus ? Number.parseInt(focus, 10) : null;
 
   // Admins (AppUser login, no-account) and members not yet linked to a
-  // Person just don't get "highlight path to me" -- everything else on
-  // this page works the same either way.
+  // Person just don't get the "path to you" highlight in the tree --
+  // everything else on this page works the same either way.
   const selfId =
     profileResult.kind === "ok" && profileResult.profile.linked && profileResult.profile.person
       ? profileResult.profile.person.id
@@ -38,6 +38,7 @@ export default async function FamilyTreePage({
       <TreeExplorer
         people={result.tree.nodes}
         initialFocusId={Number.isNaN(focusId as number) ? null : focusId}
+        rootPersonId={result.tree.rootPersonId}
         selfId={selfId}
       />
     </>

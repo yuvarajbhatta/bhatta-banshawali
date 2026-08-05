@@ -24,11 +24,20 @@
 }
 
 /* Distinct from .cardSelected (green -- "this is the one you clicked")
-   and from female avatars (gold) -- amber marks "on the highlighted
-   path back to you" specifically. */
+   and from female avatars (gold) -- amber marks "on the path from the
+   selected/searched person back to you" specifically. */
 .cardHighlighted {
   border-color: var(--color-warning);
   box-shadow: 0 0 0 2px var(--color-warning-bg);
+}
+
+/* Red -- "on the path from the tree's root down to you", shown by
+   default (no selection needed) so you can spot yourself in the whole
+   tree at a glance. Takes a back seat to .cardHighlighted (amber) when
+   a node is on both paths at once -- see useFamilyTreeLayout.ts. */
+.cardHighlightedRoot {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px var(--color-error-bg);
 }
 
 .cardDeceased {

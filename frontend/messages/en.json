@@ -84,13 +84,6 @@
       "searchPlaceholder": "Find a person in the tree...",
       "clearSearch": "Clear search"
     },
-    "focus": {
-      "ancestors": "Ancestors",
-      "descendants": "Descendants",
-      "highlightPath": "Highlight path to me",
-      "highlightPathHint": "Tap a person first",
-      "expandAll": "Expand all"
-    },
     "fullscreen": {
       "title": "Family Tree",
       "close": "Close"
@@ -321,7 +314,8 @@
       "prompt": "Search for a family member to see how you're related.",
       "noResults": "No matching records found.",
       "notConnected": "No relationship path could be found between you and this person.",
-      "viewFullProfile": "View full profile"
+      "viewFullProfile": "View full profile",
+      "you": "You"
     }
   },
   "verificationStatus": {

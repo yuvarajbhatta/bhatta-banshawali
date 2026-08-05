@@ -50,7 +50,7 @@ function renderNode(data: MemberNodeData) {
 
 describe("MemberNode", () => {
   it("renders only the person's name, no birth/death years", () => {
-    renderNode({ person: PERSON, selected: false, highlighted: false });
+    renderNode({ person: PERSON, selected: false, pathHighlight: null });
 
     expect(screen.getByText("Ram Bhatta")).toBeInTheDocument();
     expect(screen.queryByText(/1950/)).not.toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("MemberNode", () => {
   });
 
   it("uses the name alone as the accessible label", () => {
-    renderNode({ person: PERSON, selected: false, highlighted: false });
+    renderNode({ person: PERSON, selected: false, pathHighlight: null });
 
     expect(screen.getByRole("button", { name: "Ram Bhatta" })).toBeInTheDocument();
   });

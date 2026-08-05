@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { layoutFamilyTree, NODE_HEIGHT, NODE_WIDTH } from "./useFamilyTreeLayout";
+import { EMPTY_HIGHLIGHTED_PATH, type TreeHighlights } from "./treeHighlight";
 
 function person(overrides: Partial<PersonTreeNodeDto> & { id: number }): PersonTreeNodeDto {
   return {
@@ -18,9 +19,13 @@ function person(overrides: Partial<PersonTreeNodeDto> & { id: number }): PersonT
   };
 }
 
+function highlights(overrides: Partial<TreeHighlights>): TreeHighlights {
+  return { rootPath: EMPTY_HIGHLIGHTED_PATH, selectedPath: EMPTY_HIGHLIGHTED_PATH, ...overrides };
+}
+
 describe("layoutFamilyTree", () => {
   it("positions every person exactly once, sized to the node dimensions", () => {
-    const people = [person({ id: 1 }), person({ id: 2, fatherId: 1, childIds: [] })];
+    const people = [person({ id: 1, childIds: [2] }), person({ id: 2, fatherId: 1 })];
     const { nodes } = layoutFamilyTree(people, null);
 
     expect(nodes).toHaveLength(2);
@@ -63,17 +68,39 @@ describe("layoutFamilyTree", () => {
     expect(edges).toHaveLength(0);
   });
 
-  it("draws exactly one spouse edge per pair, not two", () => {
-    const a = person({ id: 1, spouseIds: [2] });
-    const b = person({ id: 2, spouseIds: [1] });
-    const { edges } = layoutFamilyTree([a, b], null);
+  it("never draws a spouse/marriage line, even when spouseIds are populated", () => {
+    const a = person({ id: 1, spouseIds: [2], childIds: [3] });
+    const b = person({ id: 2, spouseIds: [1], childIds: [3] });
+    const c = person({ id: 3, fatherId: 1, motherId: 2 });
+    const { edges } = layoutFamilyTree([a, b, c], null);
 
-    const spouseEdges = edges.filter((e) => e.id.startsWith("sp-"));
-    expect(spouseEdges).toHaveLength(1);
+    expect(edges.some((e) => e.id.startsWith("sp-"))).toBe(false);
+  });
+
+  it("drops a person who has no lineage role of their own (only ever a spouse) from the rendered tree", () => {
+    // b has no father/mother and no children -- their only connection to
+    // a is the marriage, which no longer gets a line, so they'd otherwise
+    // render as a disconnected floating card with no edges at all.
+    const a = person({ id: 1, spouseIds: [2], childIds: [] });
+    const b = person({ id: 2, spouseIds: [1] });
+    const { nodes } = layoutFamilyTree([a, b], null);
+
+    expect(nodes.map((n) => n.id)).toEqual([]);
+  });
+
+  it("keeps a spouse who also has their own parent/child role", () => {
+    // b is a's spouse, but also c's mother -- that parent-child edge is
+    // reason enough to keep her, independent of the marriage.
+    const a = person({ id: 1, spouseIds: [2], childIds: [3] });
+    const b = person({ id: 2, spouseIds: [1], childIds: [3] });
+    const c = person({ id: 3, fatherId: 1, motherId: 2 });
+    const { nodes } = layoutFamilyTree([a, b, c], null);
+
+    expect(new Set(nodes.map((n) => n.id))).toEqual(new Set(["1", "2", "3"]));
   });
 
   it("marks only the selected person's node as selected", () => {
-    const people = [person({ id: 1 }), person({ id: 2 })];
+    const people = [person({ id: 1, childIds: [2] }), person({ id: 2, fatherId: 1 })];
     const { nodes } = layoutFamilyTree(people, 2);
 
     expect(nodes.find((n) => n.id === "1")?.data.selected).toBe(false);
@@ -86,33 +113,66 @@ describe("layoutFamilyTree", () => {
     expect(edges).toEqual([]);
   });
 
-  it("defaults every node to not highlighted when no highlight is passed", () => {
-    const people = [person({ id: 1 }), person({ id: 2 })];
+  it("defaults every node to no path highlight when none is passed", () => {
+    const people = [person({ id: 1, childIds: [2] }), person({ id: 2, fatherId: 1 })];
     const { nodes } = layoutFamilyTree(people, null);
 
-    expect(nodes.every((n) => n.data.highlighted === false)).toBe(true);
+    expect(nodes.every((n) => n.data.pathHighlight === null)).toBe(true);
   });
 
-  it("marks nodes and edges present in the highlight sets", () => {
+  it("marks nodes and edges on the selected-person path (amber)", () => {
     const parent = person({ id: 1, childIds: [2] });
     const child = person({ id: 2, fatherId: 1 });
-    const { nodes, edges } = layoutFamilyTree([parent, child], null, {
-      nodeIds: new Set([1, 2]),
-      edgeIds: new Set(["pc-1-2"]),
-    });
+    const { nodes, edges } = layoutFamilyTree(
+      [parent, child],
+      null,
+      highlights({ selectedPath: { nodeIds: new Set([1, 2]), edgeIds: new Set(["pc-1-2"]) } }),
+    );
 
-    expect(nodes.find((n) => n.id === "1")?.data.highlighted).toBe(true);
-    expect(nodes.find((n) => n.id === "2")?.data.highlighted).toBe(true);
+    expect(nodes.find((n) => n.id === "1")?.data.pathHighlight).toBe("selected");
+    expect(nodes.find((n) => n.id === "2")?.data.pathHighlight).toBe("selected");
 
     const edge = edges.find((e) => e.id === "pc-1-2");
     expect(edge?.style).toMatchObject({ stroke: "var(--color-warning)", strokeWidth: 3 });
     expect(edge?.zIndex).toBe(10);
   });
 
-  it("leaves edges outside the highlight set with their normal style", () => {
+  it("marks nodes and edges on the root path (red) when there's no selected-path override", () => {
     const parent = person({ id: 1, childIds: [2] });
     const child = person({ id: 2, fatherId: 1 });
-    const { edges } = layoutFamilyTree([parent, child], null, { nodeIds: new Set(), edgeIds: new Set() });
+    const { nodes, edges } = layoutFamilyTree(
+      [parent, child],
+      null,
+      highlights({ rootPath: { nodeIds: new Set([1, 2]), edgeIds: new Set(["pc-1-2"]) } }),
+    );
+
+    expect(nodes.find((n) => n.id === "1")?.data.pathHighlight).toBe("root");
+    expect(nodes.find((n) => n.id === "2")?.data.pathHighlight).toBe("root");
+
+    const edge = edges.find((e) => e.id === "pc-1-2");
+    expect(edge?.style).toMatchObject({ stroke: "var(--color-error)", strokeWidth: 3 });
+    expect(edge?.zIndex).toBe(10);
+  });
+
+  it("lets the selected-person path win over the root path on a shared node/edge", () => {
+    const parent = person({ id: 1, childIds: [2] });
+    const child = person({ id: 2, fatherId: 1 });
+    const shared = { nodeIds: new Set([1, 2]), edgeIds: new Set(["pc-1-2"]) };
+    const { nodes, edges } = layoutFamilyTree(
+      [parent, child],
+      null,
+      highlights({ rootPath: shared, selectedPath: shared }),
+    );
+
+    expect(nodes.find((n) => n.id === "2")?.data.pathHighlight).toBe("selected");
+    const edge = edges.find((e) => e.id === "pc-1-2");
+    expect(edge?.style).toMatchObject({ stroke: "var(--color-warning)" });
+  });
+
+  it("leaves edges outside every highlight set with their normal style", () => {
+    const parent = person({ id: 1, childIds: [2] });
+    const child = person({ id: 2, fatherId: 1 });
+    const { edges } = layoutFamilyTree([parent, child], null);
 
     const edge = edges.find((e) => e.id === "pc-1-2");
     expect(edge?.style).toMatchObject({ stroke: "var(--color-neutral-300)", strokeWidth: 1.5 });
