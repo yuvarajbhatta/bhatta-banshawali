@@ -27,8 +27,12 @@ interface TreeExplorerProps {
 export function TreeExplorer({ people, initialFocusId, selfId }: TreeExplorerProps) {
   const t = useTranslations("treePage");
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(initialFocusId);
-  const [focusId, setFocusId] = useState<number | null>(initialFocusId);
+  // No explicit ?focus= link -- default to centering on the viewer's own
+  // person, if they have one, rather than the whole (zoomed-way-out,
+  // hard-to-read) tree. Admins/unlinked accounts have no "me" to center
+  // on, so they still get the whole tree.
+  const [selectedId, setSelectedId] = useState<number | null>(initialFocusId ?? selfId);
+  const [focusId, setFocusId] = useState<number | null>(initialFocusId ?? selfId);
   const [ancestorDepth, setAncestorDepth] = useState(DEFAULT_FOCUS_DEPTH.ancestorDepth);
   const [descendantDepth, setDescendantDepth] = useState(DEFAULT_FOCUS_DEPTH.descendantDepth);
   const [highlightPath, setHighlightPath] = useState(false);
