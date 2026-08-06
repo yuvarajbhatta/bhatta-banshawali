@@ -10,8 +10,14 @@ export function NewPersonForm() {
   const router = useRouter();
 
   async function handleSubmit(body: AdminPersonRequest) {
-    const created = await createAdminPerson(body);
-    router.push(`/admin/persons/${created.id}/edit`);
+    const result = await createAdminPerson(body);
+    if (result.possibleDuplicates.length > 0) {
+      const names = result.possibleDuplicates
+        .map((p) => `${p.firstName} ${p.lastName}`.trim())
+        .join(", ");
+      window.alert(t("possibleDuplicateWarning", { names }));
+    }
+    router.push(`/admin/persons/${result.person.id}/edit`);
     router.refresh();
   }
 

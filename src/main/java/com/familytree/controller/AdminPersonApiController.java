@@ -1,8 +1,10 @@
 package com.familytree.controller;
 
+import com.familytree.dto.AdminPersonCreateResultDto;
 import com.familytree.dto.AdminPersonDto;
 import com.familytree.dto.AdminPersonRequestDto;
 import com.familytree.entity.Person;
+import com.familytree.services.DuplicateCandidateService;
 import com.familytree.services.PersonService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,9 +33,11 @@ import java.util.List;
 public class AdminPersonApiController {
 
     private final PersonService personService;
+    private final DuplicateCandidateService duplicateCandidateService;
 
-    public AdminPersonApiController(PersonService personService) {
+    public AdminPersonApiController(PersonService personService, DuplicateCandidateService duplicateCandidateService) {
         this.personService = personService;
+        this.duplicateCandidateService = duplicateCandidateService;
     }
 
     @GetMapping
@@ -47,10 +51,17 @@ public class AdminPersonApiController {
     }
 
     @PostMapping
-    public ResponseEntity<AdminPersonDto> create(@Valid @RequestBody AdminPersonRequestDto request) {
+    public ResponseEntity<AdminPersonCreateResultDto> create(@Valid @RequestBody AdminPersonRequestDto request) {
         Person person = toEntity(request);
+        // Checked before saving -- findLikelyDuplicatesOf excludes the
+        // candidate's own id, which doesn't exist yet either way, but
+        // checking pre-save keeps this a pure read with no risk of the
+        // freshly-saved row matching itself.
+        List<AdminPersonDto> possibleDuplicates = duplicateCandidateService.findLikelyDuplicatesOf(person).stream()
+                .map(this::toDto)
+                .toList();
         Person saved = personService.savePerson(person);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(saved));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AdminPersonCreateResultDto(toDto(saved), possibleDuplicates));
     }
 
     @PutMapping("/{id}")

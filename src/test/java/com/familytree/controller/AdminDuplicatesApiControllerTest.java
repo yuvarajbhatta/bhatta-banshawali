@@ -53,7 +53,7 @@ class AdminDuplicatesApiControllerTest {
     @Test
     void mergeDelegatesToServiceWithActorFromAuthentication() {
         when(authentication.getName()).thenReturn("admin@example.com");
-        MergeResultDto result = new MergeResultDto(1L, 2, 1, 1, 1);
+        MergeResultDto result = new MergeResultDto(1L, 2, 1, 1, 1, 1);
         when(personMergeService.merge(1L, 2L, "admin@example.com")).thenReturn(result);
 
         assertThat(controller().merge(request(1L, 2L), authentication)).isEqualTo(result);

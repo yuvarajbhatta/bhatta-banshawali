@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import { searchPersons, type PersonSummaryDto } from "@/lib/api";
+import { Link, useRouter } from "@/i18n/navigation";
+import { searchPersons, UnauthenticatedError, type PersonSummaryDto } from "@/lib/api";
 import styles from "./PersonSearch.module.css";
 
 export function PersonSearch() {
   const t = useTranslations("directoryPage");
+  const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<PersonSummaryDto[] | null>(null);
 
@@ -23,10 +24,18 @@ export function PersonSearch() {
             setResults(people);
           }
         })
-        .catch(() => {
-          if (!cancelled) {
-            setResults([]);
+        .catch((error: unknown) => {
+          if (cancelled) {
+            return;
           }
+          // A session that expired mid-search must not render identically
+          // to a genuine zero-result search -- that silently hid the real
+          // problem (re-login needed) behind what looked like "no matches".
+          if (error instanceof UnauthenticatedError) {
+            router.push("/login");
+            return;
+          }
+          setResults([]);
         });
     }, 300);
 
@@ -34,7 +43,7 @@ export function PersonSearch() {
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [keyword]);
+  }, [keyword, router]);
 
   return (
     <div className={styles.container}>

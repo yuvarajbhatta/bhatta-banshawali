@@ -178,6 +178,13 @@ li {
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
+    /* So .btn also works applied to a <button> (the delete action below is
+       a <form method="post"> now, not a navigable link -- CSRF protection
+       only covers unsafe methods, not a bare GET) without the browser's
+       default button chrome showing through. */
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
 }
 
 .btn-primary {

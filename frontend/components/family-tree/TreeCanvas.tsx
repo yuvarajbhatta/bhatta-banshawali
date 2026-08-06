@@ -88,6 +88,7 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlights }
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
+        onlyRenderVisibleElements
         panOnScroll
         zoomOnScroll
         minZoom={0.15}

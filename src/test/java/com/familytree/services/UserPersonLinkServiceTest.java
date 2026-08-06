@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -89,5 +90,21 @@ class UserPersonLinkServiceTest {
                 .hasMessageContaining("Bhojraj Bhatta")
                 .hasMessageContaining("already linked to another account");
         org.mockito.Mockito.verify(userPersonLinkRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void createVerifiedLinkTranslatesAConcurrentDuplicateIntoAFriendlyError() {
+        // Simulates the race the pre-checks above can't close on their own:
+        // both pass (no existing VERIFIED link visible yet), then the save
+        // itself hits uk_user_person_links_verified_account/_person (V24) --
+        // the actual backstop.
+        UserAccount account = account(6L);
+        Person person = person(416L);
+        when(userPersonLinkRepository.save(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        assertThatThrownBy(() -> service.createVerifiedLink(account, person))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("just linked by another request");
     }
 }

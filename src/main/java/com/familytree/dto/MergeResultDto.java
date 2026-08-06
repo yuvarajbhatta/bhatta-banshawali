@@ -6,6 +6,7 @@ public record MergeResultDto(
         int relationshipsRepointed,
         int relationshipsDroppedAsDuplicate,
         int userLinksRepointed,
-        int correctionRequestsRepointed
+        int correctionRequestsRepointed,
+        int photosRepointed
 ) {
 }

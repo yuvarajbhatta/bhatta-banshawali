@@ -23,6 +23,7 @@ public class Relationship {
     private Person relatedPerson;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private RelationshipType relationshipType;
 
     public Long getId() {

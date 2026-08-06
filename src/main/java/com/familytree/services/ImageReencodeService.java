@@ -4,8 +4,10 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -34,6 +36,14 @@ public class ImageReencodeService {
 
     public static final String OUTPUT_MIME_TYPE = "image/jpeg";
     static final int MAX_DIMENSION = 2000;
+    // A decompression bomb (tiny compressed file, huge declared pixel
+    // dimensions) can make plain ImageIO.read() allocate gigabytes for a
+    // multi-KB upload -- checked against the header, which ImageReader
+    // parses without decoding pixel data, before the real (memory-costly)
+    // decode ever runs. Generous enough for any real camera/phone photo
+    // (well above MAX_DIMENSION, which only bounds the *stored* size),
+    // small enough to keep worst-case decode memory bounded.
+    static final int MAX_SOURCE_DIMENSION = 8000;
     private static final float JPEG_QUALITY = 0.85f;
 
     public byte[] reencode(byte[] original) {
@@ -44,16 +54,31 @@ public class ImageReencodeService {
     }
 
     private BufferedImage decode(byte[] original) {
-        BufferedImage image;
-        try (ByteArrayInputStream in = new ByteArrayInputStream(original)) {
-            image = ImageIO.read(in);
+        try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(original))) {
+            if (iis == null) {
+                throw new IllegalArgumentException("File is not a readable image.");
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext()) {
+                throw new IllegalArgumentException("File is not a readable image.");
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(iis, true, true);
+                if (reader.getWidth(0) > MAX_SOURCE_DIMENSION || reader.getHeight(0) > MAX_SOURCE_DIMENSION) {
+                    throw new IllegalArgumentException("Image dimensions are too large.");
+                }
+                BufferedImage image = reader.read(0);
+                if (image == null) {
+                    throw new IllegalArgumentException("File is not a readable image.");
+                }
+                return image;
+            } finally {
+                reader.dispose();
+            }
         } catch (IOException e) {
             throw new IllegalArgumentException("File is not a readable image.");
         }
-        if (image == null) {
-            throw new IllegalArgumentException("File is not a readable image.");
-        }
-        return image;
     }
 
     // JPEG has no alpha channel -- flattening onto a white background

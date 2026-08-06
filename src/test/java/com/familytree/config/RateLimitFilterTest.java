@@ -66,7 +66,7 @@ class RateLimitFilterTest {
     }
 
     @Test
-    void loginRequestsBlockedWithPlainTextNotJson() throws Exception {
+    void loginRequestsBlockedWithJson() throws Exception {
         for (int i = 0; i < RateLimitFilter.LOGIN_CAPACITY; i++) {
             filter.doFilter(loginRequest("192.0.2.10"), new MockHttpServletResponse(), filterChain);
         }
@@ -75,7 +75,7 @@ class RateLimitFilterTest {
         filter.doFilter(loginRequest("192.0.2.10"), blockedResponse, filterChain);
 
         assertThat(blockedResponse.getStatus()).isEqualTo(429);
-        assertThat(blockedResponse.getContentType()).startsWith("text/plain");
+        assertThat(blockedResponse.getContentType()).startsWith("application/json");
     }
 
     @Test
@@ -397,7 +397,7 @@ class RateLimitFilterTest {
     }
 
     private MockHttpServletRequest loginRequest(String clientIp) {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
         request.addHeader("X-Forwarded-For", clientIp);
         return request;
     }

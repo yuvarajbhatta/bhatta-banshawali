@@ -178,7 +178,11 @@ public class RelationshipController {
         return "relationships";
     }
 
-    @GetMapping("/relationships/delete/{id}")
+    // POST, not GET -- a state-changing bare GET has no CSRF coverage
+    // (Spring Security's CSRF protection only guards unsafe methods), so a
+    // GET delete route was triggerable by anything that can make an admin's
+    // browser issue a GET to it (e.g. an <img> tag on another site).
+    @PostMapping("/relationships/delete/{id}")
     public String deleteRelationship(@PathVariable Long id) {
         relationshipService.deleteRelationshipById(id);
         return "redirect:/relationships";

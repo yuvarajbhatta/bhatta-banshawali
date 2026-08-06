@@ -294,6 +294,8 @@ export function SignupForm() {
           <span className={styles.labelText}>{t("fields.profilePhoto")} {t("optional")}</span>
           <div className={styles.photoRow}>
             {photoPreviewUrl ? (
+              // A local blob: URL (URL.createObjectURL below) -- not eligible for next/image's remote loader/optimizer.
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={photoPreviewUrl} alt={t("fields.photoPreviewAlt")} className={styles.photoPreview} />
             ) : (
               <div className={styles.photoPlaceholder} aria-hidden="true">

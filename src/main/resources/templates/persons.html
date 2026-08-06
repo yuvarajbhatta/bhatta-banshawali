@@ -83,9 +83,11 @@
             <td class="actions" sec:authorize="hasRole('ADMIN')">
                 <a th:href="@{'/persons/edit/' + ${person.id}}" th:text="#{persons.edit}">Edit</a>
                 |
-                <a th:href="@{'/persons/delete/' + ${person.id}}"
-                   th:attr="onclick=|return confirm('${#messages.msg('persons.delete.confirm')}')|"
-                   th:text="#{persons.delete}">Delete</a>
+                <form th:action="@{'/persons/delete/' + ${person.id}}" method="post" class="inline-form"
+                      th:attr="onsubmit=|return confirm('${#messages.msg('persons.delete.confirm')}')|">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit" class="link-button" th:text="#{persons.delete}">Delete</button>
+                </form>
             </td>
         </tr>
     </table>

@@ -51,6 +51,23 @@ public class DuplicateCandidateService {
         this.personDisplay = personDisplay;
     }
 
+    /**
+     * Save-time equivalent of {@link #findCandidates()} -- checks one
+     * candidate Person against everyone already in the register, for a
+     * non-blocking "this looks like it might already exist" warning at
+     * creation/edit time. PersonService itself never blocked a same-named
+     * save and this doesn't either -- family trees legitimately have
+     * repeated names across cousins/generations (docs/09-security-threat-
+     * model.md notes this was a known, accepted gap), so this stays purely
+     * advisory, same as the full findCandidates() report.
+     */
+    public List<Person> findLikelyDuplicatesOf(Person candidate) {
+        return personRepository.findAll().stream()
+                .filter(existing -> candidate.getId() == null || !existing.getId().equals(candidate.getId()))
+                .filter(existing -> namesMatch(candidate, existing))
+                .toList();
+    }
+
     public List<DuplicateCandidateDto> findCandidates() {
         List<Person> people = personRepository.findAll();
         Set<String> directlyRelatedPairs = buildDirectlyRelatedPairKeys();

@@ -6,6 +6,7 @@ import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.repository.UserPersonLinkRepository;
 import com.familytree.web.PersonDisplayHelper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +56,17 @@ public class UserPersonLinkService {
         link.setPerson(person);
         link.setLinkStatus(UserPersonLinkStatus.VERIFIED);
         link.setVerifiedAt(LocalDateTime.now());
-        return userPersonLinkRepository.save(link);
+        try {
+            return userPersonLinkRepository.save(link);
+        } catch (DataIntegrityViolationException e) {
+            // The checks above are a SELECT-then-INSERT race (docs/09-security-
+            // threat-model.md) -- two concurrent calls can both pass them before
+            // either commits. uk_user_person_links_verified_account/_person
+            // (V24 migration) is the actual backstop; this just re-throws it as
+            // the same friendly error the pre-check above would have given had
+            // it run a moment later.
+            throw new IllegalArgumentException(
+                    "This account or person was just linked by another request. Please refresh and try again.", e);
+        }
     }
 }
