@@ -20,6 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.CacheControlHeadersWriter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
@@ -75,7 +77,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimiter rateLimiter) throws Exception {
         http
-                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY))
+                        // Spring Security's default Cache-Control (no-cache,
+                        // no-store, must-revalidate on every response) is the
+                        // right call for this app's authenticated JSON/HTML --
+                        // but it unconditionally overwrites whatever a
+                        // controller sets, which silently defeated
+                        // WatermarkController's own long-lived public caching
+                        // for a 300KB+ image meant to be fetched once and
+                        // reused across every page. Disabled globally, then
+                        // re-added scoped to everything EXCEPT that one path,
+                        // so every other response keeps the exact same
+                        // no-cache behavior as before.
+                        .cacheControl(cache -> cache.disable())
+                        .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                new NegatedRequestMatcher(
+                                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/v1/watermark")),
+                                new CacheControlHeadersWriter())))
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
                 // session to hijack, so that one endpoint stays exempt. Every
