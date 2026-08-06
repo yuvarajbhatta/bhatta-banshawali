@@ -17,6 +17,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # This gh CLI version doesn't support --json/--jq on `pr create`
+          # (it silently prints usage to stderr and exits 1) -- parse the
+          # PR number back out of the plain URL it prints to stdout instead.
           existing=$(gh pr list --repo "${{ github.repository }}" --base develop --head main --state open --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             echo "Reusing existing sync PR #$existing"
@@ -24,13 +27,14 @@ jobs:
             exit 0
           fi
 
-          number=$(gh pr create \
+          url=$(gh pr create \
             --repo "${{ github.repository }}" \
             --base develop \
             --head main \
             --title "Sync main into develop" \
-            --body "Automated sync so develop doesn't miss anything merged directly into main (e.g. a hotfix). Safe to auto-merge once checks pass; if it shows conflicts, resolve them manually." \
-            --json number --jq '.number' 2>/dev/null || true)
+            --body "Automated sync so develop doesn't miss anything merged directly into main (e.g. a hotfix). Safe to auto-merge once checks pass; if it shows conflicts, resolve them manually." 2>&1) || true
+          echo "$url"
+          number=$(echo "$url" | grep -oE '[0-9]+$' || true)
           echo "number=$number" >> "$GITHUB_OUTPUT"
 
       - name: Enable auto-merge
