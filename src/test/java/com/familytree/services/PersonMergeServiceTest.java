@@ -8,6 +8,7 @@ import com.familytree.entity.RelationshipType;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.repository.PersonCorrectionRequestRepository;
+import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RelationshipRepository;
 import com.familytree.repository.UserPersonLinkRepository;
@@ -48,6 +49,9 @@ class PersonMergeServiceTest {
     private PersonCorrectionRequestRepository personCorrectionRequestRepository;
 
     @Mock
+    private PersonPhotoRepository personPhotoRepository;
+
+    @Mock
     private AuditLogService auditLogService;
 
     private final PersonDisplayHelper personDisplay = new PersonDisplayHelper();
@@ -57,9 +61,10 @@ class PersonMergeServiceTest {
     @BeforeEach
     void setUp() {
         service = new PersonMergeService(personRepository, relationshipRepository, userPersonLinkRepository,
-                personCorrectionRequestRepository, auditLogService, personDisplay);
+                personCorrectionRequestRepository, personPhotoRepository, auditLogService, personDisplay);
         lenient().when(userPersonLinkRepository.findByPersonId(any())).thenReturn(List.of());
         lenient().when(personCorrectionRequestRepository.findByPersonId(any())).thenReturn(List.of());
+        lenient().when(personPhotoRepository.findByPersonIdOrderByUploadedAtDesc(any())).thenReturn(List.of());
         lenient().when(relationshipRepository.findByPerson(any())).thenReturn(List.of());
         lenient().when(relationshipRepository.findByRelatedPerson(any())).thenReturn(List.of());
         lenient().when(relationshipRepository.findAll()).thenReturn(List.of());
@@ -143,6 +148,10 @@ class PersonMergeServiceTest {
         correctionRequest.setPerson(loser);
         when(personCorrectionRequestRepository.findByPersonId(2L)).thenReturn(List.of(correctionRequest));
 
+        com.familytree.entity.PersonPhoto loserPhoto = new com.familytree.entity.PersonPhoto();
+        loserPhoto.setPerson(loser);
+        when(personPhotoRepository.findByPersonIdOrderByUploadedAtDesc(2L)).thenReturn(List.of(loserPhoto));
+
         MergeResultDto result = service.merge(1L, 2L, "admin");
 
         assertThat(result.survivorId()).isEqualTo(1L);
@@ -150,6 +159,9 @@ class PersonMergeServiceTest {
         assertThat(result.relationshipsDroppedAsDuplicate()).isEqualTo(1);
         assertThat(result.userLinksRepointed()).isEqualTo(1);
         assertThat(result.correctionRequestsRepointed()).isEqualTo(1);
+        assertThat(result.photosRepointed()).isEqualTo(1);
+        assertThat(loserPhoto.getPerson()).isEqualTo(survivor);
+        verify(personPhotoRepository).save(loserPhoto);
 
         assertThat(loserChildNew.getPerson()).isEqualTo(survivor);
         assertThat(someoneElseIsFatherOfLoser.getRelatedPerson()).isEqualTo(survivor);

@@ -14,6 +14,11 @@
       "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
     ]
   },
+  "routeState": {
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "retry": "Try again"
+  },
   "appShell": {
     "nav": {
       "dashboard": "Dashboard",
@@ -410,6 +415,7 @@
     "delete": "Delete",
     "deleteConfirm": "Delete {name}? This also removes their relationships. This cannot be undone.",
     "deleteError": "Could not delete this person. Please try again.",
+    "possibleDuplicateWarning": "Heads up: {names} already has a similar name. This record was still created -- check /admin/duplicates if this might be the same person.",
     "empty": "No people found.",
     "backToList": "Back to People",
     "newTitle": "Add New Person",

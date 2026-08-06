@@ -15,6 +15,14 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     // "Bhoj Raj" substring. CONCAT_WS (not plain concat: it skips nulls,
     // so a missing middle name doesn't leave a double space breaking the
     // match) additionally checks the whole name as typically searched.
+    //
+    // Deliberately a full table scan, not indexed (production-readiness
+    // review, LOW): a leading-wildcard LIKE '%keyword%' can't use a plain
+    // B-tree index regardless, and a real fix (MySQL FULLTEXT, trigram) would
+    // change match semantics -- FULLTEXT doesn't do substring-anywhere
+    // matching, so "raj" would stop matching "Bhojraj" the way it does today.
+    // Fine at actual family-tree scale (hundreds to low thousands of rows);
+    // revisit if that scale assumption ever stops holding.
     @Query("""
             select p from Person p
             where

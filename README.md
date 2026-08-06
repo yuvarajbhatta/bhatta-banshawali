@@ -37,14 +37,14 @@ Log in with `admin` / `admin123` (seeded via `app.admin.*` in `application-local
 
 - `local` (`application-local.properties`) — pure local development against the dockerized MySQL
   from `docker-compose.yml` (`localhost:3307`). Use this on your dev machine.
-- `dev` (`application-dev.properties`) — this is also the profile production silently falls back
-  to by default (`spring.profiles.default=dev`), with its real datasource and credentials supplied
-  by the external config at `/srv/config/familytree/` on the prod host. See
-  `docs/01-current-system-assessment.md` for the background on this pre-existing quirk. Don't rely
-  on this file for local development; use `local` instead.
-- `prod` (`application-prod.properties`) — reads `SPRING_DATASOURCE_*` / `APP_ADMIN_*` env vars.
-  Not currently activated in production (see note above); mainly relevant if/when the `dev`-in-prod
-  issue above gets fixed.
+- `dev` (`application-dev.properties`) — the profile Spring falls back to if `SPRING_PROFILES_ACTIVE`
+  is ever unset (`spring.profiles.default=dev`); no longer prod's actual day-to-day profile (see
+  below), just its safety net. Don't rely on this file for local development; use `local` instead.
+- `prod` (`application-prod.properties`) — the profile production actually runs under. Activated via
+  `SPRING_PROFILES_ACTIVE=prod` in the systemd `EnvironmentFile`
+  (`/srv/config/familytree/familytree.env`). Real datasource/admin credentials come from the
+  external, git-ignored `/srv/config/familytree/application.properties` (loaded via
+  `--spring.config.additional-location`), not from env vars.
 
 ## Stack
 

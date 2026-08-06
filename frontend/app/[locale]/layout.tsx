@@ -28,6 +28,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/api/v1/brand/icon",
   },
+  // This is a private family record, not a public site (see the home
+  // page's own comment) -- robots.ts covers well-behaved crawlers, this
+  // covers the rest via an actual <meta name="robots"> tag on every page.
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export function generateStaticParams() {

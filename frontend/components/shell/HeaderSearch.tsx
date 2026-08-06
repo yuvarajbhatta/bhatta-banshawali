@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
-import { searchPersons, type PersonSummaryDto } from "@/lib/api";
+import { searchPersons, UnauthenticatedError, type PersonSummaryDto } from "@/lib/api";
 import styles from "./HeaderSearch.module.css";
 
 /**
@@ -40,10 +40,18 @@ export function HeaderSearch() {
             setActiveIndex(-1);
           }
         })
-        .catch(() => {
-          if (!cancelled) {
-            setResults([]);
+        .catch((error: unknown) => {
+          if (cancelled) {
+            return;
           }
+          // A session that expired mid-search must not render identically
+          // to a genuine zero-result search -- that silently hid the real
+          // problem (re-login needed) behind what looked like "no matches".
+          if (error instanceof UnauthenticatedError) {
+            router.push("/login");
+            return;
+          }
+          setResults([]);
         });
     }, 250);
 
@@ -51,7 +59,7 @@ export function HeaderSearch() {
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [keyword]);
+  }, [keyword, router]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

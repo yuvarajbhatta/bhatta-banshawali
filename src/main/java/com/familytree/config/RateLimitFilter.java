@@ -90,7 +90,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String clientIp = clientIp(request);
         boolean isSignup = "POST".equals(request.getMethod()) && "/api/v1/signup".equals(request.getRequestURI());
-        boolean isLogin = "POST".equals(request.getMethod()) && "/login".equals(request.getRequestURI());
+        boolean isLogin = "POST".equals(request.getMethod()) && "/api/v1/auth/login".equals(request.getRequestURI());
         boolean isFamilyTree = "GET".equals(request.getMethod()) && "/api/v1/family-tree".equals(request.getRequestURI());
         boolean isPersonSearch = "GET".equals(request.getMethod()) && "/api/v1/persons".equals(request.getRequestURI());
         boolean isPasswordResetRequest = "POST".equals(request.getMethod())
@@ -111,7 +111,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         if (isLogin && !rateLimiter.tryConsume("login", clientIp, LOGIN_CAPACITY, LOGIN_PERIOD)) {
-            respondTooManyRequests(response, false);
+            respondTooManyRequests(response, true);
             return;
         }
         if (isFamilyTree && !rateLimiter.tryConsume("family-tree", clientIp, FAMILY_TREE_CAPACITY, FAMILY_TREE_PERIOD)) {

@@ -2,7 +2,11 @@ package com.familytree.services;
 
 import com.familytree.config.AppProperties;
 import com.familytree.entity.Person;
+import com.familytree.entity.PersonPhoto;
+import com.familytree.repository.PersonCorrectionRequestRepository;
+import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
+import com.familytree.repository.UserPersonLinkRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +19,10 @@ public class PersonService {
     private final RelationshipService relationshipService;
     private final NameTransliterationService nameTransliterationService;
     private final AuditLogService auditLogService;
+    private final PersonPhotoRepository personPhotoRepository;
+    private final PersonCorrectionRequestRepository personCorrectionRequestRepository;
+    private final UserPersonLinkRepository userPersonLinkRepository;
+    private final PhotoStorageService photoStorageService;
     private final String lineageDefaultLastName;
     private final String lineageDefaultGender;
 
@@ -22,11 +30,19 @@ public class PersonService {
                          RelationshipService relationshipService,
                          NameTransliterationService nameTransliterationService,
                          AuditLogService auditLogService,
+                         PersonPhotoRepository personPhotoRepository,
+                         PersonCorrectionRequestRepository personCorrectionRequestRepository,
+                         UserPersonLinkRepository userPersonLinkRepository,
+                         PhotoStorageService photoStorageService,
                          AppProperties appProperties) {
         this.personRepository = personRepository;
         this.relationshipService = relationshipService;
         this.nameTransliterationService = nameTransliterationService;
         this.auditLogService = auditLogService;
+        this.personPhotoRepository = personPhotoRepository;
+        this.personCorrectionRequestRepository = personCorrectionRequestRepository;
+        this.userPersonLinkRepository = userPersonLinkRepository;
+        this.photoStorageService = photoStorageService;
         this.lineageDefaultLastName = normalize(appProperties.getLineage().getDefaultLastName());
         this.lineageDefaultGender = normalize(appProperties.getLineage().getDefaultGender());
     }
@@ -92,6 +108,17 @@ public class PersonService {
 
         // delete all relationships first
         relationshipService.deleteRelationshipsByPerson(person);
+
+        // Every other FK into this row is RESTRICT, not CASCADE -- deleting
+        // the person while any of these survive throws an unhandled
+        // DataIntegrityViolationException instead of the expected result.
+        List<PersonPhoto> photos = personPhotoRepository.findByPersonIdOrderByUploadedAtDesc(id);
+        for (PersonPhoto photo : photos) {
+            photoStorageService.delete(photo.getStorageKey());
+        }
+        personPhotoRepository.deleteAll(photos);
+        personCorrectionRequestRepository.deleteAll(personCorrectionRequestRepository.findByPersonId(id));
+        userPersonLinkRepository.deleteAll(userPersonLinkRepository.findByPersonId(id));
 
         // then delete person
         personRepository.delete(person);

@@ -60,6 +60,18 @@ class ImageReencodeServiceTest {
     }
 
     @Test
+    void rejectsAnImageWhoseDeclaredDimensionsExceedTheSourceCap() throws IOException {
+        // Real (not a crafted bomb) but past MAX_SOURCE_DIMENSION -- proves the
+        // header-only width/height check runs and rejects before the full,
+        // memory-costly decode, which is what actually stops a genuine
+        // decompression bomb (tiny file, huge declared dimensions).
+        byte[] input = pngBytes(ImageReencodeService.MAX_SOURCE_DIMENSION + 1, 10, Color.RED);
+
+        assertThatThrownBy(() -> service.reencode(input))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void rejectsAnEmptyPayload() {
         assertThatThrownBy(() -> service.reencode(new byte[0]))
                 .isInstanceOf(IllegalArgumentException.class);

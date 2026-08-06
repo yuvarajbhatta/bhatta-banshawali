@@ -6,6 +6,7 @@ import com.familytree.entity.RelationshipType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RelationshipRepository extends JpaRepository<Relationship, Long> {
 
@@ -16,6 +17,10 @@ public interface RelationshipRepository extends JpaRepository<Relationship, Long
     List<Relationship> findByPerson(Person person);
     List<Relationship> findByRelatedPerson(Person relatedPerson);
     boolean existsByPersonAndRelatedPersonAndRelationshipType(Person person,
+                                                              Person relatedPerson,
+                                                              RelationshipType relationshipType);
+    /** At most one row can match -- unique constraint on (person, related_person, relationship_type). */
+    Optional<Relationship> findByPersonAndRelatedPersonAndRelationshipType(Person person,
                                                               Person relatedPerson,
                                                               RelationshipType relationshipType);
 
