@@ -17,7 +17,11 @@ function buildCsp(nonce: string): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    // blob: is needed for the signup photo picker's local preview
+    // (URL.createObjectURL(file), rendered before the file is ever
+    // uploaded anywhere) -- without it the browser silently drops the
+    // <img>, no console error, just a picture that never appears.
+    "img-src 'self' data: blob:",
     "connect-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
