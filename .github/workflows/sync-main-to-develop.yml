@@ -1,0 +1,42 @@
+name: Sync main into develop
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or reuse sync PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh pr list --repo "${{ github.repository }}" --base develop --head main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Reusing existing sync PR #$existing"
+            echo "number=$existing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          number=$(gh pr create \
+            --repo "${{ github.repository }}" \
+            --base develop \
+            --head main \
+            --title "Sync main into develop" \
+            --body "Automated sync so develop doesn't miss anything merged directly into main (e.g. a hotfix). Safe to auto-merge once checks pass; if it shows conflicts, resolve them manually." \
+            --json number --jq '.number' 2>/dev/null || true)
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ steps.pr.outputs.number }}" --repo "${{ github.repository }}" --merge --auto || \
+            echo "Could not enable auto-merge (may already be merged, or nothing to sync)."
