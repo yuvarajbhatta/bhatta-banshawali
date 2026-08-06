@@ -45,6 +45,17 @@ class PersonRepositoryTest {
     }
 
     @Test
+    void searchPersonsMatchesAMultiWordFullNameSpanningFirstAndMiddleName() {
+        // Each per-field check alone would miss this: "Bhoj" is only in
+        // firstName, "Raj" only in middleName, and neither column holds
+        // the full two-word substring on its own.
+        personRepository.save(createPerson("Bhoj", "Bhatta", 11, "Raj"));
+
+        assertThat(personRepository.searchPersons("Bhoj Raj", null))
+                .extracting(Person::getFirstName).containsExactly("Bhoj");
+    }
+
+    @Test
     void searchPersonsIsSafeAgainstSqlInjectionInTheKeyword() {
         // docs/09-security-threat-model.md item 8 -- JPQL @Param binding means
         // the whole string, quotes included, is bound as one opaque parameter
@@ -158,10 +169,15 @@ class PersonRepositoryTest {
     }
 
     private Person createPerson(String firstName, String lastName, Integer generation) {
+        return createPerson(firstName, lastName, generation, null);
+    }
+
+    private Person createPerson(String firstName, String lastName, Integer generation, String middleName) {
         Person person = new Person();
         person.setFirstName(firstName);
         person.setLastName(lastName);
         person.setGenerationNumber(generation);
+        person.setMiddleName(middleName);
         return person;
     }
 }

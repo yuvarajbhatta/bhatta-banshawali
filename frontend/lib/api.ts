@@ -66,6 +66,8 @@ export interface SignupRequest {
 
 export interface SignupResponse {
   status: string;
+  /** Opaque, random per-signup handle -- lets the still-unauthenticated applicant follow up with uploadSignupPhoto below. */
+  photoUploadToken: string;
 }
 
 export class SignupError extends Error {}
@@ -103,6 +105,39 @@ export async function submitSignup(request: SignupRequest): Promise<SignupRespon
     throw new SignupError(body.message ?? "Signup failed.");
   }
   return body;
+}
+
+// Separate from submitSignup above so a slow/failed photo upload never
+// blocks account creation itself -- called best-effort, after signup
+// already succeeded, same "never roll back the primary action" posture
+// as the backend's own verification-email send. Throws SignupError on
+// failure; callers are expected to catch it and proceed anyway, same
+// as they would a failed verification email.
+export async function uploadSignupPhoto(photoUploadToken: string, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append("token", photoUploadToken);
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch("/api/v1/signup/photo", {
+      method: "POST",
+      body: formData,
+      signal: AbortSignal.timeout(20000),
+    });
+  } catch {
+    throw new SignupError("Could not upload the photo. Check your connection and try again.");
+  }
+
+  if (!response.ok) {
+    let message = "Could not upload the photo.";
+    try {
+      message = (await response.json()).message ?? message;
+    } catch {
+      // Non-JSON error body -- fall back to the generic message above.
+    }
+    throw new SignupError(message);
+  }
 }
 
 export class PasswordResetError extends Error {}

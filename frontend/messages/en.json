@@ -1067,7 +1067,13 @@
       "ancestralVillage": "Ancestral Village",
       "password": "Password",
       "confirmPassword": "Confirm Password",
-      "applicantNote": "Anything else you'd like the reviewer to know"
+      "applicantNote": "Anything else you'd like the reviewer to know",
+      "profilePhoto": "Profile Photo",
+      "takePhoto": "Take a photo",
+      "uploadPhoto": "Upload a photo",
+      "removePhoto": "Remove photo",
+      "photoHint": "This will appear in your Photos once your application is approved.",
+      "photoPreviewAlt": "Selected profile photo preview"
     },
     "optional": "(optional)",
     "agreeToTerms": "I agree to the <terms>Membership Guidelines</terms> and <privacy>Privacy Policy</privacy>.",

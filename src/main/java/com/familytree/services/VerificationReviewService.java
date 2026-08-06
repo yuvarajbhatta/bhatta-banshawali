@@ -1,12 +1,14 @@
 package com.familytree.services;
 
 import com.familytree.entity.Person;
+import com.familytree.entity.PersonPhoto;
 import com.familytree.entity.RelationshipType;
 import com.familytree.entity.Role;
 import com.familytree.entity.UserAccount;
 import com.familytree.entity.UserAccountStatus;
 import com.familytree.entity.VerificationRequest;
 import com.familytree.entity.VerificationStatus;
+import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RoleRepository;
 import com.familytree.repository.UserAccountRepository;
@@ -35,6 +37,8 @@ public class VerificationReviewService {
     private final PersonDisplayHelper personDisplay;
     private final AuditLogService auditLogService;
     private final FamilyMatchService familyMatchService;
+    private final PersonPhotoRepository personPhotoRepository;
+    private final PhotoStorageService photoStorageService;
 
     public VerificationReviewService(VerificationRequestRepository verificationRequestRepository,
                                      UserAccountRepository userAccountRepository,
@@ -44,7 +48,9 @@ public class VerificationReviewService {
                                      UserPersonLinkService userPersonLinkService,
                                      PersonDisplayHelper personDisplay,
                                      AuditLogService auditLogService,
-                                     FamilyMatchService familyMatchService) {
+                                     FamilyMatchService familyMatchService,
+                                     PersonPhotoRepository personPhotoRepository,
+                                     PhotoStorageService photoStorageService) {
         this.verificationRequestRepository = verificationRequestRepository;
         this.userAccountRepository = userAccountRepository;
         this.roleRepository = roleRepository;
@@ -54,6 +60,8 @@ public class VerificationReviewService {
         this.personDisplay = personDisplay;
         this.auditLogService = auditLogService;
         this.familyMatchService = familyMatchService;
+        this.personPhotoRepository = personPhotoRepository;
+        this.photoStorageService = photoStorageService;
     }
 
     /**
@@ -108,8 +116,46 @@ public class VerificationReviewService {
             userPersonLinkService.createVerifiedLink(account, personToLink);
         }
 
+        transferPendingPhoto(request, personToLink, account);
+
         auditLogService.record(AuditLogService.ACTION_SIGNUP_APPROVED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
                 verificationRequestId, "Approved signup for " + request.getSubmittedFullName(), reviewerUsername);
+    }
+
+    /**
+     * Turns a photo uploaded via POST /api/v1/signup/photo into a real
+     * PersonPhoto now that a Person exists to attach it to -- reuses the
+     * already-re-encoded file on disk rather than re-processing it.
+     * Nothing to attach it to (no candidate matched and the admin didn't
+     * create one) just discards the pending file instead of leaving it
+     * orphaned forever.
+     */
+    private void transferPendingPhoto(VerificationRequest request, Person personToLink, UserAccount account) {
+        String storageKey = request.getPendingPhotoStorageKey();
+        if (storageKey == null) {
+            return;
+        }
+        // Cleared either way, once handled here -- most importantly on
+        // the success path: leaving it set on an already-APPROVED
+        // request would give a later reject() call (should never
+        // legitimately happen post-approval, but nothing currently
+        // guards against it) a live storageKey to delete out from under
+        // the PersonPhoto that now independently owns that same file.
+        request.setPendingPhotoStorageKey(null);
+        verificationRequestRepository.save(request);
+
+        if (personToLink == null) {
+            photoStorageService.delete(storageKey);
+            return;
+        }
+
+        PersonPhoto photo = new PersonPhoto();
+        photo.setPerson(personToLink);
+        photo.setUploadedBy(account);
+        photo.setStorageKey(storageKey);
+        photo.setMimeType(ImageReencodeService.OUTPUT_MIME_TYPE);
+        photo.setFileSizeBytes(photoStorageService.sizeOf(storageKey));
+        personPhotoRepository.save(photo);
     }
 
     /**
@@ -169,6 +215,12 @@ public class VerificationReviewService {
         UserAccount account = request.getUserAccount();
         account.setStatus(UserAccountStatus.DISABLED);
         userAccountRepository.save(account);
+
+        // No Person will ever exist for a rejected applicant -- nothing
+        // left for a pending photo to attach to.
+        if (request.getPendingPhotoStorageKey() != null) {
+            photoStorageService.delete(request.getPendingPhotoStorageKey());
+        }
 
         auditLogService.record(AuditLogService.ACTION_SIGNUP_REJECTED, AuditLogService.ENTITY_VERIFICATION_REQUEST,
                 verificationRequestId, "Rejected signup for " + request.getSubmittedFullName(), reviewerUsername);

@@ -4,10 +4,13 @@ import com.familytree.dto.SignupRequestDto;
 import com.familytree.dto.SignupResponseDto;
 import com.familytree.services.SignupService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * New UserAccount/VerificationRequest signup pipeline -- see
@@ -34,7 +37,21 @@ public class SignupController {
         // Throws EmailAlreadyRegisteredException (mapped to 409 by
         // ApiExceptionHandler) if the email is already registered -- see
         // that exception's javadoc for why this used to be a silent no-op.
-        signupService.submitSignup(request);
-        return SignupResponseDto.pendingReview();
+        String photoUploadToken = signupService.submitSignup(request);
+        return SignupResponseDto.pendingReview(photoUploadToken);
+    }
+
+    /**
+     * Separate from the JSON signup POST above so a slow/failed photo
+     * upload never blocks account creation itself -- the applicant is
+     * still anonymous/pre-session at this point (see
+     * SignupService.uploadPendingPhoto), so token is the only proof this
+     * caller is the one who just submitted this specific request.
+     */
+    @PostMapping("/photo")
+    public ResponseEntity<Void> uploadPhoto(@RequestParam("token") String token,
+                                            @RequestParam("file") MultipartFile file) {
+        signupService.uploadPendingPhoto(token, file);
+        return ResponseEntity.noContent().build();
     }
 }

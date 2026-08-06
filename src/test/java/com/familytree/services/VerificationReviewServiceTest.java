@@ -60,6 +60,12 @@ class VerificationReviewServiceTest {
     @Mock
     private FamilyMatchService familyMatchService;
 
+    @Mock
+    private com.familytree.repository.PersonPhotoRepository personPhotoRepository;
+
+    @Mock
+    private PhotoStorageService photoStorageService;
+
     @InjectMocks
     private VerificationReviewService verificationReviewService;
 
@@ -441,6 +447,90 @@ class VerificationReviewServiceTest {
         verify(verificationRequestRepository).save(captor.capture());
         assertThat(captor.getValue().getReviewedByUsername()).isEqualTo("reviewer-x");
         assertThat(captor.getValue().getReviewedAt()).isNotNull();
+    }
+
+    @Test
+    void approveWithLinkedPersonIdTransfersAPendingPhotoToARealPersonPhoto() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setPendingPhotoStorageKey("pending-abc.jpg");
+        when(verificationRequestRepository.findById(30L)).thenReturn(Optional.of(request));
+
+        Person person = new Person();
+        person.setId(88L);
+        when(personRepository.findById(88L)).thenReturn(Optional.of(person));
+        when(photoStorageService.sizeOf("pending-abc.jpg")).thenReturn(12345L);
+
+        verificationReviewService.approve(30L, "admin", null, 88L, null, null);
+
+        ArgumentCaptor<com.familytree.entity.PersonPhoto> captor =
+                ArgumentCaptor.forClass(com.familytree.entity.PersonPhoto.class);
+        verify(personPhotoRepository).save(captor.capture());
+        assertThat(captor.getValue().getPerson()).isEqualTo(person);
+        assertThat(captor.getValue().getUploadedBy()).isEqualTo(account);
+        assertThat(captor.getValue().getStorageKey()).isEqualTo("pending-abc.jpg");
+        assertThat(captor.getValue().getFileSizeBytes()).isEqualTo(12345L);
+        assertThat(captor.getValue().getMimeType()).isEqualTo(ImageReencodeService.OUTPUT_MIME_TYPE);
+        verify(photoStorageService, never()).delete(any());
+        // Otherwise a later reject() on this same (already-approved)
+        // request would have a live storageKey to delete out from under
+        // the PersonPhoto that now independently owns that file.
+        assertThat(request.getPendingPhotoStorageKey()).isNull();
+    }
+
+    @Test
+    void approveWithNoMatchAndAPendingPhotoDeletesTheOrphanedFileRatherThanKeepingIt() {
+        // No linkedPersonId, no createAsChildOfFatherId -- nobody to
+        // attach the photo to.
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setPendingPhotoStorageKey("pending-orphan.jpg");
+        when(verificationRequestRepository.findById(31L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.approve(31L, "admin", null, null, null, null);
+
+        verify(photoStorageService).delete("pending-orphan.jpg");
+        verify(personPhotoRepository, never()).save(any());
+        assertThat(request.getPendingPhotoStorageKey()).isNull();
+    }
+
+    @Test
+    void approveWithNoPendingPhotoTouchesNeitherStorageNorThePersonPhotoRepository() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(32L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.approve(32L, "admin", null, null, null, null);
+
+        verifyNoInteractions(photoStorageService, personPhotoRepository);
+    }
+
+    @Test
+    void rejectDeletesAnOrphanedPendingPhotoSinceNoPersonWillEverExistToOwnIt() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        request.setPendingPhotoStorageKey("pending-rejected.jpg");
+        when(verificationRequestRepository.findById(33L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.reject(33L, "admin", "not a match");
+
+        verify(photoStorageService).delete("pending-rejected.jpg");
+    }
+
+    @Test
+    void rejectWithNoPendingPhotoNeverTouchesStorage() {
+        UserAccount account = new UserAccount();
+        VerificationRequest request = new VerificationRequest();
+        request.setUserAccount(account);
+        when(verificationRequestRepository.findById(34L)).thenReturn(Optional.of(request));
+
+        verificationReviewService.reject(34L, "admin", null);
+
+        verifyNoInteractions(photoStorageService);
     }
 
 }

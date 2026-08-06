@@ -12,9 +12,15 @@ import com.familytree.repository.VerificationRequestRepository;
 import com.familytree.services.email.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Orchestrates a new signup: creates the UserAccount, runs the family
@@ -39,28 +45,38 @@ public class SignupService {
     private final FamilyMatchService familyMatchService;
     private final OtpService otpService;
     private final EmailService emailService;
+    private final ImageReencodeService imageReencodeService;
+    private final PhotoStorageService photoStorageService;
 
     public SignupService(UserAccountRepository userAccountRepository,
                          VerificationRequestRepository verificationRequestRepository,
                          PasswordEncoder passwordEncoder,
                          FamilyMatchService familyMatchService,
                          OtpService otpService,
-                         EmailService emailService) {
+                         EmailService emailService,
+                         ImageReencodeService imageReencodeService,
+                         PhotoStorageService photoStorageService) {
         this.userAccountRepository = userAccountRepository;
         this.verificationRequestRepository = verificationRequestRepository;
         this.passwordEncoder = passwordEncoder;
         this.familyMatchService = familyMatchService;
         this.otpService = otpService;
         this.emailService = emailService;
+        this.imageReencodeService = imageReencodeService;
+        this.photoStorageService = photoStorageService;
     }
 
     /**
+     * @return a random, unguessable token identifying the just-created
+     *          VerificationRequest -- lets the still-unauthenticated
+     *          applicant follow up with POST /api/v1/signup/photo
+     *          without a session (see uploadPendingPhoto).
      * @throws EmailAlreadyRegisteredException if the email already has an
      *          account -- see the class javadoc for why this is no longer
      *          a silent no-op.
      */
     @Transactional
-    public void submitSignup(SignupRequestDto request) {
+    public String submitSignup(SignupRequestDto request) {
         String normalizedEmail = normalizeEmail(request.getEmail());
         if (userAccountRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyRegisteredException("An account with this email already exists.");
@@ -86,6 +102,46 @@ public class SignupService {
 
         VerificationRequest verificationRequest = buildVerificationRequest(account, request, matchResult);
         verificationRequestRepository.save(verificationRequest);
+        return verificationRequest.getPhotoUploadToken();
+    }
+
+    /**
+     * Attaches a profile photo to a still-pending signup, re-encoded the
+     * same way Picture Album photos are (ImageReencodeService is the
+     * only safety net between an uploaded file and disk). Only the
+     * pending request itself is touched here -- there's no Person to
+     * attach a real PersonPhoto to yet, that only happens on approval
+     * (see VerificationReviewService.approve()). Re-uploading before
+     * that replaces the previous pending file rather than accumulating
+     * orphans.
+     *
+     * @throws ResponseStatusException 404 if the token doesn't match a
+     *          request that's still PENDING (already decided, or never
+     *          existed -- both look identical to the caller, same
+     *          enumeration-prevention posture as the rest of signup).
+     */
+    @Transactional
+    public void uploadPendingPhoto(String token, MultipartFile file) {
+        VerificationRequest request = verificationRequestRepository.findByPhotoUploadToken(token)
+                .filter(r -> r.getStatus() == VerificationStatus.PENDING)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Signup request not found."));
+
+        byte[] original;
+        try {
+            original = file.getBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read the uploaded file.");
+        }
+        byte[] reencoded = imageReencodeService.reencode(original);
+
+        String previousStorageKey = request.getPendingPhotoStorageKey();
+        String storageKey = photoStorageService.store(reencoded);
+        request.setPendingPhotoStorageKey(storageKey);
+        verificationRequestRepository.save(request);
+
+        if (previousStorageKey != null) {
+            photoStorageService.delete(previousStorageKey);
+        }
     }
 
     private VerificationRequest buildVerificationRequest(UserAccount account, SignupRequestDto request,
@@ -115,6 +171,7 @@ public class SignupService {
         verificationRequest.setMatchedCandidatePersonIds(CommaSeparatedIds.join(matchResult.existingPersonCandidateIds()));
         verificationRequest.setMatchedFatherCandidatePersonIds(CommaSeparatedIds.join(matchResult.newPersonFatherCandidateIds()));
         verificationRequest.setStatus(VerificationStatus.PENDING);
+        verificationRequest.setPhotoUploadToken(UUID.randomUUID().toString());
 
         return verificationRequest;
     }

@@ -67,7 +67,7 @@ class PersonPhotoServiceTest {
     void setUp() {
         service = new PersonPhotoService(personPhotoRepository, personRepository, userAccountRepository,
                 userPersonLinkRepository, relationshipService, new ImageReencodeService(), auditLogService,
-                storageDir.toString());
+                new PhotoStorageService(storageDir.toString()));
 
         target = personWithId(1L);
         uploaderPerson = personWithId(2L);

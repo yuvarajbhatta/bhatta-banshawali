@@ -16,10 +16,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +54,12 @@ class SignupServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private ImageReencodeService imageReencodeService;
+
+    @Mock
+    private PhotoStorageService photoStorageService;
 
     @InjectMocks
     private SignupService signupService;
@@ -191,6 +201,76 @@ class SignupServiceTest {
         ArgumentCaptor<VerificationRequest> captor = ArgumentCaptor.forClass(VerificationRequest.class);
         verify(verificationRequestRepository).save(captor.capture());
         assertThat(captor.getValue().getSubmittedDobBsYear()).isNull();
+    }
+
+    @Test
+    void submitSignupReturnsThePhotoUploadTokenSavedOnTheVerificationRequest() {
+        SignupRequestDto request = validRequest();
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}hashed");
+        when(userAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(familyMatchService.evaluateMatch(any())).thenReturn(new FamilyMatchResult(MatchConfidence.LOW, List.of(), List.of()));
+
+        String token = signupService.submitSignup(request);
+
+        ArgumentCaptor<VerificationRequest> captor = ArgumentCaptor.forClass(VerificationRequest.class);
+        verify(verificationRequestRepository).save(captor.capture());
+        assertThat(token).isNotBlank().isEqualTo(captor.getValue().getPhotoUploadToken());
+    }
+
+    @Test
+    void uploadPendingPhotoReencodesAndStoresTheFileThenSavesTheStorageKey() {
+        VerificationRequest pending = new VerificationRequest();
+        pending.setStatus(VerificationStatus.PENDING);
+        when(verificationRequestRepository.findByPhotoUploadToken("tok-1")).thenReturn(Optional.of(pending));
+
+        MultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1, 2, 3});
+        byte[] reencoded = new byte[] {9, 9, 9};
+        when(imageReencodeService.reencode(new byte[] {1, 2, 3})).thenReturn(reencoded);
+        when(photoStorageService.store(reencoded)).thenReturn("new-key.jpg");
+
+        signupService.uploadPendingPhoto("tok-1", file);
+
+        ArgumentCaptor<VerificationRequest> captor = ArgumentCaptor.forClass(VerificationRequest.class);
+        verify(verificationRequestRepository).save(captor.capture());
+        assertThat(captor.getValue().getPendingPhotoStorageKey()).isEqualTo("new-key.jpg");
+    }
+
+    @Test
+    void uploadPendingPhotoDeletesThePreviousFileWhenReplacingAnEarlierUpload() {
+        VerificationRequest pending = new VerificationRequest();
+        pending.setStatus(VerificationStatus.PENDING);
+        pending.setPendingPhotoStorageKey("old-key.jpg");
+        when(verificationRequestRepository.findByPhotoUploadToken("tok-2")).thenReturn(Optional.of(pending));
+
+        MultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1});
+        when(imageReencodeService.reencode(any())).thenReturn(new byte[] {2});
+        when(photoStorageService.store(any())).thenReturn("new-key.jpg");
+
+        signupService.uploadPendingPhoto("tok-2", file);
+
+        verify(photoStorageService).delete("old-key.jpg");
+    }
+
+    @Test
+    void uploadPendingPhotoRejectsAnUnknownToken() {
+        when(verificationRequestRepository.findByPhotoUploadToken("bogus")).thenReturn(Optional.empty());
+        MultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1});
+
+        assertThatThrownBy(() -> signupService.uploadPendingPhoto("bogus", file))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(photoStorageService, never()).store(any());
+    }
+
+    @Test
+    void uploadPendingPhotoRejectsATokenForARequestThatsAlreadyBeenDecided() {
+        VerificationRequest decided = new VerificationRequest();
+        decided.setStatus(VerificationStatus.APPROVED);
+        when(verificationRequestRepository.findByPhotoUploadToken("tok-3")).thenReturn(Optional.of(decided));
+        MultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1});
+
+        assertThatThrownBy(() -> signupService.uploadPendingPhoto("tok-3", file))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(photoStorageService, never()).store(any());
     }
 
     private SignupRequestDto validRequest() {

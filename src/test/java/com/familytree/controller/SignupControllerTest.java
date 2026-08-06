@@ -6,13 +6,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -120,5 +125,27 @@ class SignupControllerTest {
                         .header("X-Forwarded-For", "203.0.113.6"));
 
         org.mockito.Mockito.verifyNoInteractions(signupService);
+    }
+
+    @Test
+    void uploadPhotoSucceedsWithoutAuthenticationAndDelegatesToSignupService() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1, 2, 3});
+
+        mockMvc.perform(multipart("/api/v1/signup/photo").file(file).param("token", "abc-123")
+                        .header("X-Forwarded-For", "203.0.113.7"))
+                .andExpect(status().isNoContent());
+
+        verify(signupService).uploadPendingPhoto(eq("abc-123"), any());
+    }
+
+    @Test
+    void uploadPhotoReturnsNotFoundForAnUnknownToken() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[] {1});
+        doThrow(new ResponseStatusException(NOT_FOUND, "Signup request not found."))
+                .when(signupService).uploadPendingPhoto(eq("bogus"), any());
+
+        mockMvc.perform(multipart("/api/v1/signup/photo").file(file).param("token", "bogus")
+                        .header("X-Forwarded-For", "203.0.113.8"))
+                .andExpect(status().isNotFound());
     }
 }

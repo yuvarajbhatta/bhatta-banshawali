@@ -29,9 +29,10 @@ import java.util.regex.Pattern;
  * password-reset-request (inbox-spamming a target) and the three token/OTP
  * confirm endpoints (password-reset, email-verify, admin-access-request,
  * sharing one bucket -- cheap defense-in-depth against brute-forcing, see
- * TokenService/OtpService). Also photo upload (PersonPhotoController) --
- * real per-request work (image decode/re-encode, disk write) with no admin
- * review queue in front of it. Also throttles the email-verify resend and
+ * TokenService/OtpService). Also photo upload (PersonPhotoController, and
+ * the signup applicant's own pending-photo endpoint -- same bucket, same
+ * risk) -- real per-request work (image decode/re-encode, disk write) with
+ * no admin review queue in front of it. Also throttles the email-verify resend and
  * admin-access-request endpoints (inbox-spamming a target with OTP emails,
  * same shape as password-reset-request). Keyed by
  * client IP via X-Forwarded-For (set by nginx; see the
@@ -98,7 +99,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 && ("/api/v1/password-reset/confirm".equals(request.getRequestURI())
                         || "/api/v1/verify-email/confirm".equals(request.getRequestURI())
                         || "/api/v1/me/admin-access-request/confirm".equals(request.getRequestURI()));
-        boolean isPhotoUpload = "POST".equals(request.getMethod()) && PHOTO_UPLOAD_PATH.matcher(request.getRequestURI()).matches();
+        boolean isPhotoUpload = "POST".equals(request.getMethod())
+                && (PHOTO_UPLOAD_PATH.matcher(request.getRequestURI()).matches()
+                        || "/api/v1/signup/photo".equals(request.getRequestURI()));
         boolean isOtpRequest = "POST".equals(request.getMethod())
                 && ("/api/v1/verify-email/resend".equals(request.getRequestURI())
                         || "/api/v1/me/admin-access-request".equals(request.getRequestURI()));

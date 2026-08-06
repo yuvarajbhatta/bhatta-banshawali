@@ -9,7 +9,6 @@ import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.UserAccountRepository;
 import com.familytree.repository.UserPersonLinkRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,14 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Picture Album (docs/06-ui-ux-specification.md dashboard). Ships
@@ -48,7 +44,7 @@ public class PersonPhotoService {
     private final RelationshipService relationshipService;
     private final ImageReencodeService imageReencodeService;
     private final AuditLogService auditLogService;
-    private final Path uploadsDirectory;
+    private final PhotoStorageService photoStorageService;
 
     public PersonPhotoService(PersonPhotoRepository personPhotoRepository,
                               PersonRepository personRepository,
@@ -57,7 +53,7 @@ public class PersonPhotoService {
                               RelationshipService relationshipService,
                               ImageReencodeService imageReencodeService,
                               AuditLogService auditLogService,
-                              @Value("${app.uploads.directory}") String uploadsDirectory) {
+                              PhotoStorageService photoStorageService) {
         this.personPhotoRepository = personPhotoRepository;
         this.personRepository = personRepository;
         this.userAccountRepository = userAccountRepository;
@@ -65,7 +61,7 @@ public class PersonPhotoService {
         this.relationshipService = relationshipService;
         this.imageReencodeService = imageReencodeService;
         this.auditLogService = auditLogService;
-        this.uploadsDirectory = Path.of(uploadsDirectory).normalize();
+        this.photoStorageService = photoStorageService;
     }
 
     public List<PersonPhoto> list(Long personId) {
@@ -100,9 +96,7 @@ public class PersonPhotoService {
             throw new IllegalArgumentException("Could not read the uploaded file.");
         }
         byte[] reencoded = imageReencodeService.reencode(original);
-
-        String storageKey = UUID.randomUUID() + ".jpg";
-        writeToDisk(storageKey, reencoded);
+        String storageKey = photoStorageService.store(reencoded);
 
         PersonPhoto photo = new PersonPhoto();
         photo.setPerson(target);
@@ -126,7 +120,7 @@ public class PersonPhotoService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only remove photos you uploaded.");
         }
 
-        deleteFromDisk(photo.getStorageKey());
+        photoStorageService.delete(photo.getStorageKey());
         personPhotoRepository.deleteById(photoId);
 
         // Only a genuine moderation action (an admin removing someone
@@ -145,7 +139,7 @@ public class PersonPhotoService {
 
     public StoredPhotoFile readFile(Long personId, Long photoId) {
         PersonPhoto photo = getOrThrow(personId, photoId);
-        return new StoredPhotoFile(readFromDisk(photo.getStorageKey()), photo.getMimeType());
+        return new StoredPhotoFile(photoStorageService.read(photo.getStorageKey()), photo.getMimeType());
     }
 
     private PersonPhoto getOrThrow(Long personId, Long photoId) {
@@ -172,45 +166,6 @@ public class PersonPhotoService {
         relationshipService.getChildrenForPerson(uploaderPerson).forEach(p -> immediateFamilyIds.add(p.getId()));
         relationshipService.getSiblingsForPerson(uploaderPerson).forEach(p -> immediateFamilyIds.add(p.getId()));
         return immediateFamilyIds.contains(targetPersonId);
-    }
-
-    private void writeToDisk(String storageKey, byte[] bytes) {
-        try {
-            Files.createDirectories(uploadsDirectory);
-            Files.write(resolveSafely(storageKey), bytes);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not save the uploaded photo.", e);
-        }
-    }
-
-    private byte[] readFromDisk(String storageKey) {
-        try {
-            return Files.readAllBytes(resolveSafely(storageKey));
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo file is missing.");
-        }
-    }
-
-    private void deleteFromDisk(String storageKey) {
-        try {
-            Files.deleteIfExists(resolveSafely(storageKey));
-        } catch (IOException e) {
-            // Best-effort -- an orphaned file left on disk is a cleanup
-            // nuisance, not a reason to fail the delete the caller actually
-            // asked for (the database row, which every query respects).
-        }
-    }
-
-    // storageKey is always server-generated (UUID + ".jpg"), never
-    // client-controlled, so this is defense-in-depth rather than a
-    // reachable path today -- cheap enough to keep given it reads based on
-    // a database-stored value.
-    private Path resolveSafely(String storageKey) {
-        Path resolved = uploadsDirectory.resolve(storageKey).normalize();
-        if (!resolved.startsWith(uploadsDirectory)) {
-            throw new IllegalArgumentException("Invalid storage key.");
-        }
-        return resolved;
     }
 
     private String blankToNull(String value) {

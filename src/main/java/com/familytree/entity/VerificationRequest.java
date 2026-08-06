@@ -76,6 +76,27 @@ public class VerificationRequest {
     @Column(length = 2000)
     private String applicantNote;
 
+    /**
+     * Random, unguessable handle returned once from POST /api/v1/signup
+     * so a separate, still-unauthenticated follow-up request (POST
+     * /api/v1/signup/photo) can attach a profile photo to this specific
+     * pending request -- see SignupService.uploadPendingPhoto. Always
+     * set (every signup gets one), whether or not a photo ever follows.
+     */
+    @Column(name = "photo_upload_token", length = 36, unique = true)
+    private String photoUploadToken;
+
+    /**
+     * Server-generated filename (see PersonPhotoService's storageKey
+     * convention) for a photo uploaded via POST /api/v1/signup/photo,
+     * re-encoded the same way person_photos are. Null until/unless one
+     * is uploaded. Transferred into a real PersonPhoto row on approval
+     * (VerificationReviewService), once a Person exists to attach it
+     * to.
+     */
+    @Column(name = "pending_photo_storage_key", length = 255)
+    private String pendingPhotoStorageKey;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MatchConfidence matchConfidence;
@@ -249,6 +270,22 @@ public class VerificationRequest {
 
     public void setApplicantNote(String applicantNote) {
         this.applicantNote = applicantNote;
+    }
+
+    public String getPhotoUploadToken() {
+        return photoUploadToken;
+    }
+
+    public void setPhotoUploadToken(String photoUploadToken) {
+        this.photoUploadToken = photoUploadToken;
+    }
+
+    public String getPendingPhotoStorageKey() {
+        return pendingPhotoStorageKey;
+    }
+
+    public void setPendingPhotoStorageKey(String pendingPhotoStorageKey) {
+        this.pendingPhotoStorageKey = pendingPhotoStorageKey;
     }
 
     public MatchConfidence getMatchConfidence() {

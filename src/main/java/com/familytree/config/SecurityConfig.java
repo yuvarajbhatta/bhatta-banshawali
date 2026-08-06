@@ -104,7 +104,8 @@ public class SecurityConfig {
                         // Forgot-password and email-verification confirm/resend are
                         // also anonymous/pre-session (no session cookie to protect
                         // yet), same reasoning as signup.
-                        .ignoringRequestMatchers("/api/v1/signup", "/api/v1/password-reset/request",
+                        .ignoringRequestMatchers("/api/v1/signup", "/api/v1/signup/photo",
+                                "/api/v1/password-reset/request",
                                 "/api/v1/password-reset/confirm", "/api/v1/verify-email/confirm",
                                 "/api/v1/verify-email/resend"))
                 .addFilterBefore(new RateLimitFilter(rateLimiter), UsernamePasswordAuthenticationFilter.class)
@@ -170,7 +171,7 @@ public class SecurityConfig {
                         // Needed by the signup form before an applicant has an
                         // account; reveals nothing about any person or family data.
                         .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/signup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/signup", "/api/v1/signup/photo").permitAll()
                         // Forgot password / email verification confirm+resend --
                         // anonymous, pre-session, matching signup's permitAll
                         // treatment above.

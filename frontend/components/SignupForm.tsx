@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Camera, Upload, User, X } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { Button } from "@/components/Button";
-import { convertAdToBs, convertBsToAd, submitSignup, SignupError, type SignupRequest } from "@/lib/api";
+import {
+  convertAdToBs,
+  convertBsToAd,
+  submitSignup,
+  uploadSignupPhoto,
+  SignupError,
+  type SignupRequest,
+} from "@/lib/api";
 import styles from "./SignupForm.module.css";
 
 // Selecting a language on the signup page navigates to the same page
@@ -78,10 +86,51 @@ export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [dobBsError, setDobBsError] = useState<string | null>(null);
 
+  // Kept out of `form`/the sessionStorage draft above -- a File can't be
+  // JSON.stringify'd, and a selected photo isn't worth persisting across
+  // a language-switch navigation the way plain text fields are.
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(form));
   }, [form]);
+
+  // Revokes the previous object URL whenever it's replaced, and on
+  // unmount -- otherwise each new selection leaks the last one.
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) {
+        URL.revokeObjectURL(photoPreviewUrl);
+      }
+    };
+  }, [photoPreviewUrl]);
+
+  function handlePhotoSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Always reset so choosing the exact same file again still fires
+    // this handler next time (the browser won't emit "change" otherwise).
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    if (photoPreviewUrl) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+    setPhoto(file);
+    setPhotoPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function handleRemovePhoto() {
+    if (photoPreviewUrl) {
+      URL.revokeObjectURL(photoPreviewUrl);
+    }
+    setPhoto(null);
+    setPhotoPreviewUrl(null);
+  }
 
   // AD is the value submitted to the backend. When it changes (either
   // because the applicant edited the AD field directly, or because the
@@ -196,7 +245,17 @@ export function SignupForm() {
 
     setSubmitting(true);
     try {
-      await submitSignup(request);
+      const response = await submitSignup(request);
+      if (photo) {
+        // Best-effort, same as the verification email the backend sends
+        // during this same signup -- a failed photo upload is a shame,
+        // not a reason to make the applicant redo the whole form.
+        try {
+          await uploadSignupPhoto(response.photoUploadToken, photo);
+        } catch (error) {
+          console.warn("Photo upload failed, continuing signup anyway.", error);
+        }
+      }
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       }
@@ -230,6 +289,53 @@ export function SignupForm() {
 
       <fieldset className={styles.fieldset}>
         <legend>{t("sections.personal")}</legend>
+
+        <div className={styles.field}>
+          <span className={styles.labelText}>{t("fields.profilePhoto")} {t("optional")}</span>
+          <div className={styles.photoRow}>
+            {photoPreviewUrl ? (
+              <img src={photoPreviewUrl} alt={t("fields.photoPreviewAlt")} className={styles.photoPreview} />
+            ) : (
+              <div className={styles.photoPlaceholder} aria-hidden="true">
+                <User size={28} />
+              </div>
+            )}
+            <div className={styles.photoButtons}>
+              <Button type="button" variant="secondary" size="sm" onClick={() => cameraInputRef.current?.click()}>
+                <Camera size={16} aria-hidden="true" />
+                {t("fields.takePhoto")}
+              </Button>
+              <Button type="button" variant="secondary" size="sm" onClick={() => galleryInputRef.current?.click()}>
+                <Upload size={16} aria-hidden="true" />
+                {t("fields.uploadPhoto")}
+              </Button>
+              {photo ? (
+                <button type="button" className={styles.removePhotoButton} onClick={handleRemovePhoto}>
+                  <X size={14} aria-hidden="true" />
+                  {t("fields.removePhoto")}
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            className={styles.hiddenFileInput}
+            aria-label={t("fields.takePhoto")}
+            onChange={handlePhotoSelected}
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            className={styles.hiddenFileInput}
+            aria-label={t("fields.uploadPhoto")}
+            onChange={handlePhotoSelected}
+          />
+          <div className={styles.hint}>{t("fields.photoHint")}</div>
+        </div>
 
         <Field
           label={t("fields.fullName")}

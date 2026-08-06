@@ -8,6 +8,13 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface PersonRepository extends JpaRepository<Person, Long> {
+    // Per-field checks alone only match a keyword contained entirely
+    // within ONE column (first, middle, or last name) -- a two-word
+    // search like "Bhoj Raj" against firstName="Bhoj"/middleName="Raj"
+    // fails every one of them since neither column holds the full
+    // "Bhoj Raj" substring. CONCAT_WS (not plain concat: it skips nulls,
+    // so a missing middle name doesn't leave a double space breaking the
+    // match) additionally checks the whole name as typically searched.
     @Query("""
             select p from Person p
             where
@@ -19,6 +26,8 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
                 or lower(coalesce(p.lastNameNepali, '')) like lower(concat('%', :keyword, '%'))
                 or lower(coalesce(p.nickname, '')) like lower(concat('%', :keyword, '%'))
                 or lower(coalesce(p.notes, '')) like lower(concat('%', :keyword, '%'))
+                or lower(function('CONCAT_WS', ' ', p.firstName, p.middleName, p.lastName)) like lower(concat('%', :keyword, '%'))
+                or lower(function('CONCAT_WS', ' ', p.firstNameNepali, p.middleNameNepali, p.lastNameNepali)) like lower(concat('%', :keyword, '%'))
                 or (:generationNumber is not null and p.generationNumber = :generationNumber)
             order by p.generationNumber asc, p.id asc
             """)

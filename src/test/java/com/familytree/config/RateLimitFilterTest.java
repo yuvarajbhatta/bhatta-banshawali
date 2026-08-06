@@ -303,6 +303,21 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void signupPhotoUploadSharesTheSamePhotoUploadBucketAsPersonPhotos() throws Exception {
+        // Same risk (real per-request decode/re-encode/disk-write work,
+        // no admin review queue), so it's deliberately the same bucket,
+        // not a separate one an attacker could exhaust independently.
+        for (int i = 0; i < RateLimitFilter.PHOTO_UPLOAD_CAPACITY; i++) {
+            filter.doFilter(signupPhotoRequest("203.0.113.93"), new MockHttpServletResponse(), filterChain);
+        }
+
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        filter.doFilter(signupPhotoRequest("203.0.113.93"), blockedResponse, filterChain);
+
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+    }
+
+    @Test
     void listingPhotosIsNotThrottledAsUpload() throws Exception {
         // Only POST (the actual upload) is throttled here -- GET (listing)
         // and the file-serving endpoint are unrelated read paths.
@@ -317,6 +332,12 @@ class RateLimitFilterTest {
 
     private MockHttpServletRequest photoUploadRequest(String clientIp, long personId) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/persons/" + personId + "/photos");
+        request.addHeader("X-Forwarded-For", clientIp);
+        return request;
+    }
+
+    private MockHttpServletRequest signupPhotoRequest(String clientIp) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/signup/photo");
         request.addHeader("X-Forwarded-For", clientIp);
         return request;
     }

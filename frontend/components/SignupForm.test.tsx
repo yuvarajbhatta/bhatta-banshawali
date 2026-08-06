@@ -32,8 +32,16 @@ vi.mock("@/lib/api", () => ({
   convertAdToBs: vi.fn().mockRejectedValue(new Error("unsupported")),
   convertBsToAd: vi.fn().mockRejectedValue(new Error("unsupported")),
   submitSignup: vi.fn(),
+  uploadSignupPhoto: vi.fn(),
   SignupError: class SignupError extends Error {},
 }));
+
+if (typeof URL.createObjectURL === "undefined") {
+  URL.createObjectURL = vi.fn(() => "blob:mock-preview-url");
+}
+if (typeof URL.revokeObjectURL === "undefined") {
+  URL.revokeObjectURL = vi.fn();
+}
 
 describe("SignupForm", () => {
   it("marks Full Name, Email, Father's, and Grandfather's names as required", () => {
@@ -68,5 +76,36 @@ describe("SignupForm", () => {
     render(<SignupForm />);
 
     expect(screen.queryByText("subtitle")).not.toBeInTheDocument();
+  });
+
+  it("offers both a take-photo and an upload-photo control, neither visible as a raw file input", () => {
+    render(<SignupForm />);
+
+    expect(screen.getByRole("button", { name: /fields.takePhoto/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /fields.uploadPhoto/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /fields.removePhoto/ })).not.toBeInTheDocument();
+  });
+
+  it("shows a preview and a remove option once a photo is selected", () => {
+    render(<SignupForm />);
+    const file = new File(["fake-image-bytes"], "me.jpg", { type: "image/jpeg" });
+    const galleryInput = screen.getByLabelText("fields.uploadPhoto", { selector: "input" });
+
+    fireEvent.change(galleryInput, { target: { files: [file] } });
+
+    expect(screen.getByAltText("fields.photoPreviewAlt")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /fields.removePhoto/ })).toBeInTheDocument();
+  });
+
+  it("clears the preview and remove option when removed", () => {
+    render(<SignupForm />);
+    const file = new File(["fake-image-bytes"], "me.jpg", { type: "image/jpeg" });
+    const galleryInput = screen.getByLabelText("fields.uploadPhoto", { selector: "input" });
+    fireEvent.change(galleryInput, { target: { files: [file] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /fields.removePhoto/ }));
+
+    expect(screen.queryByAltText("fields.photoPreviewAlt")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /fields.removePhoto/ })).not.toBeInTheDocument();
   });
 });
