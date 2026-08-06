@@ -247,6 +247,59 @@ body {
   line-height: var(--line-height-normal);
 }
 
+/* Site-wide decorative background watermark (WatermarkController) --
+   a fixed pseudo-element behind body's own children (z-index: -1 sits
+   below any statically-positioned content, but still above body's own
+   background-color since a ::before is generated content of body, not
+   a sibling) so it never intercepts clicks and never needs touching on
+   a per-page basis. Only actually visible on pages whose own top-level
+   wrapper doesn't paint an opaque background over it -- see
+   AppShell.module.css's .shell, which was made transparent for exactly
+   this reason. Renders nothing (0 bytes -> no broken-image box, since
+   this is a background-image, not an <img>) wherever
+   app.watermark.file isn't configured or the file is missing --
+   WatermarkController 404s cleanly rather than erroring.
+
+   Day theme: the original pencil portrait as-is, low opacity, multiply
+   blend -- graphite lines read as faint dark marks on the light page,
+   the white paper background around them nearly vanishes into it.
+
+   Night theme: grayscale+inverted (dark graphite -> light strokes,
+   light paper -> near-black) so it reads as chalk on a dark surface,
+   with screen blend -- screen ignores near-black source pixels
+   entirely, so only the (now-light) former pencil strokes add any
+   visible glow to the page underneath. Mirrors this file's existing
+   :root[data-theme="dark"] / prefers-color-scheme pattern (see above)
+   rather than inventing a new one, so it's ready for a manual theme
+   toggle if one's ever added. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("/api/v1/watermark");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(70vmin, 900px);
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] body::before {
+  filter: grayscale(1) invert(1);
+  opacity: 0.1;
+  mix-blend-mode: screen;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body::before {
+    filter: grayscale(1) invert(1);
+    opacity: 0.1;
+    mix-blend-mode: screen;
+  }
+}
+
 /* A dark "stage" backdrop for hero sections -- opt-in per section, not
    a theme switch. Always dark regardless of light/dark mode, since
    these sections (e.g. the login page's branding panel) are composed

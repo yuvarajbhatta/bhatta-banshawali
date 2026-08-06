@@ -1,7 +1,12 @@
 .shell {
   display: flex;
   min-height: 100vh;
-  background: var(--color-background);
+  /* Transparent, not var(--color-background) -- body already paints
+     that exact color (see globals.css), and this being transparent is
+     what lets the site-wide background watermark (also on body) show
+     through the main content area. Visually identical to before
+     whenever the watermark itself is absent/unconfigured. */
+  background: transparent;
 }
 
 .desktopSidebar {

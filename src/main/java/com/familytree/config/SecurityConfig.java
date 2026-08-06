@@ -168,6 +168,9 @@ public class SecurityConfig {
                         // explainer) for the unauthenticated marketing/public pages.
                         .requestMatchers(HttpMethod.GET, "/api/v1/content", "/api/v1/content/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public-stats").permitAll()
+                        // Decorative site-wide background image, shown on every page
+                        // (including pre-login ones) -- see WatermarkController.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/watermark").permitAll()
                         // Needed by the signup form before an applicant has an
                         // account; reveals nothing about any person or family data.
                         .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()
