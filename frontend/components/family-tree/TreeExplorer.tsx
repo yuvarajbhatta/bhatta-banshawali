@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Maximize, RotateCcw } from "lucide-react";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -80,14 +80,19 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
     setFocusId(null);
   }
 
-  function handleSelect(personId: number) {
+  // Passed down to TreeCanvas (onSelect) / MemberQuickView (onFocusPerson),
+  // which flow into every MemberNode's props -- a new identity each render
+  // (e.g. on every search keystroke, since `search` is state on this same
+  // component) invalidates TreeCanvas's node-building useMemo and defeats
+  // MemberNode's React.memo, re-rendering every node on every keystroke.
+  const handleSelect = useCallback((personId: number) => {
     setSelectedId(personId);
-  }
+  }, []);
 
-  function handleFocusPerson(personId: number) {
+  const handleFocusPerson = useCallback((personId: number) => {
     setSelectedId(personId);
     setFocusId(personId);
-  }
+  }, []);
 
   const selectedPerson = selectedId != null ? peopleById.get(selectedId) ?? null : null;
 

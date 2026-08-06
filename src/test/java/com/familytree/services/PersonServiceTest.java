@@ -2,7 +2,10 @@ package com.familytree.services;
 
 import com.familytree.config.AppProperties;
 import com.familytree.entity.Person;
+import com.familytree.repository.PersonCorrectionRequestRepository;
+import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
+import com.familytree.repository.UserPersonLinkRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -18,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +40,18 @@ class PersonServiceTest {
     @Mock
     private AuditLogService auditLogService;
 
+    @Mock
+    private PersonPhotoRepository personPhotoRepository;
+
+    @Mock
+    private PersonCorrectionRequestRepository personCorrectionRequestRepository;
+
+    @Mock
+    private UserPersonLinkRepository userPersonLinkRepository;
+
+    @Mock
+    private PhotoStorageService photoStorageService;
+
     private PersonService personService;
 
     @org.junit.jupiter.api.BeforeEach
@@ -43,7 +59,12 @@ class PersonServiceTest {
         AppProperties appProperties = new AppProperties();
         appProperties.getLineage().setDefaultLastName("Bhatta");
         appProperties.getLineage().setDefaultGender("Male");
-        personService = new PersonService(personRepository, relationshipService, nameTransliterationService, auditLogService, appProperties);
+        personService = new PersonService(personRepository, relationshipService, nameTransliterationService,
+                auditLogService, personPhotoRepository, personCorrectionRequestRepository, userPersonLinkRepository,
+                photoStorageService, appProperties);
+        lenient().when(personPhotoRepository.findByPersonIdOrderByUploadedAtDesc(any())).thenReturn(List.of());
+        lenient().when(personCorrectionRequestRepository.findByPersonId(any())).thenReturn(List.of());
+        lenient().when(userPersonLinkRepository.findByPersonId(any())).thenReturn(List.of());
     }
 
     @Test

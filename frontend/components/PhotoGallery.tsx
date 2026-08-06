@@ -47,7 +47,12 @@ export function PhotoGallery({ personId, photos, onDeleted, onAddClick }: PhotoG
             <button type="button" className={styles.thumbButton} onClick={() => setEnlarged(photo)}>
               {/* Authenticated, session-cookie-gated endpoint -- not eligible for next/image's remote loader/optimizer. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={personPhotoFileUrl(personId, photo.id)} alt={photo.caption ?? ""} className={styles.thumb} />
+              <img
+                src={personPhotoFileUrl(personId, photo.id)}
+                alt={photo.caption ?? ""}
+                className={styles.thumb}
+                loading="lazy"
+              />
             </button>
             {photo.canDelete ? (
               <button

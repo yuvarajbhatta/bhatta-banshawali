@@ -902,6 +902,14 @@ export interface AdminPersonDto {
 
 export type AdminPersonRequest = Omit<AdminPersonDto, "id">;
 
+// Mirrors com.familytree.dto.AdminPersonCreateResultDto -- possibleDuplicates
+// is a non-blocking, advisory list (DuplicateCandidateService#findLikelyDuplicatesOf),
+// always present (empty when nothing matched), never something that blocks the save.
+export interface AdminPersonCreateResultDto {
+  person: AdminPersonDto;
+  possibleDuplicates: AdminPersonDto[];
+}
+
 export async function getAdminPersons(cookieHeader: string, keyword?: string): Promise<AdminListResult<AdminPersonDto>> {
   const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : "";
   const response = await fetch(`${API_BASE_URL}/api/v1/admin/persons${query}`, {
@@ -928,7 +936,7 @@ export async function getAdminPersonDetail(cookieHeader: string, id: string): Pr
   return { kind: "ok", detail: await response.json() };
 }
 
-export function createAdminPerson(body: AdminPersonRequest): Promise<AdminPersonDto> {
+export function createAdminPerson(body: AdminPersonRequest): Promise<AdminPersonCreateResultDto> {
   return adminApiRequest("/api/v1/admin/persons", "POST", body);
 }
 
@@ -1504,6 +1512,7 @@ export interface MergeResultDto {
   relationshipsDroppedAsDuplicate: number;
   userLinksRepointed: number;
   correctionRequestsRepointed: number;
+  photosRepointed: number;
 }
 
 export async function getAdminDuplicates(cookieHeader: string): Promise<AdminListResult<DuplicateCandidateDto>> {

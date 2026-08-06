@@ -13,10 +13,11 @@
         <a href="/persons" class="back-link" th:text="#{nav.backToPersons}">Back to Persons</a>
         <div class="header-actions" sec:authorize="hasRole('ADMIN')">
             <a class="btn btn-primary" th:href="@{'/persons/edit/' + ${person.id}}" th:text="#{persons.edit}">Edit</a>
-            <a class="btn btn-danger"
-               th:href="@{'/persons/delete/' + ${person.id}}"
-               th:attr="onclick=|return confirm('${#messages.msg('persons.delete.confirm')}')|"
-               th:text="#{persons.delete}">Delete</a>
+            <form th:action="@{'/persons/delete/' + ${person.id}}" method="post"
+                  th:attr="onsubmit=|return confirm('${#messages.msg('persons.delete.confirm')}')|">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn btn-danger" th:text="#{persons.delete}">Delete</button>
+            </form>
         </div>
     </div>
 

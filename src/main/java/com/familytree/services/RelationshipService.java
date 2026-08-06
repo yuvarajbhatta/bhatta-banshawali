@@ -32,9 +32,6 @@ public class RelationshipService {
         this.personRepository = personRepository;
         this.auditLogService = auditLogService;
     }
-    public Relationship saveRelationship(Relationship relationship) {
-        return relationshipRepository.save(relationship);
-    }
     public List<Relationship> getAllRelationships() {
         return relationshipRepository.findAll();
     }
@@ -49,8 +46,26 @@ public class RelationshipService {
             throw new RelationshipCycleException(
                     "This relationship would make " + personLabel(person) + " their own ancestor.");
         }
+        requireNoOppositeParentType(person, relatedPerson, type, null);
 
         saveIfMissing(person, relatedPerson, type);
+        createReciprocalLinks(person, relatedPerson, type);
+
+        // Logs only the primary relationship the caller asked for, not the
+        // reciprocal/auto-linked edges above -- those are implied by it,
+        // not a separate admin decision worth their own log line.
+        auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_CREATED, AuditLogService.ENTITY_RELATIONSHIP, null,
+                "Linked " + personLabel(relatedPerson) + " as " + type + " of " + personLabel(person));
+    }
+
+    /**
+     * Creates whatever reciprocal/inverse edges (person, relatedPerson, type)
+     * implies -- shared by both {@link #saveRelationshipWithAutoLinks} and
+     * {@link #updateRelationship}, since an update that changes the type/
+     * parties needs the same reciprocal established for its new state that a
+     * fresh save would create.
+     */
+    private void createReciprocalLinks(Person person, Person relatedPerson, RelationshipType type) {
         if (type == RelationshipType.FATHER || type == RelationshipType.MOTHER) {
             saveIfMissing(relatedPerson, person, RelationshipType.CHILD);
             autoCreateSpouseBetweenParents(person, relatedPerson, type);
@@ -71,12 +86,38 @@ public class RelationshipService {
                 autoCreateSpouseBetweenParents(relatedPerson, person, parentType);
             });
         }
+    }
 
-        // Logs only the primary relationship the caller asked for, not the
-        // reciprocal/auto-linked edges above -- those are implied by it,
-        // not a separate admin decision worth their own log line.
-        auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_CREATED, AuditLogService.ENTITY_RELATIONSHIP, null,
-                "Linked " + personLabel(person) + " as " + type + " of " + personLabel(relatedPerson));
+    /**
+     * Deletes the reciprocal edge (person, relatedPerson, type) implies, the
+     * mirror of {@link #createReciprocalLinks}. Called before a relationship
+     * row is deleted or replaced so its auto-created counterpart (e.g. the
+     * CHILD row a FATHER/MOTHER save also wrote) doesn't survive as an
+     * orphan pointing at a relationship that no longer exists. Deliberately
+     * does not touch spouse links {@link #autoCreateSpouseBetweenParents}
+     * inferred from this edge -- that inference can be independently
+     * supported by other children/edges, so it isn't this edge's to retract.
+     */
+    private void deleteReciprocalLinks(Person person, Person relatedPerson, RelationshipType type) {
+        if (type == null) {
+            // Guards a genuinely-null row from before V25__relationship_type_not_null.sql
+            // -- one has no reciprocal to have created in the first place.
+            return;
+        }
+        switch (type) {
+            case FATHER, MOTHER -> deleteIfExists(relatedPerson, person, RelationshipType.CHILD);
+            case CHILD -> {
+                deleteIfExists(relatedPerson, person, RelationshipType.FATHER);
+                deleteIfExists(relatedPerson, person, RelationshipType.MOTHER);
+            }
+            case SPOUSE -> deleteIfExists(relatedPerson, person, RelationshipType.SPOUSE);
+            default -> { }
+        }
+    }
+
+    private void deleteIfExists(Person person, Person relatedPerson, RelationshipType type) {
+        relationshipRepository.findByPersonAndRelatedPersonAndRelationshipType(person, relatedPerson, type)
+                .ifPresent(relationshipRepository::delete);
     }
     private void saveIfMissing(Person person, Person relatedPerson, RelationshipType type) {
         boolean exists = relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(
@@ -153,6 +194,13 @@ public class RelationshipService {
 
     public void deleteRelationshipById(Long id) {
         Relationship relationship = relationshipRepository.findById(id).orElse(null);
+        if (relationship != null) {
+            // Otherwise the reciprocal row saveRelationshipWithAutoLinks wrote
+            // alongside this one (e.g. the CHILD edge a FATHER/MOTHER save
+            // also creates) survives as an orphan pointing at a relationship
+            // that no longer exists.
+            deleteReciprocalLinks(relationship.getPerson(), relationship.getRelatedPerson(), relationship.getRelationshipType());
+        }
         relationshipRepository.deleteById(id);
         if (relationship != null) {
             auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_DELETED, AuditLogService.ENTITY_RELATIONSHIP, id,
@@ -173,16 +221,32 @@ public class RelationshipService {
             throw new RelationshipCycleException(
                     "This relationship would make " + personLabel(person) + " their own ancestor.");
         }
+        requireNoOppositeParentType(person, relatedPerson, type, id);
 
         Relationship existingRelationship = relationshipRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Relationship with id " + id + " not found"));
+
+        // Otherwise the reciprocal row the original save wrote (e.g. the
+        // CHILD edge a FATHER/MOTHER save also creates) survives pointing at
+        // the pre-update parties, orphaned from the relationship it used to
+        // mirror.
+        deleteReciprocalLinks(existingRelationship.getPerson(), existingRelationship.getRelatedPerson(),
+                existingRelationship.getRelationshipType());
+
         existingRelationship.setPerson(person);
         existingRelationship.setRelatedPerson(relatedPerson);
         existingRelationship.setRelationshipType(type);
 
         Relationship saved = relationshipRepository.save(existingRelationship);
+        createReciprocalLinks(person, relatedPerson, type);
+
+        // Matches saveRelationshipWithAutoLinks's direction above --
+        // relatedPerson plays the `type` role relative to person (e.g. a
+        // FATHER row means relatedPerson is person's father), so the
+        // message must read relatedPerson-as-type-of-person, not the
+        // reverse (this was previously backwards here).
         auditLogService.record(AuditLogService.ACTION_RELATIONSHIP_UPDATED, AuditLogService.ENTITY_RELATIONSHIP, id,
-                "Updated relationship: " + personLabel(person) + " as " + type + " of " + personLabel(relatedPerson));
+                "Updated relationship: " + personLabel(relatedPerson) + " as " + type + " of " + personLabel(person));
         return saved;
     }
     public List<Person> getDirectChildren(Person person) {
@@ -335,12 +399,69 @@ public class RelationshipService {
                 parentCandidate = person;
                 childCandidate = relatedPerson;
             }
+            case SPOUSE -> {
+                // Not a parent/child edge itself, but a spouse who is
+                // already an ancestor or descendant of the other party
+                // (e.g. recorded as their own parent's spouse) is just as
+                // much an impossible family link as a direct parent cycle
+                // -- check both directions since spouse has no inherent
+                // parent/child orientation.
+                return isAncestor(person, relatedPerson, excludeRelationshipId)
+                        || isAncestor(relatedPerson, person, excludeRelationshipId);
+            }
             default -> {
                 return false;
             }
         }
 
         return isAncestor(childCandidate, parentCandidate, excludeRelationshipId);
+    }
+
+    /**
+     * FATHER/MOTHER-only: rejects (a) the same (person, relatedPerson) pair
+     * already holding the opposite parent-type row -- the unique constraint
+     * in V2__relationship_uniqueness.sql is per relationship_type, so
+     * nothing at the DB layer otherwise stops relatedPerson from being
+     * recorded as both father and mother of person -- and (b) a gender
+     * mismatch against relatedPerson's own recorded Person.gender (a
+     * "Female" person set as FATHER, or "Male" set as MOTHER). Unset/blank
+     * gender is allowed either way -- getFatherForPerson/getMotherForPerson
+     * only ever read the relationship_type, never Person.gender, so this is
+     * the only place either invariant is enforced.
+     */
+    private void requireNoOppositeParentType(Person person, Person relatedPerson, RelationshipType type, Long excludeRelationshipId) {
+        RelationshipType opposite = type == RelationshipType.FATHER ? RelationshipType.MOTHER
+                : type == RelationshipType.MOTHER ? RelationshipType.FATHER : null;
+        if (opposite == null) {
+            return;
+        }
+
+        boolean pairAlreadyOppositeType = relationshipRepository
+                .findByPersonAndRelatedPersonAndRelationshipType(person, relatedPerson, opposite)
+                .filter(existing -> excludeRelationshipId == null || !existing.getId().equals(excludeRelationshipId))
+                .isPresent();
+        if (pairAlreadyOppositeType) {
+            throw new RelationshipCycleException(personLabel(relatedPerson) + " is already recorded as "
+                    + roleLabel(opposite) + " of " + personLabel(person) + " -- the same person can't be both "
+                    + roleLabel(type) + " and " + roleLabel(opposite) + ".");
+        }
+
+        String gender = relatedPerson.getGender();
+        if (gender == null || gender.isBlank()) {
+            return;
+        }
+        if (type == RelationshipType.FATHER && "Female".equalsIgnoreCase(gender)) {
+            throw new RelationshipCycleException(
+                    personLabel(relatedPerson) + " is recorded as Female and can't be set as father of " + personLabel(person) + ".");
+        }
+        if (type == RelationshipType.MOTHER && "Male".equalsIgnoreCase(gender)) {
+            throw new RelationshipCycleException(
+                    personLabel(relatedPerson) + " is recorded as Male and can't be set as mother of " + personLabel(person) + ".");
+        }
+    }
+
+    private String roleLabel(RelationshipType type) {
+        return type == RelationshipType.FATHER ? "father" : "mother";
     }
 
     /**

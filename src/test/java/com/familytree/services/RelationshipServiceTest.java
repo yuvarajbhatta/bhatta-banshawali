@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,14 +39,6 @@ class RelationshipServiceTest {
 
     @InjectMocks
     private RelationshipService relationshipService;
-
-    @Test
-    void saveRelationshipDelegatesToRepository() {
-        Relationship relationship = new Relationship();
-        when(relationshipRepository.save(relationship)).thenReturn(relationship);
-
-        assertThat(relationshipService.saveRelationship(relationship)).isEqualTo(relationship);
-    }
 
     @Test
     void getAllRelationshipsDelegatesToRepository() {
@@ -454,6 +447,48 @@ class RelationshipServiceTest {
         assertThatThrownBy(() -> relationshipService.saveRelationshipWithAutoLinks(person, person, RelationshipType.FATHER))
                 .isInstanceOf(RelationshipCycleException.class);
         verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksThrowsWhenSamePairAlreadyHasTheOppositeParentType() {
+        // parent is already recorded as MOTHER of child -- recording them as
+        // FATHER too would mean the same person is both, which is impossible.
+        Person child = createPerson(1L, "Child");
+        Person parent = createPerson(2L, "Parent");
+        when(relationshipRepository.findByPersonAndRelatedPersonAndRelationshipType(child, parent, RelationshipType.MOTHER))
+                .thenReturn(java.util.Optional.of(relationship(child, parent, RelationshipType.MOTHER)));
+
+        assertThatThrownBy(() -> relationshipService.saveRelationshipWithAutoLinks(child, parent, RelationshipType.FATHER))
+                .isInstanceOf(RelationshipCycleException.class)
+                .hasMessageContaining("already recorded as mother");
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksThrowsWhenParentGenderContradictsTheRoleBeingAssigned() {
+        Person child = createPerson(1L, "Child");
+        Person parent = createPerson(2L, "Parent");
+        parent.setGender("Female");
+
+        assertThatThrownBy(() -> relationshipService.saveRelationshipWithAutoLinks(child, parent, RelationshipType.FATHER))
+                .isInstanceOf(RelationshipCycleException.class)
+                .hasMessageContaining("recorded as Female");
+        verify(relationshipRepository, never()).save(any());
+    }
+
+    @Test
+    void saveRelationshipWithAutoLinksAllowsFatherRoleWhenGenderIsUnset() {
+        Person child = createPerson(1L, "Child");
+        Person parent = createPerson(2L, "Parent");
+        when(relationshipRepository.existsByPersonAndRelatedPersonAndRelationshipType(any(), any(), any())).thenReturn(false);
+        when(relationshipRepository.findByPersonAndRelationshipType(child, RelationshipType.MOTHER)).thenReturn(List.of());
+        noKnownParentsFor(parent);
+
+        relationshipService.saveRelationshipWithAutoLinks(child, parent, RelationshipType.FATHER);
+
+        verify(relationshipRepository).save(argThat(saved ->
+                saved.getPerson().equals(child) && saved.getRelatedPerson().equals(parent)
+                        && saved.getRelationshipType() == RelationshipType.FATHER));
     }
 
     @Test

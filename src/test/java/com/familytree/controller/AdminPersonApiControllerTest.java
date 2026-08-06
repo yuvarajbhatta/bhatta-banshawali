@@ -1,8 +1,10 @@
 package com.familytree.controller;
 
+import com.familytree.dto.AdminPersonCreateResultDto;
 import com.familytree.dto.AdminPersonDto;
 import com.familytree.dto.AdminPersonRequestDto;
 import com.familytree.entity.Person;
+import com.familytree.services.DuplicateCandidateService;
 import com.familytree.services.PersonService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,8 +27,11 @@ class AdminPersonApiControllerTest {
     @Mock
     private PersonService personService;
 
+    @Mock
+    private DuplicateCandidateService duplicateCandidateService;
+
     private AdminPersonApiController controller() {
-        return new AdminPersonApiController(personService);
+        return new AdminPersonApiController(personService, duplicateCandidateService);
     }
 
     private Person person(long id) {
@@ -67,10 +72,24 @@ class AdminPersonApiControllerTest {
     void createSavesAndReturns201() {
         when(personService.savePerson(any(Person.class))).thenReturn(person(5L));
 
-        ResponseEntity<AdminPersonDto> response = controller().create(request());
+        ResponseEntity<AdminPersonCreateResultDto> response = controller().create(request());
 
         assertThat(response.getStatusCode().value()).isEqualTo(201);
-        assertThat(response.getBody().id()).isEqualTo(5L);
+        assertThat(response.getBody().person().id()).isEqualTo(5L);
+        assertThat(response.getBody().possibleDuplicates()).isEmpty();
+    }
+
+    @Test
+    void createSurfacesPossibleDuplicatesWithoutBlockingTheSave() {
+        when(personService.savePerson(any(Person.class))).thenReturn(person(5L));
+        when(duplicateCandidateService.findLikelyDuplicatesOf(any(Person.class))).thenReturn(List.of(person(9L)));
+
+        ResponseEntity<AdminPersonCreateResultDto> response = controller().create(request());
+
+        assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(response.getBody().person().id()).isEqualTo(5L);
+        assertThat(response.getBody().possibleDuplicates()).hasSize(1);
+        assertThat(response.getBody().possibleDuplicates().get(0).id()).isEqualTo(9L);
     }
 
     @Test

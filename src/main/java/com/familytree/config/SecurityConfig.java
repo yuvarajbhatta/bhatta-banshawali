@@ -229,8 +229,19 @@ public class SecurityConfig {
                         // (and the legacy AppUser admin) hold ROLE_SUPER_ADMIN --
                         // see BridgingUserDetailsService.
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/admin-access-requests/*/approve").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/", "/persons", "/persons/*", "/relationships", "/lineage", "/lineage/tree", "/generations")
-                        .hasAnyRole("ADMIN", "USER")
+                        // Same choke point in the other direction: revoking admin/
+                        // super-admin access is just as much a privilege-control
+                        // action as granting it above -- a plain Administrator must
+                        // not be able to strip every other admin's access and become
+                        // the sole remaining administrator unsupervised.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/accounts/*/revoke-admin").hasRole("SUPER_ADMIN")
+                        // Must precede the general "/persons", "/persons/*" ->
+                        // ADMIN-or-USER rule below (first-match-wins): "/persons/*"
+                        // is a single-path-segment wildcard, so without this
+                        // ordering it would also match -- and therefore swallow --
+                        // "/persons/new" here, leaving that ADMIN-only rule
+                        // unreachable and letting a plain USER load the admin
+                        // create-person form.
                         .requestMatchers(
                                 "/persons/admin/**",
                                 "/persons/new", "/persons/edit/**", "/persons/delete/**", "/persons/update/**",
@@ -239,6 +250,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**", "/v3/api-docs", "/swagger-ui/**", "/swagger-ui.html",
                                 "/admin/**", "/api/v1/admin/**"
                         ).hasRole("ADMIN")
+                        .requestMatchers("/", "/persons", "/persons/*", "/relationships", "/lineage", "/lineage/tree", "/generations")
+                        .hasAnyRole("ADMIN", "USER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

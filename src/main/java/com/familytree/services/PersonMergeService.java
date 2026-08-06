@@ -3,11 +3,13 @@ package com.familytree.services;
 import com.familytree.dto.MergeResultDto;
 import com.familytree.entity.Person;
 import com.familytree.entity.PersonCorrectionRequest;
+import com.familytree.entity.PersonPhoto;
 import com.familytree.entity.Relationship;
 import com.familytree.entity.RelationshipType;
 import com.familytree.entity.UserPersonLink;
 import com.familytree.entity.UserPersonLinkStatus;
 import com.familytree.repository.PersonCorrectionRequestRepository;
+import com.familytree.repository.PersonPhotoRepository;
 import com.familytree.repository.PersonRepository;
 import com.familytree.repository.RelationshipRepository;
 import com.familytree.repository.UserPersonLinkRepository;
@@ -45,6 +47,7 @@ public class PersonMergeService {
     private final RelationshipRepository relationshipRepository;
     private final UserPersonLinkRepository userPersonLinkRepository;
     private final PersonCorrectionRequestRepository personCorrectionRequestRepository;
+    private final PersonPhotoRepository personPhotoRepository;
     private final AuditLogService auditLogService;
     private final PersonDisplayHelper personDisplay;
 
@@ -52,12 +55,14 @@ public class PersonMergeService {
                               RelationshipRepository relationshipRepository,
                               UserPersonLinkRepository userPersonLinkRepository,
                               PersonCorrectionRequestRepository personCorrectionRequestRepository,
+                              PersonPhotoRepository personPhotoRepository,
                               AuditLogService auditLogService,
                               PersonDisplayHelper personDisplay) {
         this.personRepository = personRepository;
         this.relationshipRepository = relationshipRepository;
         this.userPersonLinkRepository = userPersonLinkRepository;
         this.personCorrectionRequestRepository = personCorrectionRequestRepository;
+        this.personPhotoRepository = personPhotoRepository;
         this.auditLogService = auditLogService;
         this.personDisplay = personDisplay;
     }
@@ -93,6 +98,7 @@ public class PersonMergeService {
         RelationshipRepointResult relationshipResult = repointRelationships(survivor, loser);
         int userLinksRepointed = repointUserPersonLinks(survivor, loser);
         int correctionRequestsRepointed = repointCorrectionRequests(survivor, loser);
+        int photosRepointed = repointPhotos(survivor, loser);
 
         personRepository.delete(loser);
 
@@ -102,11 +108,12 @@ public class PersonMergeService {
                         + relationshipResult.repointed() + " relationships re-pointed, "
                         + relationshipResult.droppedAsDuplicate() + " dropped as duplicates, "
                         + userLinksRepointed + " account links re-pointed, "
-                        + correctionRequestsRepointed + " correction requests re-pointed.",
+                        + correctionRequestsRepointed + " correction requests re-pointed, "
+                        + photosRepointed + " photos re-pointed.",
                 actorUsername);
 
         return new MergeResultDto(survivor.getId(), relationshipResult.repointed(),
-                relationshipResult.droppedAsDuplicate(), userLinksRepointed, correctionRequestsRepointed);
+                relationshipResult.droppedAsDuplicate(), userLinksRepointed, correctionRequestsRepointed, photosRepointed);
     }
 
     private boolean directlyRelated(Person a, Person b) {
@@ -191,6 +198,15 @@ public class PersonMergeService {
             personCorrectionRequestRepository.save(request);
         }
         return requests.size();
+    }
+
+    private int repointPhotos(Person survivor, Person loser) {
+        List<PersonPhoto> photos = personPhotoRepository.findByPersonIdOrderByUploadedAtDesc(loser.getId());
+        for (PersonPhoto photo : photos) {
+            photo.setPerson(survivor);
+            personPhotoRepository.save(photo);
+        }
+        return photos.size();
     }
 
     private Person getPersonOrThrow(Long id) {
