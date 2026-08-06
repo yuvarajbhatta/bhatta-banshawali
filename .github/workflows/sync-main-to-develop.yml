@@ -36,15 +36,20 @@ jobs:
             --base develop \
             --head main \
             --title "Sync main into develop" \
-            --body "Automated sync so develop doesn't miss anything merged directly into main (e.g. a hotfix). Safe to auto-merge once checks pass; if it shows conflicts, resolve them manually." 2>&1) || true
+            --body "Automated sync so develop doesn't miss anything merged directly into main (e.g. a hotfix). Merged automatically right after creation unless it shows conflicts, which need resolving manually." 2>&1) || true
           echo "$url"
           number=$(echo "$url" | grep -oE '[0-9]+$' || true)
           echo "number=$number" >> "$GITHUB_OUTPUT"
 
-      - name: Enable auto-merge
+      - name: Merge sync PR
         if: steps.pr.outputs.number != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ steps.pr.outputs.number }}" --repo "${{ github.repository }}" --merge --auto || \
-            echo "Could not enable auto-merge (may already be merged, or nothing to sync)."
+          # --auto (deferred auto-merge) needs branch protection configured
+          # on the base branch to have anything to defer to -- confirmed live
+          # ("Protected branch rules not configured for this branch"), and
+          # develop deliberately has none (only main is gated). Nothing
+          # blocks an immediate merge here, so just merge it now.
+          gh pr merge "${{ steps.pr.outputs.number }}" --repo "${{ github.repository }}" --merge || \
+            echo "Could not merge (may already be merged, have conflicts, or nothing to sync)."
