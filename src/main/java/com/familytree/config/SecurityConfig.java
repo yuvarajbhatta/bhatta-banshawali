@@ -92,8 +92,14 @@ public class SecurityConfig {
                         // no-cache behavior as before.
                         .cacheControl(cache -> cache.disable())
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
-                                new NegatedRequestMatcher(
-                                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/v1/watermark")),
+                                // No HTTP method restriction here (unlike most
+                                // other matchers in this file): a HEAD request
+                                // -- which Spring MVC auto-derives from the
+                                // @GetMapping -- should get the identical
+                                // Cache-Control a GET would, not fall back to
+                                // this writer's restrictive default just
+                                // because it isn't literally "GET".
+                                new NegatedRequestMatcher(PathPatternRequestMatcher.pathPattern("/api/v1/watermark")),
                                 new CacheControlHeadersWriter())))
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
