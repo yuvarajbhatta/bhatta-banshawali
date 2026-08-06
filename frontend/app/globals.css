@@ -281,7 +281,7 @@ body::before {
   background-image: url("/api/v1/watermark");
   background-repeat: no-repeat;
   background-position: center;
-  background-size: min(70vmin, 900px);
+  background-size: min(140vmin, 1800px);
   opacity: 0.06;
   mix-blend-mode: multiply;
 }
