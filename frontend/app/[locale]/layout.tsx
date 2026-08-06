@@ -25,6 +25,9 @@ const cormorantGaramond = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Bhatta Banshawali",
   description: "A living record of the Bhatta family's history, preserved and verified.",
+  icons: {
+    icon: "/api/v1/brand/icon",
+  },
 };
 
 export function generateStaticParams() {

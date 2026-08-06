@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { GitFork } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { ADMIN_NAV_ITEMS, APP_NAV_ITEMS } from "./navItems";
 import styles from "./Sidebar.module.css";
@@ -33,7 +32,8 @@ export function Sidebar({ onNavigate, footer, adminCounts, announcementUnreadCou
     <nav className={styles.sidebar} aria-label={brandT("name")}>
       <Link href="/dashboard" className={styles.brand} onClick={onNavigate}>
         <span className={styles.brandMark} aria-hidden="true">
-          <GitFork size={18} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/api/v1/brand/icon" alt="" className={styles.brandMarkImage} />
         </span>
         <span className={styles.brandName}>Bhatta Banshawali</span>
       </Link>

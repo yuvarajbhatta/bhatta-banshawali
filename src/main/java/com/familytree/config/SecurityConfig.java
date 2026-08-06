@@ -25,6 +25,7 @@ import org.springframework.security.web.header.writers.DelegatingRequestMatcherH
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 public class SecurityConfig {
@@ -99,7 +100,9 @@ public class SecurityConfig {
                                 // Cache-Control a GET would, not fall back to
                                 // this writer's restrictive default just
                                 // because it isn't literally "GET".
-                                new NegatedRequestMatcher(PathPatternRequestMatcher.pathPattern("/api/v1/watermark")),
+                                new NegatedRequestMatcher(new OrRequestMatcher(
+                                        PathPatternRequestMatcher.pathPattern("/api/v1/watermark"),
+                                        PathPatternRequestMatcher.pathPattern("/api/v1/brand/**"))),
                                 new CacheControlHeadersWriter())))
                 // CSRF protects state-changing requests made using an existing
                 // authenticated session cookie; an anonymous signup POST has no
@@ -196,6 +199,9 @@ public class SecurityConfig {
                         // Decorative site-wide background image, shown on every page
                         // (including pre-login ones) -- see WatermarkController.
                         .requestMatchers(HttpMethod.GET, "/api/v1/watermark").permitAll()
+                        // Favicon + logo, shown on every page including pre-login
+                        // ones -- see BrandAssetController.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/brand/**").permitAll()
                         // Needed by the signup form before an applicant has an
                         // account; reveals nothing about any person or family data.
                         .requestMatchers(HttpMethod.GET, "/api/v1/date-conversion/**").permitAll()

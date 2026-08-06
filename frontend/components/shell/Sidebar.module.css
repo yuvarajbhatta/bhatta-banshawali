@@ -23,9 +23,28 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: var(--color-primary-600);
-  color: var(--color-neutral-0);
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.brandMarkImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Same day/night treatment as the site-wide background watermark
+   (globals.css) -- the source art has a light, cream background that
+   reads naturally in light mode but needs inverting to sit on a dark
+   sidebar. */
+:root[data-theme="dark"] .brandMarkImage {
+  filter: grayscale(1) invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brandMarkImage {
+    filter: grayscale(1) invert(1);
+  }
 }
 
 .brandName {
