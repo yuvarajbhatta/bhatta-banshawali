@@ -5,7 +5,11 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  # enablePullRequestAutoMerge (the "Enable auto-merge" step) needs
+  # contents: write for the default GITHUB_TOKEN -- pull-requests: write
+  # alone gets "Resource not accessible by integration", confirmed live
+  # (the PR still got created fine, just never actually auto-merged).
+  contents: write
   pull-requests: write
 
 jobs:
