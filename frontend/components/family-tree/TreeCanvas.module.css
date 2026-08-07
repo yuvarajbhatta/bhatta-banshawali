@@ -15,3 +15,15 @@
   background: transparent;
   color: var(--color-text-subtle);
 }
+
+/* React Flow's own base stylesheet sets touch-action: none on the pane, so
+   it captures every touch inside the canvas -- including a plain one-finger
+   vertical swipe, which then can't fall through to scroll the surrounding
+   page. Overriding to pan-y hands single-finger vertical drags back to the
+   browser's native scroll; two-finger pinch/pan gestures aren't claimed by
+   pan-y, so they still reach React Flow's own pointer handling untouched.
+   !important since this is deliberately overriding the library's own
+   same-specificity class selector, not something exposed as a component prop. */
+.canvasWrapper :global(.react-flow__pane) {
+  touch-action: pan-y !important;
+}

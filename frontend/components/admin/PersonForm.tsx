@@ -163,6 +163,11 @@ export function PersonForm({ initial, submitLabel, onSubmit }: PersonFormProps) 
               onChange={(event) => set("birthDate", event.target.value || null)}
             />
           </div>
+          {/* Commented out per request -- rarely entered and the form felt
+              cluttered. Existing deathDate values are untouched (still
+              submitted as-is on edit) and still drive the tree's deceased/
+              living styling; this only removes the ability to set/change
+              it from this form.
           <div className={styles.field}>
             <label htmlFor="deathDate">{t("deathDate")}</label>
             <input
@@ -172,6 +177,8 @@ export function PersonForm({ initial, submitLabel, onSubmit }: PersonFormProps) 
               onChange={(event) => set("deathDate", event.target.value || null)}
             />
           </div>
+          */}
+          <div />
         </div>
         <div className={styles.row}>
           <div className={styles.field}>
@@ -191,6 +198,12 @@ export function PersonForm({ initial, submitLabel, onSubmit }: PersonFormProps) 
             />
           </div>
         </div>
+        {/* Commented out per request -- the same gotra for everyone in
+            this family tree, so asking for it per-person is unnecessary
+            (also commented out of the profile pages that displayed it --
+            MemberDashboard.tsx, directory/[id]/page.tsx). Existing gotra
+            values are untouched (still submitted as-is on edit), just not
+            editable or shown anywhere right now.
         <div className={styles.row}>
           <div className={styles.field}>
             <label htmlFor="gotra">{t("gotra")}</label>
@@ -198,6 +211,7 @@ export function PersonForm({ initial, submitLabel, onSubmit }: PersonFormProps) 
           </div>
           <div />
         </div>
+        */}
       </div>
 
       <div className={styles.section}>
