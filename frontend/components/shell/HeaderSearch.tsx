@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { searchPersons, UnauthenticatedError, type PersonSummaryDto } from "@/lib/api";
 import styles from "./HeaderSearch.module.css";
 
@@ -13,11 +13,20 @@ import styles from "./HeaderSearch.module.css";
  * uses on /directory, just as a compact debounced dropdown instead of a
  * full-page result list. Only searches members: there's no Photos/
  * Events/Documents index to group results with (docs/frontend-redesign-plan.md).
+ *
+ * Doubles as the tree page's own search while on /tree -- that page used
+ * to have a second, redundant search box (TreeFilters, now removed) right
+ * above the canvas. On /tree this one shows tree-specific wording and, on
+ * picking a result, sets ?focus= instead of navigating to the directory
+ * profile -- TreeExplorer reacts to that query param to pan/select the
+ * matched node (see its initialFocusId effect).
  */
 export function HeaderSearch() {
   const t = useTranslations("appShell.header");
   const directoryT = useTranslations("directoryPage");
   const router = useRouter();
+  const pathname = usePathname();
+  const isTreePage = pathname === "/tree";
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<PersonSummaryDto[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -76,7 +85,11 @@ export function HeaderSearch() {
   function goToPerson(person: PersonSummaryDto) {
     setOpen(false);
     setKeyword("");
-    router.push(`/directory/${person.id}`);
+    if (isTreePage) {
+      router.push(`/tree?focus=${person.id}`);
+    } else {
+      router.push(`/directory/${person.id}`);
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -111,7 +124,7 @@ export function HeaderSearch() {
           aria-controls="header-search-results"
           aria-label={t("searchLabel")}
           className={styles.input}
-          placeholder={t("searchPlaceholder")}
+          placeholder={isTreePage ? t("searchPlaceholderTree") : t("searchPlaceholder")}
           value={keyword}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
