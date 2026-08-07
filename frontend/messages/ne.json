@@ -45,6 +45,7 @@
     },
     "header": {
       "searchPlaceholder": "परिवारका सदस्य खोज्नुहोस्...",
+      "searchPlaceholderTree": "रूखमा कुनै व्यक्ति खोज्नुहोस्...",
       "searchLabel": "खोज",
       "openMenu": "मेनु खोल्नुहोस्",
       "closeMenu": "मेनु बन्द गर्नुहोस्",
@@ -81,15 +82,10 @@
     "touchHint": "रूख चित्र हेर्न दुई औंलाले चलाउनुहोस्",
     "touchHintDismiss": "हटाउनुहोस्",
     "controls": {
+      "groupLabel": "रूख दृश्य नियन्त्रण",
       "zoomIn": "जुम इन",
       "zoomOut": "जुम आउट",
-      "fitView": "स्क्रिनमा मिलाउनुहोस्",
       "resetView": "दृश्य रिसेट गर्नुहोस्"
-    },
-    "filters": {
-      "search": "खोज",
-      "searchPlaceholder": "रूखमा कुनै व्यक्ति खोज्नुहोस्...",
-      "clearSearch": "खोज हटाउनुहोस्"
     },
     "fullscreen": {
       "title": "पारिवारिक रूख",

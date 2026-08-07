@@ -2,12 +2,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Maximize, RotateCcw } from "lucide-react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { buildGraphIndex, findRelationshipPath } from "@/lib/familyGraph";
 import { TreeCanvas } from "./TreeCanvas";
-import { TreeFilters } from "./TreeFilters";
 import { MemberQuickView } from "./MemberQuickView";
 import { TreeFullscreenView } from "./TreeFullscreenView";
 import { computeHighlightedPath, type TreeHighlights } from "./treeHighlight";
@@ -24,10 +22,26 @@ interface TreeExplorerProps {
 
 export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: TreeExplorerProps) {
   const t = useTranslations("treePage");
-  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(initialFocusId);
   const [focusId, setFocusId] = useState<number | null>(initialFocusId);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+
+  // Search now lives entirely in the header (HeaderSearch shows tree-
+  // specific wording/behavior on this page -- see its own comment), which
+  // navigates here via ?focus=<id> rather than holding any local search
+  // state. initialFocusId is a prop, not state, so it only takes effect on
+  // mount by default -- this re-syncs selectedId/focusId whenever the
+  // header search (or any other ?focus= link) changes it, without a
+  // useEffect: adjusting state during render, conditioned on a value
+  // actually having changed since the last render, is the pattern React
+  // itself recommends for "reset state when a prop changes" (avoids an
+  // extra commit + the setState-in-effect anti-pattern).
+  const [lastSyncedFocusId, setLastSyncedFocusId] = useState(initialFocusId);
+  if (initialFocusId !== lastSyncedFocusId) {
+    setLastSyncedFocusId(initialFocusId);
+    setSelectedId(initialFocusId);
+    setFocusId(initialFocusId);
+  }
 
   const index = useMemo(() => buildGraphIndex(people), [people]);
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
@@ -44,25 +58,10 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
   }, [index, rootPersonId, selfId]);
   const rootPath = useMemo(() => computeHighlightedPath(rootPathSteps), [rootPathSteps]);
 
-  // Search finds and centers the view on a match rather than hiding
-  // everyone else -- the whole tree always stays visible, this just
-  // tells TreeCanvas who to pan/zoom to.
-  const searchMatchId = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) {
-      return null;
-    }
-    const match = people.find((person) => {
-      const haystack = `${person.englishFullName} ${person.nepaliFullName}`.toLowerCase();
-      return haystack.includes(normalizedSearch);
-    });
-    return match ? match.id : null;
-  }, [people, search]);
-
-  // A search match counts as "selected" for path-highlighting purposes
-  // too, not just for panning -- otherwise the amber line only appears
-  // after an extra click on the node the search just zoomed to.
-  const pathTargetId = searchMatchId ?? selectedId;
+  // A focused/selected person gets the amber path highlight too, not just
+  // panning/the quick-view popup -- covers both a node clicked directly on
+  // the canvas and a person reached via the header search's ?focus= link.
+  const pathTargetId = focusId ?? selectedId;
 
   const selectedPathSteps = useMemo(() => {
     if (pathTargetId == null || selfId == null || pathTargetId === selfId) {
@@ -74,17 +73,15 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
 
   const highlights: TreeHighlights = useMemo(() => ({ rootPath, selectedPath }), [rootPath, selectedPath]);
 
-  function handleResetView() {
-    setSearch("");
+  const handleResetView = useCallback(() => {
     setSelectedId(null);
     setFocusId(null);
-  }
+  }, []);
 
   // Passed down to TreeCanvas (onSelect) / MemberQuickView (onFocusPerson),
   // which flow into every MemberNode's props -- a new identity each render
-  // (e.g. on every search keystroke, since `search` is state on this same
-  // component) invalidates TreeCanvas's node-building useMemo and defeats
-  // MemberNode's React.memo, re-rendering every node on every keystroke.
+  // defeats TreeCanvas's node-building useMemo and MemberNode's React.memo,
+  // re-rendering every node unnecessarily.
   const handleSelect = useCallback((personId: number) => {
     setSelectedId(personId);
   }, []);
@@ -94,32 +91,15 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
     setFocusId(personId);
   }, []);
 
+  const handleOpenFullscreen = useCallback(() => {
+    setSelectedId(null);
+    setIsFullscreenOpen(true);
+  }, []);
+
   const selectedPerson = selectedId != null ? peopleById.get(selectedId) ?? null : null;
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.toolbarRow}>
-        <div className={styles.searchColumn}>
-          <TreeFilters search={search} onSearchChange={setSearch} />
-        </div>
-        <button type="button" className={styles.toolbarButton} onClick={handleResetView} aria-label={t("controls.resetView")}>
-          <RotateCcw size={16} aria-hidden="true" />
-          <span aria-hidden="true">{t("controls.resetView")}</span>
-        </button>
-        <button
-          type="button"
-          className={styles.toolbarButton}
-          onClick={() => {
-            setSelectedId(null);
-            setIsFullscreenOpen(true);
-          }}
-          aria-label={t("viewFullTreeCta")}
-        >
-          <Maximize size={16} aria-hidden="true" />
-          <span aria-hidden="true">{t("viewFullTreeCta")}</span>
-        </button>
-      </div>
-
       <div className={styles.canvasArea}>
         {people.length === 0 ? (
           <div className={styles.empty}>{t("empty")}</div>
@@ -128,8 +108,10 @@ export function TreeExplorer({ people, initialFocusId, rootPersonId, selfId }: T
             <TreeCanvas
               people={people}
               selectedId={selectedId}
-              focusId={searchMatchId ?? focusId}
+              focusId={focusId}
               onSelect={handleSelect}
+              onReset={handleResetView}
+              onOpenFullscreen={handleOpenFullscreen}
               highlights={highlights}
             />
           </ReactFlowProvider>

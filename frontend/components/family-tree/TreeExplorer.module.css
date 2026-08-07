@@ -1,10 +1,6 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  /* No fixed toolbar-height budget subtracted here -- .canvasArea's
-     flex: 1 below claims whatever's left after the toolbars take
-     whatever height they actually need, so this stays correct
-     regardless of how many rows they wrap onto on a narrow screen. */
   height: calc(100vh - 68px - var(--space-8) * 2);
   min-height: 420px;
 }
@@ -15,52 +11,9 @@
   min-height: 240px;
 }
 
-.toolbarRow {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.searchColumn {
-  flex: 1;
-  min-width: 0;
-}
-
-.toolbarButton {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
-  height: 38px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.toolbarButton:hover {
-  background: var(--color-primary-50);
-  color: var(--color-primary-700-text);
-}
-
 @media (max-width: 640px) {
   .wrapper {
     min-height: 360px;
-  }
-
-  .toolbarButton {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .toolbarButton span {
-    display: none;
   }
 }
 

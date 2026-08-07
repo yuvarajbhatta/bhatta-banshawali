@@ -1,30 +1,36 @@
 "use client";
 
-import { Maximize, Minus, Plus } from "lucide-react";
+import { Maximize, Minus, Plus, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useReactFlow } from "@xyflow/react";
 import styles from "./TreeControls.module.css";
 
-export function TreeControls() {
-  const t = useTranslations("treePage.controls");
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+interface TreeControlsProps {
+  onReset: () => void;
+  /** Omitted inside TreeFullscreenView -- already fullscreen, nothing to open. */
+  onOpenFullscreen?: () => void;
+}
+
+export function TreeControls({ onReset, onOpenFullscreen }: TreeControlsProps) {
+  const t = useTranslations("treePage");
+  const { zoomIn, zoomOut } = useReactFlow();
 
   return (
-    <div className={styles.controls} role="group" aria-label={t("fitView")}>
-      <button type="button" className={styles.button} onClick={() => zoomIn({ duration: 200 })} aria-label={t("zoomIn")}>
+    <div className={styles.controls} role="group" aria-label={t("controls.groupLabel")}>
+      <button type="button" className={styles.button} onClick={() => zoomIn({ duration: 200 })} aria-label={t("controls.zoomIn")}>
         <Plus size={18} aria-hidden="true" />
       </button>
-      <button type="button" className={styles.button} onClick={() => zoomOut({ duration: 200 })} aria-label={t("zoomOut")}>
+      <button type="button" className={styles.button} onClick={() => zoomOut({ duration: 200 })} aria-label={t("controls.zoomOut")}>
         <Minus size={18} aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        className={styles.button}
-        onClick={() => fitView({ padding: 0.2, duration: 300 })}
-        aria-label={t("fitView")}
-      >
-        <Maximize size={16} aria-hidden="true" />
+      <button type="button" className={styles.button} onClick={onReset} aria-label={t("controls.resetView")}>
+        <RotateCcw size={16} aria-hidden="true" />
       </button>
+      {onOpenFullscreen ? (
+        <button type="button" className={styles.button} onClick={onOpenFullscreen} aria-label={t("viewFullTreeCta")}>
+          <Maximize size={16} aria-hidden="true" />
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -29,10 +29,13 @@ interface TreeCanvasProps {
   selectedId: number | null;
   focusId: number | null;
   onSelect: (personId: number) => void;
+  onReset: () => void;
+  /** Omitted inside TreeFullscreenView -- already fullscreen, nothing to open. */
+  onOpenFullscreen?: () => void;
   highlights?: TreeHighlights;
 }
 
-export function TreeCanvas({ people, selectedId, focusId, onSelect, highlights }: TreeCanvasProps) {
+export function TreeCanvas({ people, selectedId, focusId, onSelect, onReset, onOpenFullscreen, highlights }: TreeCanvasProps) {
   const { nodes: layoutNodes, edges } = useFamilyTreeLayout(people, selectedId, highlights);
   const { setCenter, fitView } = useReactFlow();
   const lastFocusedIdRef = useRef<number | null>(null);
@@ -92,14 +95,19 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlights }
         onlyRenderVisibleElements
         panOnScroll
         zoomOnScroll
-        minZoom={0.15}
+        // Low enough that zooming out always reaches "whole tree visible",
+        // regardless of how large the family gets -- the old 0.15 floor
+        // could be more restrictive than fitView's own computed zoom for a
+        // large tree, making "zoom all the way out" stop short of actually
+        // showing everything.
+        minZoom={0.02}
         maxZoom={1.5}
         translateExtent={translateExtent}
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--color-border)" />
       </ReactFlow>
-      <TreeControls />
+      <TreeControls onReset={onReset} onOpenFullscreen={onOpenFullscreen} />
       <TouchHint />
     </div>
   );

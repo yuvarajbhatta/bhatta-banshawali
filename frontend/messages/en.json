@@ -45,6 +45,7 @@
     },
     "header": {
       "searchPlaceholder": "Search family members...",
+      "searchPlaceholderTree": "Find a person in the tree...",
       "searchLabel": "Search",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
@@ -81,15 +82,10 @@
     "touchHint": "Use two fingers to navigate through the tree diagram",
     "touchHintDismiss": "Dismiss",
     "controls": {
+      "groupLabel": "Tree view controls",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
-      "fitView": "Fit to screen",
       "resetView": "Reset view"
-    },
-    "filters": {
-      "search": "Search",
-      "searchPlaceholder": "Find a person in the tree...",
-      "clearSearch": "Clear search"
     },
     "fullscreen": {
       "title": "Family Tree",
