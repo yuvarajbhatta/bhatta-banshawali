@@ -30,7 +30,8 @@ interface TreeCanvasProps {
   focusId: number | null;
   onSelect: (personId: number) => void;
   onReset: () => void;
-  onOpenFullscreen: () => void;
+  /** Omitted inside TreeFullscreenView -- already fullscreen, nothing to open. */
+  onOpenFullscreen?: () => void;
   highlights?: TreeHighlights;
 }
 
