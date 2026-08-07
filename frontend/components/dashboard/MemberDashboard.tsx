@@ -25,7 +25,7 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
     );
   }
 
-  const { person, family, gotra, pendingCorrectionCount } = profile;
+  const { person, family, pendingCorrectionCount } = profile;
   const index = buildGraphIndex(people);
   const ancestorCount = getAncestors(index, person.id).length;
   const descendantCount = getDescendants(index, person.id).length;
@@ -47,12 +47,14 @@ export async function MemberDashboard({ profile, people, photos }: MemberDashboa
                 <dt>{t("born")}</dt>
                 <dd>{person.birthDate ? <BirthDateDisplay dateAd={person.birthDate} /> : t("notRecorded")}</dd>
               </div>
+              {/* Commented out per request -- see PersonForm.tsx's comment.
               {gotra ? (
                 <div className={styles.fact}>
                   <dt>{t("gotra")}</dt>
                   <dd>{gotra}</dd>
                 </div>
               ) : null}
+              */}
             </dl>
           </div>
           <Link href={`/directory/${person.id}`}>

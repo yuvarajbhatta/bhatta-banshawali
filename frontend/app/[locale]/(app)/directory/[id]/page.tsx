@@ -44,8 +44,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
                 )}
               </dd>
 
+              {/* Commented out per request -- see PersonForm.tsx's comment.
               <dt>{t("fields.deathDate")}</dt>
               <dd>{result.person.deathDate ?? t("notAdded")}</dd>
+              */}
 
               <dt>{t("fields.birthPlace")}</dt>
               <dd>{result.person.birthPlace ?? t("notAdded")}</dd>
@@ -53,8 +55,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
               <dt>{t("fields.currentAddress")}</dt>
               <dd>{result.person.currentAddress ?? t("notAdded")}</dd>
 
+              {/* Commented out per request -- see PersonForm.tsx's comment.
               <dt>{t("fields.gotra")}</dt>
               <dd>{result.person.gotra ?? t("notAdded")}</dd>
+              */}
             </dl>
           </div>
 

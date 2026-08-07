@@ -12,6 +12,7 @@ import "@xyflow/react/dist/style.css";
 import type { PersonTreeNodeDto } from "@/lib/api";
 import { MemberNode } from "./MemberNode";
 import { TreeControls } from "./TreeControls";
+import { TouchHint } from "./TouchHint";
 import { NODE_HEIGHT, NODE_WIDTH, useFamilyTreeLayout } from "./useFamilyTreeLayout";
 import type { TreeHighlights } from "./treeHighlight";
 import styles from "./TreeCanvas.module.css";
@@ -99,6 +100,7 @@ export function TreeCanvas({ people, selectedId, focusId, onSelect, highlights }
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--color-border)" />
       </ReactFlow>
       <TreeControls />
+      <TouchHint />
     </div>
   );
 }
