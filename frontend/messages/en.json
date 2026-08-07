@@ -78,6 +78,8 @@
     "error": "Could not load the family tree. Please try again.",
     "retry": "Retry",
     "empty": "No family members have been recorded yet.",
+    "touchHint": "Use two fingers to navigate through the tree diagram",
+    "touchHintDismiss": "Dismiss",
     "controls": {
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",

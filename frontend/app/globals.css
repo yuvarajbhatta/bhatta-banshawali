@@ -247,6 +247,22 @@ body {
   line-height: var(--line-height-normal);
 }
 
+/* iOS Safari auto-zooms the viewport on focus for any form control whose
+   *computed* font-size is under 16px, and doesn't always cleanly reset
+   the zoom level afterward -- on a phone this shows up as the whole page
+   suddenly not fitting the window and staying "scrollable" past its own
+   content. Several component stylesheets set inputs to --text-sm (14px)
+   or smaller; !important is deliberate here so this floor can't be
+   silently undercut by a more specific `.field input` rule elsewhere --
+   it's a hard UX/accessibility floor, not a style to negotiate per
+   component. Desktop is unaffected either way -- 16px is a perfectly
+   normal input size there too. */
+input,
+textarea,
+select {
+  font-size: max(var(--text-base), 16px) !important;
+}
+
 /* Site-wide decorative background watermark (WatermarkController) --
    a fixed pseudo-element behind body's own children (z-index: -1 sits
    below any statically-positioned content, but still above body's own
