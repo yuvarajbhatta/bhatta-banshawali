@@ -170,6 +170,13 @@ public class AdminAccessRequestService {
         return adminAccessRequestRepository.findAllByStatusOrderByRequestedAtAsc(AdminAccessRequestStatus.PENDING).size();
     }
 
+    // Missing @Transactional here (unlike every sibling method in this
+    // class) meant getAccountOrThrow's own short transaction closed before
+    // isAlreadyAdmin's account.getRoles() access below -- worked by
+    // accident under the old spring.jpa.open-in-view default, throws
+    // LazyInitializationException now that it's off (surfaced live as
+    // GET /api/v1/me/admin-access-request -> 500).
+    @Transactional(readOnly = true)
     public MyAdminAccessRequestStatusDto myStatus(Long userAccountId) {
         UserAccount account = getAccountOrThrow(userAccountId);
         if (isAlreadyAdmin(account)) {
