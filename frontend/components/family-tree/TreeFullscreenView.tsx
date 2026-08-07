@@ -59,6 +59,7 @@ export function TreeFullscreenView({ people, peopleById, rootPath = EMPTY_HIGHLI
             selectedId={selectedId}
             focusId={null}
             onSelect={setSelectedId}
+            onReset={() => setSelectedId(null)}
             highlights={{ rootPath, selectedPath: EMPTY_HIGHLIGHTED_PATH }}
           />
         </ReactFlowProvider>
