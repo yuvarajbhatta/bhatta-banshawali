@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@xyflow/react": "^12.11.2",
+    "@xyflow/react": "^12.11.3",
     "framer-motion": "^13.0.0",
     "lucide-react": "^1.30.0",
     "next": "^16.2.12",
